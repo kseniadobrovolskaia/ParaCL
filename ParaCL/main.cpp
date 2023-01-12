@@ -1,8 +1,9 @@
-#include "Lexer.hpp"
+#include "Parser.hpp"
 
 
 //std::vector<Lex_t*> lex_string(std::vector<std::string> &vars);
-void print_nodes(std::vector<Lex_t*> &nodes, std::vector<std::string> &vars);
+void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars);
+
 
 
 int main(int argc, char const *argv[])
@@ -10,13 +11,16 @@ int main(int argc, char const *argv[])
 	try
 	{
 		std::vector<std::string> vars;
-		std::vector<Lex_t*> nodes = lex_string(vars);
+		std::vector<Lex_t*> lexems = lex_string(vars);
 
-		while (!nodes.empty())
-		{
-			print_nodes(nodes, vars);
-			nodes = lex_string(vars);
-		}
+		print_lexems(lexems, vars);
+
+		check_brases(lexems);
+
+		Lex_t *sintax_tree = Parse_arithmetic(lexems);
+
+		int result = Calculate_arithmetic(sintax_tree);
+		std::cout << "Значение арифметического выражения: " << result << std::endl;
 
 	}
 	catch(std::exception & ex)
@@ -29,9 +33,9 @@ int main(int argc, char const *argv[])
 }
 
 
-void print_nodes(std::vector<Lex_t*> &nodes, std::vector<std::string> &vars)
+void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars)
 {
-	for (auto elem = nodes.begin(); elem < nodes.end(); ++elem)
+	for (auto elem = lexems.begin(); elem < lexems.end(); ++elem)
 	{
 		std::cout << (*elem)->name();
 		if ((*elem)->get_kind() == 1)

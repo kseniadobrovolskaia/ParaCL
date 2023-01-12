@@ -11,13 +11,14 @@
 
 typedef enum Lex_kind_t {
 	BRACE,
-	DECL,
+	VAR,
 	KEYWD,
 	VALUE,
 	SCOPE,
 	UNOP,
 	BINOP,
 	COMPOP,
+	ASSIGN
 
 } Lex_kind_t;
 
@@ -39,13 +40,13 @@ enum UnOp_t { INC, DEC };
 
 enum BinOp_t { ADD, SUB, MULT, DIV };
 
-enum Brace { LBRACE, RBRACE };
+enum Brace_t { LBRACE, RBRACE };
 
-enum Scope { LSCOPE, RSCOPE };
+enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL };
 
-enum Keywords { IF, WHILE, PRINT, SCAN };
+enum Keywords_t { IF, WHILE, PRINT, SCAN, SEMICOL };
 
 
 void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
@@ -58,29 +59,39 @@ void push_unop(std::vector<Lex_t*> &lex_array, UnOp_t unop)
 	lex_array.push_back(new Lex_t(Lex_kind_t::UNOP, unop));
 }
 
-void push_brace(std::vector<Lex_t*> &lex_array, Brace brace)
+void push_brace(std::vector<Lex_t*> &lex_array, Brace_t brace)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::BRACE, brace));
 }
 
-void push_scope(std::vector<Lex_t*> &lex_array, Scope scope)
+void push_scope(std::vector<Lex_t*> &lex_array, Scope_t scope)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::SCOPE, scope));
 }
 
-void push_keyword(std::vector<Lex_t*> &lex_array, Keywords kw)
+void push_keyword(std::vector<Lex_t*> &lex_array, Keywords_t kw)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::KEYWD, kw));
 }
 
-void push_decl(std::vector<Lex_t*> &lex_array, int num_var)
+void push_var(std::vector<Lex_t*> &lex_array, int num_var)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::DECL, num_var));
+	lex_array.push_back(new Lex_t(Lex_kind_t::VAR, num_var));
 }
 
 void push_value(std::vector<Lex_t*> &lex_array, int value)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::VALUE, value));
+}
+
+void push_compop(std::vector<Lex_t*> &lex_array, CompOp_t compop)
+{
+	lex_array.push_back(new Lex_t(Lex_kind_t::COMPOP, compop));
+}
+
+void push_assign(std::vector<Lex_t*> &lex_array)
+{
+	lex_array.push_back(new Lex_t(Lex_kind_t::ASSIGN, 0));
 }
 
 
@@ -90,33 +101,84 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 	char elem, prev = '\0';
 	std::string word;
 	std::vector <Lex_t*> lex_array;
-	//Lex_t *prev_lex = nullptr;
 
 	std::cin >> std::noskipws;
 	std::cin >> elem;
 	
-	while (elem != ';')
+	while (elem != '.')
 	{
 		switch (elem)
 		{
+		case ';':
+			push_keyword(lex_array, SEMICOL);
+			break;
+		case '=':
+			switch(prev)
+			{
+			case '=':
+				lex_array.pop_back();
+				push_compop(lex_array, EQUAL);
+				break;
+			case '<':
+				lex_array.pop_back();
+				push_compop(lex_array, LESorEQ);
+				break;
+			case '>':
+				lex_array.pop_back();
+				push_compop(lex_array, GRorEQ);
+				break;
+			default:
+				push_assign(lex_array);
+			}
+			break;
+		case '<':
+			push_compop(lex_array, LESS);
+			break;
+		case '>':
+			push_compop(lex_array, GREATER);
+			break;
 		case '+':
 			if (prev == '+')
 			{	
 				lex_array.pop_back();
+				push_unop(lex_array, INC);
+				break;
+			}
+			else
+			{
+				push_binop(lex_array, ADD);
+			}
+
+			break;
+		case '-':
+			if (prev == '-')
+			{
+				lex_array.pop_back();
 				push_unop(lex_array, DEC);
 				break;
 			}
+			else
+			{
+				push_binop(lex_array, SUB);
+			}
 
-			push_binop(lex_array, ADD);
-			break;
-		case '-':
-			push_binop(lex_array, SUB);
 			break;
 		case '*':
 			push_binop(lex_array, MULT);
 			break;
 		case '/':
-			push_binop(lex_array, DIV);
+			if(prev == '/')
+			{
+				lex_array.pop_back();
+				while (elem != '\n')
+				{
+					std::cin >> elem;
+				}
+			}
+			else
+			{
+				push_binop(lex_array, DIV);
+			}
 			break;
 		case '(':
 			push_brace(lex_array, LBRACE);
@@ -174,13 +236,13 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 				std::vector<std::string>::iterator itr = std::find(vars.begin(), vars.end(), word);
 				if (itr == vars.end())
 				{
-					push_decl(lex_array, num_var);
+					push_var(lex_array, num_var);
 					vars.push_back(word);
 					num_var++;					
 				}
 				else
 				{
-					push_decl(lex_array, std::distance(vars.begin(), itr));
+					push_var(lex_array, std::distance(vars.begin(), itr));
 				}
 
 			}
@@ -188,12 +250,6 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			word.clear();
 			continue;
 		}
-		
-
-		//if (!std::isspace(elem) || std::cin.fail())
-	    //{
-	     //   throw std::logic_error("Invalid input");
-	    //}
 
 	    prev = elem;
 	    
@@ -218,11 +274,15 @@ std::string Lex_t::name()
 	case Lex_kind_t::VALUE:
 		return static_cast<std::string>("VALUE:") + static_cast<std::string>(std::to_string(data_));
 	case Lex_kind_t::KEYWD:
+		if (data_ == 4)
+		{
+			return static_cast<std::string>("KEYWD:;");
+		}
 		if (data_ == 0 || data_ == 1)
 		{
 			return static_cast<std::string>("KEYWD:") + ((data_ == 0) ? "if" : "while");
 		}
-		return static_cast<std::string>("KEYWD:") + ((data_ == 2) ? "print" : "scan");
+		return static_cast<std::string>("KEYWD:") + ((data_ == 2) ? "print" : "?");
 	case Lex_kind_t::BINOP:
 		if (data_ == 0 || data_ == 1)
 		{
@@ -239,8 +299,10 @@ std::string Lex_t::name()
 			return static_cast<std::string>("COMPOP:") + ((data_ == 0) ? "LESS" : "GREATER");
 		}
 		return static_cast<std::string>("COMPOP:") + ((data_ == 2) ? "LESorEQ" : "GRorEQ");
-	case Lex_kind_t::DECL:
-		return static_cast<std::string>("DECL:");
+	case Lex_kind_t::VAR:
+		return static_cast<std::string>("VAR:");
+	case Lex_kind_t::ASSIGN:
+		return static_cast<std::string>("ASSIGN");
 	}
 	return nullptr;
 }
