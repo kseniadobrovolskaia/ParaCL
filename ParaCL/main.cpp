@@ -1,8 +1,11 @@
-#include "Parser.hpp"
-#include "Sintax_graph.hpp"
 
+#include "Sintax_graph.hpp"
+#include "Parser_stmts.hpp"
+#include "Parser_arith.hpp"
 
 void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars);
+void print_VARS();
+void print_prog_elems(std::vector<Statement*> prog);
 
 
 
@@ -10,18 +13,13 @@ int main(int argc, char const *argv[])
 {
 	try
 	{
-		std::vector<std::string> vars;
-		std::vector<Lex_t*> lexems = lex_string(vars); //(7 - 85+(8-9*6)/1 +8)*2-4 <= 0;.
+		std::vector<Lex_t*> lexems = lex_string(vars);
 
-		//print_lexems(lexems, vars);
+		std::vector<Statement*> prog = parse_prog(lexems);
+		build_sintax_graph(prog);
+		//print_prog_elems(prog);
+		print_VARS();
 
-		check_brases(lexems);
-
-		Lex_t *sintax_tree = parse_arithmetic(lexems);
-		build_sintax_graph(sintax_tree);
-
-		int result = calculate(sintax_tree);
-		std::cout << "Значение арифметического выражения: " << result << std::endl;
 		system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
 				"shotwell sintax_tree.png");
 	
@@ -50,3 +48,23 @@ void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars)
 	std::cout << std::endl;
 }
 
+
+void print_VARS()
+{
+	std::cout << "Значения глобальных переменных: " << std::endl;
+
+	for (auto const &pair : VARS)
+	{
+		std::cout << pair.first << " = " << pair.second << std::endl;
+	}
+}
+
+
+void print_prog_elems(std::vector<Statement*> prog)
+{
+	std::cout << "Элементы программы :" << std::endl;
+	for (auto elem : prog)
+	{
+		std::cout << (elem->get_lhs())->name() << std::endl;
+	}
+}

@@ -1,5 +1,5 @@
 
-SOURCES=main.cpp Lexer.hpp Parser.hpp Sintax_graph.hpp
+SOURCES=main.cpp 
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=ParaCL.exe
 

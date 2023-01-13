@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <fstream>
 
+std::unordered_map<std::string, int>VARS;
+std::vector<std::string> vars;
 
 typedef enum Lex_kind_t {
 	BRACE,
@@ -19,7 +21,6 @@ typedef enum Lex_kind_t {
 	UNOP,
 	BINOP,
 	COMPOP,
-	ASSIGN
 
 } Lex_kind_t;
 
@@ -31,10 +32,11 @@ class Lex_t
 
 public:
 	Lex_t(Lex_kind_t kind, int data) : kind_(kind), data_(data){};
-	std::string name();
-	std::string short_name();
-	Lex_kind_t get_kind() { return kind_; };
-	int get_data() { return data_; };
+	virtual ~Lex_t() = default;
+	std::string name() const;
+	std::string short_name() const;
+	Lex_kind_t get_kind() const { return kind_; };
+	int get_data() const { return data_; };
 	
 };
 
@@ -48,7 +50,7 @@ enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL };
 
-enum Keywords_t { IF, WHILE, PRINT, SCAN, SEMICOL };
+enum Keywords_t { ASSIGN, IF, WHILE, PRINT, SCAN, SEMICOL };
 
 
 void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
@@ -91,11 +93,6 @@ void push_compop(std::vector<Lex_t*> &lex_array, CompOp_t compop)
 	lex_array.push_back(new Lex_t(Lex_kind_t::COMPOP, compop));
 }
 
-void push_assign(std::vector<Lex_t*> &lex_array)
-{
-	lex_array.push_back(new Lex_t(Lex_kind_t::ASSIGN, 0));
-}
-
 
 std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 {
@@ -130,7 +127,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 				push_compop(lex_array, GRorEQ);
 				break;
 			default:
-				push_assign(lex_array);
+				push_keyword(lex_array, ASSIGN);
 			}
 			break;
 		case '<':
@@ -263,7 +260,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 }
 
 
-std::string Lex_t::name()
+std::string Lex_t::name() const
 {
 	switch (kind_)
 	{
@@ -302,17 +299,17 @@ std::string Lex_t::name()
 		}
 		return static_cast<std::string>("COMPOP:") + ((data_ == 2) ? "LESorEQ" : "GRorEQ");
 	case Lex_kind_t::VAR:
-		return static_cast<std::string>("VAR:");
-	case Lex_kind_t::ASSIGN:
-		return static_cast<std::string>("ASSIGN");
+		return static_cast<std::string>("VAR:") + vars[data_];
 	}
 	return nullptr;
 }
 
-std::string Lex_t::short_name()
+std::string Lex_t::short_name() const
 {
 	switch (kind_)
 	{
+	case Lex_kind_t::VAR:
+		return vars[data_];
 	case Lex_kind_t::BRACE:
 		return ((data_ == Brace_t::LBRACE) ? "(" : ")");
 	case Lex_kind_t::UNOP:

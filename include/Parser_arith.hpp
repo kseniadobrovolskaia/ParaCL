@@ -6,8 +6,6 @@
 #include <unordered_map>
 
 
-std::unordered_map<std::string, int>VARS; //VARS["elem"] = 5; VARS["elem"]++;
-
 
 //----------------------------------------------------------------------------------------------------------
 
@@ -19,13 +17,13 @@ public:
 
 //----------------------------------------------------------------------------------------------------------
 
+
 class Variable : public Lex_t {
 
 	std::string name_;
 	
 public:
- 	Variable(Lex_t *parent, std::string name, int num_var) : Lex_t(Lex_kind_t::VAR, num_var), name_(name) {};
- 	int get_num_var() const { return data_; };
+ 	Variable(std::string name, int num_var) : Lex_t(Lex_kind_t::VAR, num_var), name_(name) {};
  	std::string get_name() const { return name_; };
 };
 
@@ -63,17 +61,6 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
-class UnOp : public Lex_t {
-
-  	Lex_t *rhs_;
-
-public:
-	UnOp(Lex_t *parent, UnOp_t opcode) : Lex_t(Lex_kind_t::UNOP, opcode) {};
-};
-
-
-//----------------------------------------------------------------------------------------------------------
-
 
 
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
@@ -82,9 +69,11 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_M(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_T(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
+int is_val_var(Lex_t *node, int *value);
 int is_plus_minus(Lex_t *node);
 int is_mul_div(Lex_t *node);
 int is_brace(Lex_t *node);
+
 
 
 enum Move { INCREMENT, GET_CURRENT };
@@ -255,13 +244,24 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		token_counter(Move::INCREMENT);
 		return T;
 	}
-	int val = (lex_array[token_counter(Move::GET_CURRENT)]->get_kind() == Lex_kind_t::VALUE);
-	if (!val)
+
+	int value;
+	int is_v_v = is_val_var(lex_array[token_counter(GET_CURRENT)], &value);
+	if (is_v_v < 0)
 	{
 		throw std::logic_error("Invalid input");
 	}
 
-	T = new Value(lex_array[token_counter(Move::GET_CURRENT)]->get_data());
+	if (is_v_v == Lex_kind_t::VALUE)
+	{
+		T = new Value(lex_array[token_counter(GET_CURRENT)]->get_data());
+	}
+	else if (is_v_v == Lex_kind_t::VAR)
+	{
+		int num_var = lex_array[token_counter(GET_CURRENT)]->get_data();
+		T = new Variable(vars[num_var], num_var);
+	}
+	
 	token_counter(Move::INCREMENT);
 	return T;
 }
@@ -274,47 +274,55 @@ int calculate(Lex_t *tree)
 	{
 		return tree->get_data();
 	}
-	else
+	else if (tree->get_kind() == Lex_kind_t::VAR)
 	{
-		if (tree->get_kind() == Lex_kind_t::BINOP)
+		std::string name_var = vars[tree->get_data()];
+		if (!(VARS.contains(name_var)))
 		{
-			left = calculate((static_cast<BinOp*>(tree))->get_lhs());
-			right = calculate((static_cast<BinOp*>(tree))->get_rhs());
-			switch (tree->get_data())
-			{
-				case BinOp_t::ADD:
-					return left + right;
-				case BinOp_t::SUB:
-					return left - right;
-				case BinOp_t::MULT:
-					return left * right;
-				case BinOp_t::DIV:
-					if (right == 0)
-					{
-						throw std::runtime_error("Error: division by zero");
-					}
-					return left / right;
-			}
+		 	throw std::runtime_error("Uninitialized variable");
 		}
-		else
-		{	
-			left = calculate((static_cast<CompOp*>(tree))->get_lhs());
-			right = calculate((static_cast<CompOp*>(tree))->get_rhs());
-			switch (tree->get_data())
-			{
-				case CompOp_t::LESS:
-					return left < right;
-				case CompOp_t::GREATER:
-					return left > right;
-				case CompOp_t::LESorEQ:
-					return left <= right;
-				case CompOp_t::GRorEQ:
-					return left >= right;
-				case CompOp_t::EQUAL:
-					return left == right;
-			}
+		return VARS[name_var];
+	}
+	else if (tree->get_kind() == Lex_kind_t::BINOP)
+	{
+		left = calculate((static_cast<BinOp*>(tree))->get_lhs());
+		right = calculate((static_cast<BinOp*>(tree))->get_rhs());
+		switch (tree->get_data())
+		{
+			case BinOp_t::ADD:
+				return left + right;
+			case BinOp_t::SUB:
+				return left - right;
+			case BinOp_t::MULT:
+				return left * right;
+			case BinOp_t::DIV:
+				if (right == 0)
+				{
+					throw std::runtime_error("Error: division by zero");
+				}
+				return left / right;
+		
 		}
 	}
+	else if (tree->get_kind() == Lex_kind_t::COMPOP)
+	{	
+		left = calculate((static_cast<CompOp*>(tree))->get_lhs());
+		right = calculate((static_cast<CompOp*>(tree))->get_rhs());
+		switch (tree->get_data())
+		{
+			case CompOp_t::LESS:
+				return left < right;
+			case CompOp_t::GREATER:
+				return left > right;
+			case CompOp_t::LESorEQ:
+				return left <= right;
+			case CompOp_t::GRorEQ:
+				return left >= right;
+			case CompOp_t::EQUAL:
+				return left == right;
+		}
+	}
+
 	throw std::runtime_error("Error: it is not clear what is in function \"Calculate_arithmetic\"");
 
 }
@@ -364,6 +372,23 @@ int is_brace(Lex_t *node)
 	}
 	
 	return node->get_data();
+}
+
+
+int is_val_var(Lex_t *node, int *value)
+{
+	if (node->get_kind() == Lex_kind_t::VALUE)
+	{	
+		*value = node->get_data();
+		return Lex_kind_t::VALUE;
+	}
+	if (node->get_kind() == Lex_kind_t::VAR)
+	{
+		*value = VARS[vars[node->get_data()]];
+		return Lex_kind_t::VAR;
+	}
+
+	return -1;
 }
 
 
