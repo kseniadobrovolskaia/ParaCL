@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <ctype.h>
 #include <algorithm>
+#include <fstream>
 
 
 typedef enum Lex_kind_t {
@@ -31,6 +32,7 @@ class Lex_t
 public:
 	Lex_t(Lex_kind_t kind, int data) : kind_(kind), data_(data){};
 	std::string name();
+	std::string short_name();
 	Lex_kind_t get_kind() { return kind_; };
 	int get_data() { return data_; };
 	
@@ -306,6 +308,64 @@ std::string Lex_t::name()
 	}
 	return nullptr;
 }
+
+std::string Lex_t::short_name()
+{
+	switch (kind_)
+	{
+	case Lex_kind_t::BRACE:
+		return ((data_ == Brace_t::LBRACE) ? "(" : ")");
+	case Lex_kind_t::UNOP:
+		return ((data_ == UnOp_t::INC) ? "++" : "--");
+	case Lex_kind_t::SCOPE:
+		return ((data_ == Scope_t::LSCOPE) ? "{" : "}");
+	case Lex_kind_t::VALUE:
+		return std::to_string(data_);
+	case Lex_kind_t::KEYWD:
+		switch (data_)
+		{
+		case Keywords_t::SEMICOL:
+			return ";";
+		case Keywords_t::PRINT:
+			return "print";
+		case Keywords_t::SCAN:
+			return "?";
+		case Keywords_t::IF:
+			return "if";
+		case Keywords_t::WHILE:
+			return "while";
+		}
+	case Lex_kind_t::BINOP:
+		switch (data_)
+		{
+		case BinOp_t::ADD:
+			return "+";
+		case BinOp_t::SUB:
+			return "-";
+		case BinOp_t::MULT:
+			return "*";
+		case BinOp_t::DIV:
+			return "/";
+		}
+		
+	case Lex_kind_t::COMPOP:
+		switch (data_)
+		{
+		case CompOp_t::LESS:
+			return "less";
+		case CompOp_t::GREATER:
+			return "greater";
+		case CompOp_t::LESorEQ:
+			return "lesOReq";
+		case CompOp_t::GRorEQ:
+			return "grOReq";
+		case CompOp_t::EQUAL:
+			return "eq";
+		}
+	}
+	return nullptr;
+}
+
 
 
 

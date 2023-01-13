@@ -1,5 +1,5 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PARSER_ARISH_H
+#define PARSER_ARISH_H
 
 
 #include "Lexer.hpp"
@@ -21,9 +21,12 @@ public:
 
 class Variable : public Lex_t {
 
-
+	std::string name_;
+	
 public:
-	Variable(Lex_t *parent, const std::string name) : Lex_t(Lex_kind_t::VAR, VARS[name]) {};
+ 	Variable(Lex_t *parent, std::string name, int num_var) : Lex_t(Lex_kind_t::VAR, num_var), name_(name) {};
+ 	int get_num_var() const { return data_; };
+ 	std::string get_name() const { return name_; };
 };
 
 
@@ -37,8 +40,8 @@ class BinOp : public Lex_t {
 public:
 	BinOp() = default;
   	BinOp(Lex_t *lhs, Lex_t *rhs, BinOp_t opcode) : Lex_t(Lex_kind_t::BINOP, opcode), lhs_(lhs), rhs_(rhs){};
-  	Lex_t *get_lhs() { return lhs_; };
-  	Lex_t *get_rhs() { return rhs_; };
+  	Lex_t *get_lhs() const { return lhs_; };
+  	Lex_t *get_rhs() const { return rhs_; };
 };
 
 
@@ -52,8 +55,8 @@ class CompOp : public Lex_t {
 public:
 	CompOp() = default;
   	CompOp(Lex_t *lhs, Lex_t *rhs, CompOp_t opcode) : Lex_t(Lex_kind_t::COMPOP, opcode), lhs_(lhs), rhs_(rhs){};
-  	Lex_t *get_lhs() { return lhs_; };
-  	Lex_t *get_rhs() { return rhs_; };
+  	Lex_t *get_lhs() const { return lhs_; };
+  	Lex_t *get_rhs() const { return rhs_; };
 };
 
 
@@ -72,23 +75,13 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
-// class Assign{
 
-// 	Lex_t *lhs_, *rhs_;
-
-// public:
-// 	Assign()
-// }
-
-
-//----------------------------------------------------------------------------------------------------------
-
-
-
-Lex_t *Parse_arithmetic(std::vector<Lex_t *> &lex_array);
+Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
+Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_E(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_M(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_T(std::vector<Lex_t *> &lex_array);
+Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
 int is_plus_minus(Lex_t *node);
 int is_mul_div(Lex_t *node);
 int is_brace(Lex_t *node);
@@ -136,14 +129,14 @@ void check_brases(std::vector<Lex_t *> &lex_array)
 }
 
 
-Lex_t *Parse_arithmetic(std::vector<Lex_t *> &lex_array)
+Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *root = parse_E(lex_array);
+	Lex_t *root = parse_bool(lex_array);
 
 	return root;
 }
 
-Lex_t *Parse_bool(std::vector<Lex_t *> &lex_array)
+Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_E(lex_array);
 	Lex_t *R;
@@ -169,9 +162,10 @@ Lex_t *Parse_bool(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			is_comp = lex_array[token_counter(Move::GET_CURRENT)]->get_data();
 			token_counter(Move::INCREMENT);
 			R = parse_E(lex_array);	
-			L = new CompOp(L, R, static_cast<CompOp_t>(lex_array[token_counter(Move::GET_CURRENT)]->get_data()));
+			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
 		}
 	}
 
@@ -253,7 +247,7 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 	if (is_brace(lex_array[token_counter(Move::GET_CURRENT)]) == Brace_t::LBRACE)
 	{
 		token_counter(Move::INCREMENT);
-		T = parse_E(lex_array);
+		T = parse_bool(lex_array);
 		if (is_brace(lex_array[token_counter(Move::GET_CURRENT)]) != Brace_t::RBRACE)
 		{
 			throw std::logic_error("Invalid input: check brases in arithmetic expression");
@@ -273,32 +267,52 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 }
 
 
-
-int Calculate_arithmetic(Lex_t *tree)
+int calculate(Lex_t *tree)
 {
 	int left, right;
 	if (tree->get_kind() == Lex_kind_t::VALUE)
 	{
 		return tree->get_data();
 	}
-	if (tree->get_kind() == Lex_kind_t::BINOP)
+	else
 	{
-		left = Calculate_arithmetic((static_cast<BinOp*>(tree))->get_lhs());
-		right = Calculate_arithmetic((static_cast<BinOp*>(tree))->get_rhs());
-		switch (tree->get_data())
+		if (tree->get_kind() == Lex_kind_t::BINOP)
 		{
-			case BinOp_t::ADD:
-				return left + right;
-			case BinOp_t::SUB:
-				return left - right;
-			case BinOp_t::MULT:
-				return left * right;
-			case BinOp_t::DIV:
-				if (right == 0)
-				{
-					throw std::runtime_error("Error: division by zero");
-				}
-				return left / right;
+			left = calculate((static_cast<BinOp*>(tree))->get_lhs());
+			right = calculate((static_cast<BinOp*>(tree))->get_rhs());
+			switch (tree->get_data())
+			{
+				case BinOp_t::ADD:
+					return left + right;
+				case BinOp_t::SUB:
+					return left - right;
+				case BinOp_t::MULT:
+					return left * right;
+				case BinOp_t::DIV:
+					if (right == 0)
+					{
+						throw std::runtime_error("Error: division by zero");
+					}
+					return left / right;
+			}
+		}
+		else
+		{	
+			left = calculate((static_cast<CompOp*>(tree))->get_lhs());
+			right = calculate((static_cast<CompOp*>(tree))->get_rhs());
+			switch (tree->get_data())
+			{
+				case CompOp_t::LESS:
+					return left < right;
+				case CompOp_t::GREATER:
+					return left > right;
+				case CompOp_t::LESorEQ:
+					return left <= right;
+				case CompOp_t::GRorEQ:
+					return left >= right;
+				case CompOp_t::EQUAL:
+					return left == right;
+			}
 		}
 	}
 	throw std::runtime_error("Error: it is not clear what is in function \"Calculate_arithmetic\"");

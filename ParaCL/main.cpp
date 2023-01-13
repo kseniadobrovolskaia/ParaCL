@@ -1,7 +1,7 @@
 #include "Parser.hpp"
+#include "Sintax_graph.hpp"
 
 
-//std::vector<Lex_t*> lex_string(std::vector<std::string> &vars);
 void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars);
 
 
@@ -11,17 +11,20 @@ int main(int argc, char const *argv[])
 	try
 	{
 		std::vector<std::string> vars;
-		std::vector<Lex_t*> lexems = lex_string(vars);
+		std::vector<Lex_t*> lexems = lex_string(vars); //(7 - 85+(8-9*6)/1 +8)*2-4 <= 0;.
 
-		print_lexems(lexems, vars);
+		//print_lexems(lexems, vars);
 
 		check_brases(lexems);
 
-		Lex_t *sintax_tree = Parse_arithmetic(lexems);
+		Lex_t *sintax_tree = parse_arithmetic(lexems);
+		build_sintax_graph(sintax_tree);
 
-		int result = Calculate_arithmetic(sintax_tree);
+		int result = calculate(sintax_tree);
 		std::cout << "Значение арифметического выражения: " << result << std::endl;
-
+		system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
+				"shotwell sintax_tree.png");
+	
 	}
 	catch(std::exception & ex)
 	{
