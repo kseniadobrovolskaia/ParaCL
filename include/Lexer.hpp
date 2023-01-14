@@ -357,7 +357,7 @@ std::string Lex_t::short_name() const
 		case CompOp_t::GRorEQ:
 			return "grOReq";
 		case CompOp_t::EQUAL:
-			return "eq";
+			return "equal";
 		}
 	}
 	return nullptr;

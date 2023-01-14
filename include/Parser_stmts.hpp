@@ -6,12 +6,6 @@
 #include "Lexer.hpp"
 #include "Parser_arith.hpp"
 
-//1. разбор арифметический выражений (в результате исполнения вернет инт)(не мод среду)
-//2.разбор логических выражений      (в результате исполнения вернет 0 или 1)(не мод среду)
-//3.разбор утверждений(присваивание, ++, --, if, while, ?, print) (assign_stmt(), if_stmt(), while_stmt())(не возвр рез)
-//4.Собрать все вместе(программа==список утверждений)
-//variable
-
 
 class Statement{
 
@@ -52,7 +46,7 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 	}
 
 	int var_num = L->get_data();
-	L = new Variable(name_lhs, var_num);
+	L = new Variable(var_num);
 
 	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
 	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::ASSIGN))
@@ -69,14 +63,46 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 }
 
 
+Statement *parse_if(std::vector<Lex_t *> &lex_array)
+{
+
+
+}
+
+
 std::vector<Statement*> parse_prog(std::vector<Lex_t *> &lex_array)
 {
 	std::vector<Statement*> prog_elems;
 	int size = lex_array.size();
+	Statement *stmt;
 
 	while (token_counter(GET_CURRENT) < size)
 	{
-		prog_elems.push_back(parse_assign(lex_array));
+		if (lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::VAR)
+		{
+			stmt = parse_assign(lex_array);
+		}
+		else if (lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::KEYWD)
+		{
+			switch (lex_array[token_counter(GET_CURRENT)]->get_data())
+			{
+			case Keywords_t::IF:
+				stmt = parse_if(lex_array);
+				break;
+			case Keywords_t::WHILE:
+				break;
+			case Keywords_t::PRINT:
+				break;
+			case Keywords_t::SCAN:
+				break;
+			}
+		}
+		else
+		{
+			throw std::logic_error("Invalid input: bad program building");
+		}
+
+		prog_elems.push_back(stmt);
 		if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
 		|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::SEMICOL))
 		{

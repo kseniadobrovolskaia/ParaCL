@@ -19,12 +19,9 @@ public:
 
 
 class Variable : public Lex_t {
-
-	std::string name_;
 	
 public:
- 	Variable(std::string name, int num_var) : Lex_t(Lex_kind_t::VAR, num_var), name_(name) {};
- 	std::string get_name() const { return name_; };
+ 	Variable(int num_var) : Lex_t(Lex_kind_t::VAR, num_var){};
 };
 
 
@@ -259,7 +256,7 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 	else if (is_v_v == Lex_kind_t::VAR)
 	{
 		int num_var = lex_array[token_counter(GET_CURRENT)]->get_data();
-		T = new Variable(vars[num_var], num_var);
+		T = new Variable(num_var);
 	}
 	
 	token_counter(Move::INCREMENT);
