@@ -6,8 +6,7 @@
 #include <unordered_map>
 
 
-
-//----------------------------------------------------------------------------------------------------------
+int program_size;
 
 
 class Value : public Lex_t {
@@ -74,8 +73,26 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
+class UnOp : public Lex_t {
+
+  	Variable *var_;
+
+public:
+	UnOp() = default;
+  	UnOp(Variable *var, UnOp_t opcode) : Lex_t(Lex_kind_t::UNOP, opcode), var_(var){};
+  	Lex_t *get_var() const { return var_; };
+};
 
 
+//----------------------------------------------------------------------------------------------------------
+
+
+enum Move { INCREMENT, GET_CURRENT };
+
+
+int token_counter(Move move);
+int calculate(Lex_t *tree);
+void check_brases(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_E(std::vector<Lex_t *> &lex_array);
@@ -85,11 +102,11 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
 int is_val_var(Lex_t *node, int *value);
 int is_plus_minus(Lex_t *node);
 int is_mul_div(Lex_t *node);
+int is_compop(Lex_t *node);
 int is_brace(Lex_t *node);
+int is_unop(Lex_t *node);
 
 
-
-enum Move { INCREMENT, GET_CURRENT };
 
 int token_counter(Move move) 
 {
@@ -98,6 +115,10 @@ int token_counter(Move move)
 	if (move == Move::INCREMENT)
 	{
 		curr_lex++;
+		if (curr_lex > program_size)
+		{
+			throw std::logic_error("Syntax error");
+		}
 	}
 
 	return curr_lex;
@@ -138,6 +159,7 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 	return root;
 }
 
+
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_E(lex_array);
@@ -157,20 +179,18 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 			return L;
 		}
 		
-		is_comp = (lex_array[token_counter(Move::GET_CURRENT)]->get_kind() == Lex_kind_t::COMPOP);
-		if (is_comp == 0)
+		is_comp = is_compop(lex_array[token_counter(Move::GET_CURRENT)]);
+		if (is_comp < 0)
 		{
 			return L;
 		}
 		else
 		{
-			is_comp = lex_array[token_counter(Move::GET_CURRENT)]->get_data();
 			token_counter(Move::INCREMENT);
 			R = parse_E(lex_array);	
 			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
 		}
 	}
-
 }
 	
 
@@ -260,6 +280,8 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 
 	int value;
 	int is_v_v = is_val_var(lex_array[token_counter(GET_CURRENT)], &value);
+	int is_un = is_unop(lex_array[token_counter(GET_CURRENT) + 1]);
+
 	if (is_v_v < 0)
 	{
 		throw std::logic_error("Invalid input");
@@ -267,12 +289,21 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 
 	if (is_v_v == Lex_kind_t::VALUE)
 	{
+		if (is_un >= 0)
+		{
+			throw std::logic_error("Unop can use only with variables");
+		}
 		T = new Value(lex_array[token_counter(GET_CURRENT)]->get_data());
 	}
 	else if (is_v_v == Lex_kind_t::VAR)
 	{
 		int num_var = lex_array[token_counter(GET_CURRENT)]->get_data();
 		T = new Variable(num_var);
+		if (is_un >= 0)
+		{
+			T = new UnOp(static_cast<Variable*>(T), static_cast<UnOp_t>(is_un));
+			token_counter(Move::INCREMENT);
+		}
 	}
 	
 	token_counter(Move::INCREMENT);
@@ -296,6 +327,24 @@ int calculate(Lex_t *tree)
 		}
 		return VARS[name_var];
 	}
+	else if (tree->get_kind() == Lex_kind_t::UNOP)
+	{
+		std::string name_var = vars[((static_cast<UnOp*>(tree))->get_var())->get_data()];
+		if (!(VARS.contains(name_var)))
+		{
+		 	throw std::runtime_error("Uninitialized variable");
+		}
+		switch (tree->get_data())
+		{
+			case UnOp_t::INC:
+				VARS[name_var]++;
+				return VARS[name_var];
+			case UnOp_t::DEC:
+				VARS[name_var]--;
+				return VARS[name_var];
+		}
+
+	}
 	else if (tree->get_kind() == Lex_kind_t::BINOP)
 	{
 		left = calculate((static_cast<BinOp*>(tree))->get_lhs());
@@ -314,7 +363,6 @@ int calculate(Lex_t *tree)
 					throw std::runtime_error("Error: division by zero");
 				}
 				return left / right;
-		
 		}
 	}
 	else if (tree->get_kind() == Lex_kind_t::COMPOP)
@@ -337,7 +385,6 @@ int calculate(Lex_t *tree)
 	}
 
 	throw std::runtime_error("Error: it is not clear what is in function \"Calculate_arithmetic\"");
-
 }
 
 
@@ -377,13 +424,32 @@ int is_mul_div(Lex_t *node)
 }
 
 
+int is_compop(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::COMPOP)
+	{
+		return -1;
+	}
+	return node->get_data();
+}
+
+
 int is_brace(Lex_t *node)
 {
 	if (node->get_kind() != Lex_kind_t::BRACE)
 	{
 		return -1;
 	}
-	
+	return node->get_data();
+}
+
+
+int is_unop(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::UNOP)
+	{
+		return -1;
+	}
 	return node->get_data();
 }
 
@@ -400,7 +466,6 @@ int is_val_var(Lex_t *node, int *value)
 		*value = VARS[vars[node->get_data()]];
 		return Lex_kind_t::VAR;
 	}
-
 	return -1;
 }
 

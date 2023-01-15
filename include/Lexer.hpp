@@ -50,7 +50,7 @@ enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL };
 
-enum Keywords_t { ASSIGN, IF, WHILE, PRINT, SCAN, SEMICOL };
+enum Keywords_t { ASSIGN, IF, WHILE, PRINT, SCAN, SEMICOL, INCREM, DECREM };
 
 
 void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
@@ -137,11 +137,11 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			push_compop(lex_array, GREATER);
 			break;
 		case '+':
+		{
 			if (prev == '+')
-			{	
+			{
 				lex_array.pop_back();
 				push_unop(lex_array, INC);
-				break;
 			}
 			else
 			{
@@ -149,6 +149,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			}
 
 			break;
+		}
 		case '-':
 			if (prev == '-')
 			{
@@ -201,13 +202,13 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			while (std::isdigit(elem))
 			{
 				word += elem;
+				prev = elem;
 				std::cin >> elem;
 			}
 
 			push_value(lex_array, std::stoi(word));
 			word.clear();
 			continue;
-
 		}
 		
 		if (std::isalpha(elem) || elem == '_')
@@ -215,6 +216,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			while (std::isalpha(elem) || std::isdigit(elem) || elem == '_')
 			{
 				word += elem;
+				prev = elem;
 				std::cin >> elem;
 			}
 
@@ -253,7 +255,6 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 	    prev = elem;
 	    
 	    std::cin >> elem;
-	
 	}
 
 	return lex_array;

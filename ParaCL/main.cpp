@@ -14,11 +14,10 @@ int main(int argc, char const *argv[])
 	try
 	{
 		std::vector<Lex_t*> lexems = lex_string(vars);
-		//print_lexems(lexems);
+		program_size = lexems.size();
 
-		std::vector<Statement*> prog = parse_prog(lexems);
+		std::vector<Statement*> prog = parse_program(lexems);
 		build_sintax_graph(prog);
-		//print_prog_elems(prog);
 		print_VARS();
 
 		system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
@@ -66,20 +65,25 @@ void print_prog_elems(std::vector<Statement*> prog)
 	}
 }
 
+
 void build_sintax_graph(std::vector<Statement*> prog)
 {
-	std::ofstream tree;
+	std::ofstream file_tree;
 
-	tree.open("sintax_tree.txt");
+	file_tree.open("sintax_tree.txt");
 
-	if (!(tree.is_open()))
+	if (!(file_tree.is_open()))
 	{
 	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
 	  exit(EXIT_FAILURE);
 	}
-	
-	create_prog_nodes(prog, tree);
 
-	tree << "}";
-	tree.close();	
+	file_tree << "digraph G{\n           node_0[label = \"Program\", style=\"filled\", shape=\"record\", fillcolor = \"purple\"];";
+
+	create_scope_nodes(prog, file_tree);
+
+	file_tree << "}";
+	file_tree.close();	
 }
+
+

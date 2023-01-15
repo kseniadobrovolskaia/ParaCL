@@ -4,63 +4,66 @@
 #include "Parser_stmts.hpp"
 
 
-void create_node_in_sintax_tree_file(Lex_t *sintax_tree, std::ofstream &file_tree, int *num_node);
+
+void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node);
+void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
+int is_binop(Lex_t *curr_node);
+int is_if_while(Statement *stmt);
+int is_assign(Statement *stmt);
 
 
-void create_prog_nodes(std::vector<Statement*> prog, std::ofstream &tree)
+
+void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 {
-	static int num_node = 1, main_prog = 1;
-	int prev_num_node = 1, prev_stmt = num_node - 1, stmt = 0, stmt_type = 0, size_prog = prog.size();
+	static int num_node = 1;
+	int prev_num_node, prev_stmt = num_node - 1, stmt, stmt_type, size_prog = prog.size();
 
+	if (!(file_tree.is_open()))
+	{
+	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
+	  exit(EXIT_FAILURE);
+	}
 
 	for (int prog_elem = 0; prog_elem < size_prog; prog_elem++)
 	{
-		if (main_prog == 1)
-		{
-			main_prog = 0;
-			tree << "digraph G{\n           node_0[label = \"Prog\", style=\"filled\", shape=\"record\", fillcolor = \"purple\"];";
-		}
-
-		tree << "\n           node_" << num_node << "[label = \"stmt\", style=\"filled\", shape=\"record\", fillcolor = \"violet\"];";
+		file_tree << "\n           node_" << num_node << "[label = \"stmt\", style=\"filled\", shape=\"record\", fillcolor = \"violet\"];";
 		stmt = num_node;
-		tree << "\n           node_" << prev_stmt << "  -> node_" << stmt << ";\n";
+		file_tree << "\n           node_" << prev_stmt << "  -> node_" << stmt << ";\n";
 		prev_stmt = stmt;
 		
 		num_node++;
+
 		stmt_type = num_node;
-		tree << "\n           node_" << num_node << "[label = \"" << prog[prog_elem]->name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"pink\"];";
-		tree << "\n           node_" << stmt << "  -> node_" << stmt_type << ";\n";
+		file_tree << "\n           node_" << num_node << "[label = \"" << prog[prog_elem]->name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"pink\"];";
+		file_tree << "\n           node_" << stmt << "  -> node_" << stmt_type << ";\n";
 		
 		num_node++;
 		
-		create_node_in_sintax_tree_file(prog[prog_elem]->get_lhs(), tree, &num_node);
-		tree << "\n           node_" << stmt_type << "  -> node_" << stmt_type + 1 << ";\n";
+		create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
+		file_tree << "\n           node_" << stmt_type << "  -> node_" << stmt_type + 1 << ";\n";
 		prev_num_node = num_node;
 
-		if (prog[prog_elem]->get_kind() == Keywords_t::ASSIGN)
+		if (is_assign(prog[prog_elem]))
 		{
-			create_node_in_sintax_tree_file(prog[prog_elem]->get_rhs(), tree, &num_node);
-			tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+			create_statement_nodes(prog[prog_elem]->get_rhs(), file_tree, &num_node);
+			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 		}
-		else if ((prog[prog_elem]->get_kind() == Keywords_t::IF) || (prog[prog_elem]->get_kind() == Keywords_t::WHILE))
+		else if (is_if_while(prog[prog_elem]))
 		{
-			tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
+			file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 			num_node++;
-			create_prog_nodes(static_cast<Scope*>(prog[prog_elem]->get_rhs())->get_lhs(), tree);
-			tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+			create_scope_nodes(static_cast<Scope*>(prog[prog_elem]->get_rhs())->get_lhs(), file_tree);
+			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 		}
 	}
 }
 
 
-void create_node_in_sintax_tree_file(Lex_t *sintax_tree, std::ofstream &file_tree, int *num_node)
+void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node)
 {
-	static int i = 1;
-	static int elemold = 0;
-	int elem = *num_node;
-	i = *num_node;
-	std::vector<std::string> colors = {"azure", "beige", "coral", "snow", "purple", "violet", "pink"};
-
+	static int prev_elem = 0;
+	int curr_elem = *num_node;
+	
 	if (!(file_tree.is_open()))
 	{
 	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
@@ -69,42 +72,78 @@ void create_node_in_sintax_tree_file(Lex_t *sintax_tree, std::ofstream &file_tre
 
 	std::string colour;
 
-	switch (sintax_tree->get_kind())
+	switch (curr_node->get_kind())
 	{
 	case Lex_kind_t::VAR:
-		colour = "azure";
+		colour = "lightcyan2";
 		break;
 	case Lex_kind_t::VALUE:
 		colour = "azure";
 		break;
 	case Lex_kind_t::BINOP:
-		colour = "pink";
-		break;
 	case Lex_kind_t::COMPOP:
-		colour = "pink";
+		colour = "powderblue";
 		break;
 	case Lex_kind_t::KEYWD:
+	case Lex_kind_t::UNOP:
 		colour = "pink";
 		break;
 	}
 
-	file_tree << "\n           node_" << i << "[label = \"" << sintax_tree->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
-
-  	i++;
-  	*num_node = i;
-  	elemold = elem;
-
-  	if ((sintax_tree->get_kind() != Lex_kind_t::VALUE) && (sintax_tree->get_kind() != Lex_kind_t::VAR) && (sintax_tree->get_kind() != Lex_kind_t::KEYWD))
+	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
+	if (is_unop(curr_node) >= 0)
 	{
-		create_node_in_sintax_tree_file(static_cast<BinOp *>(sintax_tree)->get_lhs(), file_tree, num_node);
-		file_tree << "\n           node_" << elem << "  -> node_" << elemold << ";\n";
-		elemold = elem;
-		create_node_in_sintax_tree_file(static_cast<BinOp *>(sintax_tree)->get_rhs(), file_tree, num_node);
-		file_tree << "\n           node_" << elem << "  -> node_" << elemold << ";\n";
-		elemold = elem;
+		(*num_node)++;
+		file_tree << "\n           node_" << *num_node << "[label = \"" << (static_cast<UnOp*>(curr_node)->get_var())->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"lightcyan2\"];";
+		file_tree << "\n           node_" << *num_node - 1 << "  -> node_" << *num_node << ";\n";
 	}
 
-	*num_node = i;
+  	(*num_node)++;
+  	prev_elem = curr_elem;
+
+  	if (is_binop(curr_node))
+	{
+		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_lhs(), file_tree, num_node);
+		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
+		prev_elem = curr_elem;
+		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_rhs(), file_tree, num_node);
+		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
+		prev_elem = curr_elem;
+	}
+}
+
+
+int is_binop(Lex_t *curr_node)
+{
+	if (curr_node->get_kind() == Lex_kind_t::BINOP)
+	{
+		return 1;
+	}
+	if (curr_node->get_kind() == Lex_kind_t::COMPOP)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+
+int is_if_while(Statement *stmt)
+{
+	if (stmt->get_kind() == Keywords_t::IF)
+	{
+		return 1;
+	}
+	if (stmt->get_kind() == Keywords_t::WHILE)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+
+int is_assign(Statement *stmt)
+{
+	return stmt->get_kind() == Keywords_t::ASSIGN;
 }
 
 
