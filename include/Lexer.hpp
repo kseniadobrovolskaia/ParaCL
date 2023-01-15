@@ -265,39 +265,82 @@ std::string Lex_t::name() const
 	switch (kind_)
 	{
 	case Lex_kind_t::BRACE:
-		return static_cast<std::string>("BRACE:") + ((data_ == 0) ? "LBRACE" : "RBRACE");
+		return static_cast<std::string>("BRACE:") + ((data_ == Brace_t::LBRACE) ? "LBRACE" : "RBRACE");
 	case Lex_kind_t::UNOP:
-		return static_cast<std::string>("UNOP:") + ((data_ == 0) ? "INC" : "DEC");
+		return static_cast<std::string>("UNOP:") + ((data_ == UnOp_t::INC) ? "INC" : "DEC");
 	case Lex_kind_t::SCOPE:
-		return static_cast<std::string>("SCOPE:") + ((data_ == 0) ? "LSCOPE" : "RSCOPE");
+		return static_cast<std::string>("SCOPE:") + ((data_ == Scope_t::LSCOPE) ? "LSCOPE" : "RSCOPE");
 	case Lex_kind_t::VALUE:
 		return static_cast<std::string>("VALUE:") + static_cast<std::string>(std::to_string(data_));
 	case Lex_kind_t::KEYWD:
-		if (data_ == 4)
+	{
+		std::string type;
+		switch (data_)
 		{
-			return static_cast<std::string>("KEYWD:;");
+		case Keywords_t::ASSIGN:
+			type = "=";
+			break;
+		case Keywords_t::IF:
+			type = "if";
+			break;
+		case Keywords_t::WHILE:
+			type = "while";
+			break;
+		case Keywords_t::PRINT:
+			type = "print";
+			break;
+		case Keywords_t::SCAN:
+			type = "?";
+			break;
+		case Keywords_t::SEMICOL:
+			type = ";";
+			break;
 		}
-		if (data_ == 0 || data_ == 1)
-		{
-			return static_cast<std::string>("KEYWD:") + ((data_ == 0) ? "if" : "while");
-		}
-		return static_cast<std::string>("KEYWD:") + ((data_ == 2) ? "print" : "?");
+		return static_cast<std::string>("KEYWD:") + type;
+	}	
 	case Lex_kind_t::BINOP:
-		if (data_ == 0 || data_ == 1)
+	{
+		std::string type;
+		switch (data_)
 		{
-			return static_cast<std::string>("BINOP:") + ((data_ == 0) ? "ADD" : "SUB");
+		case BinOp_t::ADD:
+			type = "+";
+			break;
+		case BinOp_t::SUB:
+			type = "-";
+			break;
+		case BinOp_t::MULT:
+			type = "*";
+			break;
+		case BinOp_t::DIV:
+			type = "/";
+			break;
 		}
-		return static_cast<std::string>("BINOP:") + ((data_ == 2) ? "MULT" : "DIV");
+		return static_cast<std::string>("BINOP:") + type;
+	}
 	case Lex_kind_t::COMPOP:
-		if (data_ == 4)
+	{
+		std::string type;
+		switch (data_)
 		{
-			return "COMPOP:EQUAL";
+		case CompOp_t::LESS:
+			type = "<";
+			break;
+		case CompOp_t::GREATER:
+			type = ">";
+			break;
+		case CompOp_t::LESorEQ:
+			type = "<=";
+			break;
+		case CompOp_t::GRorEQ:
+			type = ">=";
+			break;
+		case CompOp_t::EQUAL:
+			type = "==";
+			break;
 		}
-		if (data_ == 0 || data_ == 1)
-		{
-			return static_cast<std::string>("COMPOP:") + ((data_ == 0) ? "LESS" : "GREATER");
-		}
-		return static_cast<std::string>("COMPOP:") + ((data_ == 2) ? "LESorEQ" : "GRorEQ");
+		return static_cast<std::string>("COMPOP:") + type;
+	}
 	case Lex_kind_t::VAR:
 		return static_cast<std::string>("VAR:") + vars[data_];
 	}

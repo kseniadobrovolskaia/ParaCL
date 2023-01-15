@@ -9,11 +9,13 @@
 
 //----------------------------------------------------------------------------------------------------------
 
+
 class Value : public Lex_t {
 
 public:
 	Value(int num) : Lex_t(Lex_kind_t::VALUE, num){};
 };
+
 
 //----------------------------------------------------------------------------------------------------------
 
@@ -22,6 +24,20 @@ class Variable : public Lex_t {
 	
 public:
  	Variable(int num_var) : Lex_t(Lex_kind_t::VAR, num_var){};
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+class Statement;
+
+class Scope : public Lex_t {
+
+	std::vector<Statement*> lhs_;
+
+public:
+	Scope(std::vector <Statement*> lhs) : Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE), lhs_(lhs){};
+	std::vector<Statement*> get_lhs() const { return lhs_; };
 };
 
 

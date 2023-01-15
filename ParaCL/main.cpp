@@ -3,10 +3,10 @@
 #include "Parser_stmts.hpp"
 #include "Parser_arith.hpp"
 
-void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars);
+void print_lexems(std::vector<Lex_t*> &lexems);
 void print_VARS();
 void print_prog_elems(std::vector<Statement*> prog);
-
+void build_sintax_graph(std::vector<Statement*> prog);
 
 
 int main(int argc, char const *argv[])
@@ -14,6 +14,7 @@ int main(int argc, char const *argv[])
 	try
 	{
 		std::vector<Lex_t*> lexems = lex_string(vars);
+		//print_lexems(lexems);
 
 		std::vector<Statement*> prog = parse_prog(lexems);
 		build_sintax_graph(prog);
@@ -34,15 +35,11 @@ int main(int argc, char const *argv[])
 }
 
 
-void print_lexems(std::vector<Lex_t*> &lexems, std::vector<std::string> &vars)
+void print_lexems(std::vector<Lex_t*> &lexems)
 {
 	for (auto elem = lexems.begin(); elem < lexems.end(); ++elem)
 	{
 		std::cout << (*elem)->name();
-		if ((*elem)->get_kind() == 1)
-		{
-			std::cout << vars[(*elem)->get_data()];
-		}
 		std::cout << " ";
 	}
 	std::cout << std::endl;
@@ -65,6 +62,24 @@ void print_prog_elems(std::vector<Statement*> prog)
 	std::cout << "Элементы программы :" << std::endl;
 	for (auto elem : prog)
 	{
-		std::cout << (elem->get_lhs())->name() << std::endl;
+		std::cout << elem->name() << std::endl;
 	}
+}
+
+void build_sintax_graph(std::vector<Statement*> prog)
+{
+	std::ofstream tree;
+
+	tree.open("sintax_tree.txt");
+
+	if (!(tree.is_open()))
+	{
+	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
+	  exit(EXIT_FAILURE);
+	}
+	
+	create_prog_nodes(prog, tree);
+
+	tree << "}";
+	tree.close();	
 }

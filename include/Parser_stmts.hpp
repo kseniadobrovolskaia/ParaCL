@@ -23,13 +23,16 @@ public:
 
 
 
+
 //----------------------------------------------------------------------------------------------------------
 
 
+std::vector<Statement*> parse_prog(std::vector<Lex_t *> &lex_array);
 
 
 Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 {
+	Lex_t *R;
 	Lex_t *L = lex_array[token_counter(GET_CURRENT)];
 	token_counter(INCREMENT);
 
@@ -55,18 +58,69 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 	}
 	token_counter(INCREMENT);
 
-	Lex_t *R = parse_arithmetic(lex_array);
+	if ((lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::KEYWD)
+	&& (lex_array[token_counter(GET_CURRENT)]->get_data() == Keywords_t::SCAN))
+	{
+		std::cout << "Наткнулись на скан " << std::endl;
+		R = new Lex_t(Lex_kind_t::KEYWD, Keywords_t::SCAN);
+		token_counter(INCREMENT);
+	}
+	else
+	{
+		R = parse_arithmetic(lex_array);
 
-	VARS[name_lhs] = calculate(R);
+		VARS[name_lhs] = calculate(R);
+	}
 
 	return new Statement(L, R, Keywords_t::ASSIGN);
 }
 
 
-Statement *parse_if(std::vector<Lex_t *> &lex_array)
+Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type)
 {
+	token_counter(INCREMENT);
+
+	Lex_t* L = parse_arithmetic(lex_array);
+
+	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::SCOPE) 
+	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Scope_t::LSCOPE))
+	{
+		throw std::logic_error("Invalid input: bad scope");
+	}
+
+	token_counter(INCREMENT);
+
+	std::vector<Statement*> scope = parse_prog(lex_array);
+
+	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::SCOPE) 
+	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Scope_t::RSCOPE))
+	{
+		throw std::logic_error("Invalid input: bad scope in \"if\"");
+	}
+
+	token_counter(INCREMENT);
+
+	Lex_t *R = new Scope(scope);
+
+	return new Statement(L, R, type);
+}
 
 
+Statement *parse_print(std::vector<Lex_t *> &lex_array)
+{
+	token_counter(INCREMENT);
+
+	Lex_t* L = parse_arithmetic(lex_array);
+
+	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
+	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::SEMICOL))
+	{
+		throw std::logic_error("Invalid input: bad semicols");
+	}
+
+	token_counter(INCREMENT);
+
+	return new Statement(L, nullptr, Keywords_t::PRINT);
 }
 
 
@@ -81,34 +135,44 @@ std::vector<Statement*> parse_prog(std::vector<Lex_t *> &lex_array)
 		if (lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::VAR)
 		{
 			stmt = parse_assign(lex_array);
+			if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
+			|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::SEMICOL))
+			{
+				throw std::logic_error("Invalid input: bad semicols");
+			}
+			token_counter(INCREMENT);
 		}
 		else if (lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::KEYWD)
 		{
 			switch (lex_array[token_counter(GET_CURRENT)]->get_data())
 			{
 			case Keywords_t::IF:
-				stmt = parse_if(lex_array);
+				stmt = parse_if_while(lex_array, Keywords_t::IF);
 				break;
 			case Keywords_t::WHILE:
+				stmt = parse_if_while(lex_array, Keywords_t::WHILE);
 				break;
 			case Keywords_t::PRINT:
-				break;
-			case Keywords_t::SCAN:
+				stmt = parse_print(lex_array);
 				break;
 			}
 		}
 		else
 		{
-			throw std::logic_error("Invalid input: bad program building");
+			if((lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::SCOPE) 
+			&& (lex_array[token_counter(GET_CURRENT)]->get_data() == Scope_t::RSCOPE))
+			{
+				return prog_elems;
+			}
+			else
+			{
+				throw std::logic_error("Invalid input: bad program building");
+			}
+			std::cout << "Мы получили тип " << lex_array[token_counter(GET_CURRENT)]->name() << std::endl;
 		}
 
 		prog_elems.push_back(stmt);
-		if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
-		|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::SEMICOL))
-		{
-			throw std::logic_error("Invalid input: bad semicols");
-		}
-		token_counter(INCREMENT);
+
 	}
 
 	return prog_elems;
