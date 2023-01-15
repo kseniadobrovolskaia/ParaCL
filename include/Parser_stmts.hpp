@@ -30,18 +30,20 @@ Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type);
 Statement *parse_assign(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_unop(std::vector<Lex_t *> &lex_array);
-
+int is_semicol(Lex_t *node);
+int is_assign(Lex_t *node);
+int is_scope(Lex_t *node);
+int is_scan(Lex_t *node);
 
 
 Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *R;
 	Lex_t *L = lex_array[token_counter(GET_CURRENT)];
-	token_counter(INCREMENT);
 
-	if (L->get_kind() != Lex_kind_t::VAR)
+	if (token_counter(INCREMENT) >= program_size)
 	{
-		throw std::logic_error("Invalid input: bad assignment");
+		throw std::logic_error("Syntax error");
 	}
 
 	std::string name_lhs = vars[L->get_data()];
@@ -51,26 +53,30 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 	 	VARS[name_lhs] = 0;
 	}
 
-	int var_num = L->get_data();
-	L = new Variable(var_num);
+	L = new Variable(L->get_data());
 
-	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
-	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::ASSIGN))
+	if(!is_assign(lex_array[token_counter(GET_CURRENT)]))
 	{
 		throw std::logic_error("Invalid input: bad assignment");
 	}
-	token_counter(INCREMENT);
 
-	if ((lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::KEYWD)
-	&& (lex_array[token_counter(GET_CURRENT)]->get_data() == Keywords_t::SCAN))
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	if (is_scan(lex_array[token_counter(GET_CURRENT)]))
 	{
 		R = new Lex_t(Lex_kind_t::KEYWD, Keywords_t::SCAN);
-		token_counter(INCREMENT);
+
+		if (token_counter(INCREMENT) >= program_size)
+		{
+			throw std::logic_error("Syntax error");
+		}
 	}
 	else
 	{
 		R = parse_arithmetic(lex_array);
-
 		VARS[name_lhs] = calculate(R);
 	}
 
@@ -80,22 +86,36 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 
 Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type)
 {
-	token_counter(INCREMENT);
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	if (is_brace(lex_array[token_counter(GET_CURRENT)]) != Brace_t::LBRACE)
+	{
+		throw std::logic_error("Syntax error");
+	}
 
 	Lex_t* L = parse_arithmetic(lex_array);
 
-	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::SCOPE) 
-	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Scope_t::LSCOPE))
+	if(is_scope(lex_array[token_counter(GET_CURRENT)]) != Scope_t::LSCOPE)
 	{
 		throw std::logic_error("Invalid input: bad scope");
 	}
 
-	token_counter(INCREMENT);
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
 
 	std::vector<Statement*> scope = parse_program(lex_array);
 
-	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::SCOPE) 
-	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Scope_t::RSCOPE))
+	if (token_counter(GET_CURRENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	if(is_scope(lex_array[token_counter(GET_CURRENT)]) != Scope_t::RSCOPE)
 	{
 		throw std::logic_error("Invalid input: bad scope in \"if\"");
 	}
@@ -110,17 +130,22 @@ Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type)
 
 Statement *parse_print(std::vector<Lex_t *> &lex_array)
 {
-	token_counter(INCREMENT);
-
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+	
 	Lex_t* L = parse_arithmetic(lex_array);
 
-	if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
-	|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::SEMICOL))
+	if(!is_semicol(lex_array[token_counter(GET_CURRENT)]))
 	{
 		throw std::logic_error("Invalid input: bad semicols");
 	}
 
-	token_counter(INCREMENT);
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
 
 	return new Statement(L, nullptr, Keywords_t::PRINT);
 }
@@ -129,11 +154,10 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 Statement *parse_unop(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = lex_array[token_counter(GET_CURRENT)];
-	token_counter(INCREMENT);
 
-	if (L->get_kind() != Lex_kind_t::VAR)
+	if (token_counter(INCREMENT) >= program_size)
 	{
-		throw std::logic_error("Invalid input: bad assignment");
+		throw std::logic_error("Syntax error");
 	}
 
 	std::string name_lhs = vars[L->get_data()];
@@ -143,26 +167,24 @@ Statement *parse_unop(std::vector<Lex_t *> &lex_array)
 	 	throw std::runtime_error("Uninitialized variable witn unop");
 	}
 
-	int var_num = L->get_data();
-	L = new Variable(var_num);
+	L = new Variable(L->get_data());
 
-	if(lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::UNOP) 
-	{
-		throw std::logic_error("Invalid input: bad unop");
-	}
+	int is_un = is_unop(lex_array[token_counter(GET_CURRENT)]);
 
-	if (lex_array[token_counter(GET_CURRENT)]->get_data() == UnOp_t::INC)
+	if (is_un == UnOp_t::INC)
 	{
 		VARS[name_lhs]++;
-		token_counter(INCREMENT);
-
-		return new Statement(L, nullptr, Keywords_t::INCREM);
+	}
+	else
+	{
+		VARS[name_lhs]--;
 	}
 	
-	VARS[name_lhs]--;
-	token_counter(INCREMENT);
-
-	return new Statement(L, nullptr, Keywords_t::DECREM);
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+	return new Statement(L, nullptr, static_cast<Keywords_t>(is_un));
 
 }
 
@@ -174,14 +196,15 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 	Statement *stmt;
 
 	while (token_counter(GET_CURRENT) < size)
-	{
+	{		
 		if (lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::VAR)
 		{
-			if ((token_counter(GET_CURRENT) + 1) > program_size)
+			if ((token_counter(GET_CURRENT) + 1) >= program_size)
 			{
 				throw std::logic_error("Syntax error");
 			}
-			if(lex_array[token_counter(GET_CURRENT) + 1]->get_kind() == Lex_kind_t::UNOP) 
+
+			if(is_unop(lex_array[token_counter(GET_CURRENT) + 1]) >= 0) 
 			{
 				stmt = parse_unop(lex_array);
 			}
@@ -190,8 +213,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 				stmt = parse_assign(lex_array);
 			}
 			
-			if((lex_array[token_counter(GET_CURRENT)]->get_kind() != Lex_kind_t::KEYWD) 
-			|| (lex_array[token_counter(GET_CURRENT)]->get_data() != Keywords_t::SEMICOL))
+			if(!is_semicol(lex_array[token_counter(GET_CURRENT)]))
 			{
 				throw std::logic_error("Invalid input: bad semicols");
 			}
@@ -214,8 +236,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
-			if((lex_array[token_counter(GET_CURRENT)]->get_kind() == Lex_kind_t::SCOPE) 
-			&& (lex_array[token_counter(GET_CURRENT)]->get_data() == Scope_t::RSCOPE))
+			if(is_scope(lex_array[token_counter(GET_CURRENT)]) == Scope_t::RSCOPE)
 			{
 				return prog_elems;
 			}
@@ -223,11 +244,9 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 			{
 				throw std::logic_error("Invalid input: bad program building");
 			}
-			std::cout << "Мы получили тип " << lex_array[token_counter(GET_CURRENT)]->name() << std::endl;
 		}
 
 		prog_elems.push_back(stmt);
-
 	}
 
 	return prog_elems;
@@ -257,6 +276,58 @@ std::string Statement::name() const
 	}
 
 	return nullptr;
+}
+
+
+int is_assign(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::KEYWD)
+	{
+		return 0;
+	}
+	if (node->get_data() != Keywords_t::ASSIGN)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+
+int is_scan(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::KEYWD)
+	{
+		return 0;
+	}
+	if (node->get_data() != Keywords_t::SCAN)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+
+int is_scope(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::SCOPE)
+	{
+		return -1;
+	}
+	return node->get_data();
+}
+
+
+int is_semicol(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::KEYWD)
+	{
+		return 0;
+	}
+	if (node->get_data() != Keywords_t::SEMICOL)
+	{
+		return 0;
+	}
+	return 1;
 }
 
 #endif

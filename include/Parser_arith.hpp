@@ -112,7 +112,7 @@ int token_counter(Move move)
 {
 	static int curr_lex = 0;
 
-	if (move == Move::INCREMENT)
+	if (move == INCREMENT)
 	{
 		curr_lex++;
 		if (curr_lex > program_size)
@@ -156,6 +156,11 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *root = parse_bool(lex_array);
 
+	if (token_counter(GET_CURRENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
 	return root;
 }
 
@@ -167,26 +172,26 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 	int is_comp;
 	int size = lex_array.size();
 
-	if (token_counter(Move::GET_CURRENT) >= size)
+	if (token_counter(GET_CURRENT) >= size)
 	{
 		return L;
 	}
 	
 	while (1)
 	{
-		if (token_counter(Move::GET_CURRENT) >= size)
+		if (token_counter(GET_CURRENT) >= size)
 		{
 			return L;
 		}
 		
-		is_comp = is_compop(lex_array[token_counter(Move::GET_CURRENT)]);
+		is_comp = is_compop(lex_array[token_counter(GET_CURRENT)]);
 		if (is_comp < 0)
 		{
 			return L;
 		}
 		else
 		{
-			token_counter(Move::INCREMENT);
+			token_counter(INCREMENT);
 			R = parse_E(lex_array);	
 			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
 		}
@@ -201,26 +206,26 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 	int is_p_m;
 	int size = lex_array.size();
 
-	if (token_counter(Move::GET_CURRENT) >= size)
+	if (token_counter(GET_CURRENT) >= size)
 	{
 		return L;
 	}
 	
 	while (1)
 	{
-		if (token_counter(Move::GET_CURRENT) >= size)
+		if (token_counter(GET_CURRENT) >= size)
 		{
 			return L;
 		}
 		
-		is_p_m = is_plus_minus(lex_array[token_counter(Move::GET_CURRENT)]);
+		is_p_m = is_plus_minus(lex_array[token_counter(GET_CURRENT)]);
 		if (is_p_m < 0)
 		{
 			return L;
 		}
 		else
 		{
-			token_counter(Move::INCREMENT);
+			token_counter(INCREMENT);
 			R = parse_M(lex_array);	
 			L = new BinOp(L, R, static_cast<BinOp_t>(is_p_m));
 		}
@@ -235,26 +240,26 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 	int is_m_d;
 	int size = lex_array.size();
 
-	if (token_counter(Move::GET_CURRENT) >= size)
+	if (token_counter(GET_CURRENT) >= size)
 	{
 		return L;
 	}
 
 	while (1)
 	{
-		if (token_counter(Move::GET_CURRENT) >= size)
+		if (token_counter(GET_CURRENT) >= size)
 		{
 			return L;
 		}
 
-		is_m_d = is_mul_div(lex_array[token_counter(Move::GET_CURRENT)]);
+		is_m_d = is_mul_div(lex_array[token_counter(GET_CURRENT)]);
 		if (is_m_d < 0)
 		{
 			return L;
 		}
 		else
 		{
-			token_counter(Move::INCREMENT);
+			token_counter(INCREMENT);
 			R = parse_T(lex_array);
 			L = new BinOp(L, R, static_cast<BinOp_t>(is_m_d));
 		}
@@ -266,26 +271,47 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *T;
 
-	if (is_brace(lex_array[token_counter(Move::GET_CURRENT)]) == Brace_t::LBRACE)
+	if (token_counter(GET_CURRENT) >= program_size)
 	{
-		token_counter(Move::INCREMENT);
+		throw std::logic_error("Syntax error");
+	}
+
+	if (is_brace(lex_array[token_counter(GET_CURRENT)]) == Brace_t::LBRACE)
+	{
+		if (token_counter(INCREMENT) >= program_size)
+		{
+			throw std::logic_error("Syntax error");
+		}
+
 		T = parse_bool(lex_array);
-		if (is_brace(lex_array[token_counter(Move::GET_CURRENT)]) != Brace_t::RBRACE)
+
+		if (is_brace(lex_array[token_counter(GET_CURRENT)]) != Brace_t::RBRACE)
 		{
 			throw std::logic_error("Invalid input: check brases in arithmetic expression");
 		}
-		token_counter(Move::INCREMENT);
+
+		if (token_counter(INCREMENT) >= program_size)
+		{
+			throw std::logic_error("Syntax error");
+		}
+
 		return T;
 	}
 
 	int value;
 	int is_v_v = is_val_var(lex_array[token_counter(GET_CURRENT)], &value);
-	int is_un = is_unop(lex_array[token_counter(GET_CURRENT) + 1]);
 
 	if (is_v_v < 0)
 	{
 		throw std::logic_error("Invalid input");
 	}
+
+	if (token_counter(GET_CURRENT) + 1 >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	int is_un = is_unop(lex_array[token_counter(GET_CURRENT) + 1]);
 
 	if (is_v_v == Lex_kind_t::VALUE)
 	{
@@ -302,11 +328,14 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		if (is_un >= 0)
 		{
 			T = new UnOp(static_cast<Variable*>(T), static_cast<UnOp_t>(is_un));
-			token_counter(Move::INCREMENT);
+			token_counter(INCREMENT);
 		}
 	}
 	
-	token_counter(Move::INCREMENT);
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
 	return T;
 }
 
