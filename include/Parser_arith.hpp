@@ -170,20 +170,9 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 	Lex_t *L = parse_E(lex_array);
 	Lex_t *R;
 	int is_comp;
-	int size = lex_array.size();
-
-	if (token_counter(GET_CURRENT) >= size)
-	{
-		return L;
-	}
 	
 	while (1)
 	{
-		if (token_counter(GET_CURRENT) >= size)
-		{
-			return L;
-		}
-		
 		is_comp = is_compop(lex_array[token_counter(GET_CURRENT)]);
 		if (is_comp < 0)
 		{
@@ -204,20 +193,9 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 	Lex_t *L = parse_M(lex_array);
 	Lex_t *R;
 	int is_p_m;
-	int size = lex_array.size();
-
-	if (token_counter(GET_CURRENT) >= size)
-	{
-		return L;
-	}
 	
 	while (1)
 	{
-		if (token_counter(GET_CURRENT) >= size)
-		{
-			return L;
-		}
-		
 		is_p_m = is_plus_minus(lex_array[token_counter(GET_CURRENT)]);
 		if (is_p_m < 0)
 		{
@@ -238,20 +216,9 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 	Lex_t *L = parse_T(lex_array);
 	Lex_t *R;
 	int is_m_d;
-	int size = lex_array.size();
-
-	if (token_counter(GET_CURRENT) >= size)
-	{
-		return L;
-	}
 
 	while (1)
 	{
-		if (token_counter(GET_CURRENT) >= size)
-		{
-			return L;
-		}
-
 		is_m_d = is_mul_div(lex_array[token_counter(GET_CURRENT)]);
 		if (is_m_d < 0)
 		{
@@ -306,12 +273,13 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		throw std::logic_error("Invalid input");
 	}
 
-	if (token_counter(GET_CURRENT) + 1 >= program_size)
+	if ((token_counter(GET_CURRENT) + 1) >= program_size)
 	{
 		throw std::logic_error("Syntax error");
 	}
 
 	int is_un = is_unop(lex_array[token_counter(GET_CURRENT) + 1]);
+	//int is_as = is_assign(lex_array[token_counter(GET_CURRENT) + 1]);
 
 	if (is_v_v == Lex_kind_t::VALUE)
 	{
@@ -319,6 +287,11 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		{
 			throw std::logic_error("Unop can use only with variables");
 		}
+		// if (is_as)
+		// {
+		// 	throw std::logic_error("Assign can use only with variables");
+		// }
+
 		T = new Value(lex_array[token_counter(GET_CURRENT)]->get_data());
 	}
 	else if (is_v_v == Lex_kind_t::VAR)
@@ -328,14 +301,19 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		if (is_un >= 0)
 		{
 			T = new UnOp(static_cast<Variable*>(T), static_cast<UnOp_t>(is_un));
+			if (is_un == UnOp_t::INC)
+			{
+				VARS[vars[num_var]]++;
+			}
+			else
+			{
+				VARS[vars[num_var]]--;
+			}
 			token_counter(INCREMENT);
 		}
 	}
 	
-	if (token_counter(INCREMENT) >= program_size)
-	{
-		throw std::logic_error("Syntax error");
-	}
+	token_counter(INCREMENT);
 	return T;
 }
 
@@ -361,7 +339,7 @@ int calculate(Lex_t *tree)
 		std::string name_var = vars[((static_cast<UnOp*>(tree))->get_var())->get_data()];
 		if (!(VARS.contains(name_var)))
 		{
-		 	throw std::runtime_error("Uninitialized variable");
+		 	throw std::logic_error("Uninitialized variable");
 		}
 		switch (tree->get_data())
 		{
@@ -492,11 +470,17 @@ int is_val_var(Lex_t *node, int *value)
 	}
 	if (node->get_kind() == Lex_kind_t::VAR)
 	{
+		if (!VARS.contains(vars[node->get_data()]))
+		{
+			throw std::logic_error("Uninitialized variable");
+		}
 		*value = VARS[vars[node->get_data()]];
 		return Lex_kind_t::VAR;
 	}
 	return -1;
 }
+
+
 
 
 #endif

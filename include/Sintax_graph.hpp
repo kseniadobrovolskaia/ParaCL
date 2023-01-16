@@ -4,7 +4,6 @@
 #include "Parser_stmts.hpp"
 
 
-
 void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node);
 void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
 int is_binop(Lex_t *curr_node);
@@ -45,14 +44,14 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 
 		if (is_assign(prog[prog_elem]))
 		{
-			create_statement_nodes(prog[prog_elem]->get_rhs(), file_tree, &num_node);
+			create_statement_nodes(static_cast<Assign*>(prog[prog_elem])->get_rhs(), file_tree, &num_node);
 			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 		}
 		else if (is_if_while(prog[prog_elem]))
 		{
 			file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 			num_node++;
-			create_scope_nodes(static_cast<Scope*>(prog[prog_elem]->get_rhs())->get_lhs(), file_tree);
+			create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_rhs())->get_lhs(), file_tree);
 			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 		}
 	}

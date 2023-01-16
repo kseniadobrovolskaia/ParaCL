@@ -1,7 +1,6 @@
 
 #include "Sintax_graph.hpp"
-#include "Parser_stmts.hpp"
-#include "Parser_arith.hpp"
+#include "Run_program.hpp"
 
 void print_lexems(std::vector<Lex_t*> &lexems);
 void print_VARS();
@@ -18,7 +17,8 @@ int main(int argc, char const *argv[])
 
 		std::vector<Statement*> prog = parse_program(lexems);
 		build_sintax_graph(prog);
-		print_VARS();
+
+		run_program(prog);
 
 		system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
 				"shotwell sintax_tree.png");
@@ -44,16 +44,6 @@ void print_lexems(std::vector<Lex_t*> &lexems)
 	std::cout << std::endl;
 }
 
-
-void print_VARS()
-{
-	std::cout << "Значения глобальных переменных: " << std::endl;
-
-	for (auto const &pair : VARS)
-	{
-		std::cout << pair.first << " = " << pair.second << std::endl;
-	}
-}
 
 
 void print_prog_elems(std::vector<Statement*> prog)
@@ -86,4 +76,14 @@ void build_sintax_graph(std::vector<Statement*> prog)
 	file_tree.close();	
 }
 
+
+void print_VARS()
+{
+	std::cout << "Значения глобальных переменных: " << std::endl;
+
+	for (auto const &pair : VARS)
+	{
+		std::cout << pair.first << " = " << pair.second << std::endl;
+	}
+}
 

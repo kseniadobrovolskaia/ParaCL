@@ -164,7 +164,19 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 
 			break;
 		case '*':
-			push_binop(lex_array, MULT);
+			if(prev == '/')
+			{
+				lex_array.pop_back();
+				while (elem != '/' || prev != '*')
+				{
+					prev = elem;
+					std::cin >> elem;
+				}
+			}
+			else
+			{
+				push_binop(lex_array, MULT);
+			}
 			break;
 		case '/':
 			if(prev == '/')

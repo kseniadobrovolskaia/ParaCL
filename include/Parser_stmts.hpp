@@ -10,14 +10,30 @@
 class Statement{
 
 	Keywords_t kind_;
-	Lex_t *lhs_, *rhs_;
+	Lex_t *lhs_;
 
 public:
-	Statement(Lex_t *lhs, Lex_t *rhs, Keywords_t kind) : kind_(kind), lhs_(lhs), rhs_(rhs){};
+	Statement(Lex_t *lhs, Keywords_t kind) : kind_(kind), lhs_(lhs) {};
 	virtual ~Statement() = default;
 	Keywords_t get_kind() const { return kind_; };
-	std::string name() const;
-  	Lex_t *get_lhs() const { return lhs_; };
+	Lex_t *get_lhs() const { return lhs_; };
+	virtual std::string name() const = 0;
+	virtual void run_stmt() = 0;
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+
+class Assign final : public Statement {
+
+	Lex_t *rhs_;
+
+public:
+	Assign(Lex_t *lhs, Lex_t *rhs) : Statement(lhs, Keywords_t::ASSIGN), rhs_(rhs){};
+	virtual ~Assign() = default;
+	virtual std::string name() const override;
+	virtual void run_stmt() override;
   	Lex_t *get_rhs() const { return rhs_; };
 };
 
@@ -25,11 +41,71 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
+class If final : public Statement {
+
+	Lex_t *rhs_;
+
+public:
+	If(Lex_t *lhs, Lex_t *rhs) : Statement(lhs, Keywords_t::IF), rhs_(rhs){};
+	virtual ~If() = default;
+	virtual std::string name() const override;
+	virtual void run_stmt() override;
+  	Lex_t *get_rhs() const { return rhs_; };
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+
+class While final : public Statement {
+
+	Lex_t *rhs_;
+
+public:
+	While(Lex_t *lhs, Lex_t *rhs) : Statement(lhs, Keywords_t::WHILE), rhs_(rhs){};
+	virtual ~While() = default;
+	virtual std::string name() const override;
+	virtual void run_stmt() override;
+  	Lex_t *get_rhs() const { return rhs_; };
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+
+class Print final : public Statement {
+
+public:
+	Print(Lex_t *lhs) : Statement(lhs, Keywords_t::PRINT) {};
+	virtual ~Print() = default;
+	virtual std::string name() const override;
+	virtual void run_stmt() override;
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+
+class Inc_Dec final : public Statement {
+
+public:
+	Inc_Dec(Lex_t *lhs, Keywords_t type) : Statement(lhs, type) {};
+	virtual ~Inc_Dec() = default;
+	virtual std::string name() const override;
+	virtual void run_stmt() override;
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+
+
 std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array);
 Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type);
 Statement *parse_assign(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_unop(std::vector<Lex_t *> &lex_array);
+int is_unop_stmt(Lex_t *node);
 int is_semicol(Lex_t *node);
 int is_assign(Lex_t *node);
 int is_scope(Lex_t *node);
@@ -77,10 +153,9 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 	else
 	{
 		R = parse_arithmetic(lex_array);
-		VARS[name_lhs] = calculate(R);
 	}
 
-	return new Statement(L, R, Keywords_t::ASSIGN);
+	return new Assign(L, R);
 }
 
 
@@ -124,7 +199,11 @@ Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type)
 
 	Lex_t *R = new Scope(scope);
 
-	return new Statement(L, R, type);
+	if (type == Keywords_t::IF)
+	{
+		return new If(L, R);
+	}
+	return new While(L, R);	
 }
 
 
@@ -134,20 +213,22 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 	{
 		throw std::logic_error("Syntax error");
 	}
-	
+
 	Lex_t* L = parse_arithmetic(lex_array);
+
+	if (token_counter(GET_CURRENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
 
 	if(!is_semicol(lex_array[token_counter(GET_CURRENT)]))
 	{
 		throw std::logic_error("Invalid input: bad semicols");
 	}
 
-	if (token_counter(INCREMENT) >= program_size)
-	{
-		throw std::logic_error("Syntax error");
-	}
+	token_counter(INCREMENT);
 
-	return new Statement(L, nullptr, Keywords_t::PRINT);
+	return new Print(L);
 }
 
 
@@ -168,10 +249,10 @@ Statement *parse_unop(std::vector<Lex_t *> &lex_array)
 	}
 
 	L = new Variable(L->get_data());
+	
+	int is_un = is_unop_stmt(lex_array[token_counter(GET_CURRENT)]);
 
-	int is_un = is_unop(lex_array[token_counter(GET_CURRENT)]);
-
-	if (is_un == UnOp_t::INC)
+	if (is_un == Keywords_t::INCREM)
 	{
 		VARS[name_lhs]++;
 	}
@@ -180,11 +261,9 @@ Statement *parse_unop(std::vector<Lex_t *> &lex_array)
 		VARS[name_lhs]--;
 	}
 	
-	if (token_counter(INCREMENT) >= program_size)
-	{
-		throw std::logic_error("Syntax error");
-	}
-	return new Statement(L, nullptr, static_cast<Keywords_t>(is_un));
+	token_counter(INCREMENT);
+
+	return new Inc_Dec(L, static_cast<Keywords_t>(is_un));
 
 }
 
@@ -248,34 +327,37 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 
 		prog_elems.push_back(stmt);
 	}
-
 	return prog_elems;
 }
 
 
-std::string Statement::name() const
+std::string Assign::name() const
 {
-	switch (kind_)
-	{
-	case Keywords_t::ASSIGN:
-		return "=";
-	case Keywords_t::IF:
-		return "if";
-	case Keywords_t::WHILE:
-		return "while";
-	case Keywords_t::PRINT:
-		return "print";
-	case Keywords_t::SCAN:
-		return "?";
-	case Keywords_t::SEMICOL:
-		return ";";
-	case Keywords_t::INCREM:
-		return "++";
-	case Keywords_t::DECREM:
-		return "--";
-	}
+	return "=";
+}
 
-	return nullptr;
+std::string If::name() const
+{
+	return "if";
+}
+
+std::string While::name() const
+{
+	return "while";
+}
+
+std::string Print::name() const
+{
+	return "print";
+}
+
+std::string Inc_Dec::name() const
+{
+	if (this->get_kind() == Keywords_t::INCREM)
+	{
+		return "++";
+	}
+	return "--";
 }
 
 
@@ -304,6 +386,20 @@ int is_scan(Lex_t *node)
 		return 0;
 	}
 	return 1;
+}
+
+
+int is_unop_stmt(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::UNOP)
+	{
+		return 0;
+	}
+	if (node->get_data() == UnOp_t::INC)
+	{
+		return Keywords_t::INCREM;
+	}
+	return Keywords_t::DECREM;
 }
 
 
