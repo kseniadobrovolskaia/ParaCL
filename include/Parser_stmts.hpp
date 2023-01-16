@@ -10,15 +10,14 @@
 class Statement{
 
 	Keywords_t kind_;
-	Lex_t *lhs_;
 
 public:
-	Statement(Lex_t *lhs, Keywords_t kind) : kind_(kind), lhs_(lhs) {};
+	Statement(Keywords_t kind) : kind_(kind) {};
 	virtual ~Statement() = default;
 	Keywords_t get_kind() const { return kind_; };
-	Lex_t *get_lhs() const { return lhs_; };
 	virtual std::string name() const = 0;
 	virtual void run_stmt() = 0;
+	virtual Lex_t *get_lhs() const = 0;
 };
 
 
@@ -27,14 +26,17 @@ public:
 
 class Assign final : public Statement {
 
-	Lex_t *rhs_;
+	Lex_t *lhs_, *rhs_;
+	Assign_type type_;
 
 public:
-	Assign(Lex_t *lhs, Lex_t *rhs) : Statement(lhs, Keywords_t::ASSIGN), rhs_(rhs){};
+	Assign(Lex_t *lhs, Lex_t *rhs, Assign_type type) : Statement(Keywords_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
 	virtual ~Assign() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
+	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
+  	Assign_type get_type() const { return type_; };
 };
 
 
@@ -43,13 +45,14 @@ public:
 
 class If final : public Statement {
 
-	Lex_t *rhs_;
+	Lex_t *lhs_, *rhs_;
 
 public:
-	If(Lex_t *lhs, Lex_t *rhs) : Statement(lhs, Keywords_t::IF), rhs_(rhs){};
+	If(Lex_t *lhs, Lex_t *rhs) : Statement(Keywords_t::IF), lhs_(lhs), rhs_(rhs){};
 	virtual ~If() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
+	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
 };
 
@@ -59,13 +62,14 @@ public:
 
 class While final : public Statement {
 
-	Lex_t *rhs_;
+	Lex_t *lhs_, *rhs_;
 
 public:
-	While(Lex_t *lhs, Lex_t *rhs) : Statement(lhs, Keywords_t::WHILE), rhs_(rhs){};
+	While(Lex_t *lhs, Lex_t *rhs) : Statement(Keywords_t::WHILE), lhs_(lhs), rhs_(rhs){};
 	virtual ~While() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
+	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
 };
 
@@ -75,11 +79,14 @@ public:
 
 class Print final : public Statement {
 
+	Lex_t *lhs_;
+
 public:
-	Print(Lex_t *lhs) : Statement(lhs, Keywords_t::PRINT) {};
+	Print(Lex_t *lhs) : Statement(Keywords_t::PRINT), lhs_(lhs) {};
 	virtual ~Print() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
+	virtual Lex_t *get_lhs() const override{ return lhs_; };
 };
 
 
@@ -88,11 +95,14 @@ public:
 
 class Inc_Dec final : public Statement {
 
+	Lex_t *lhs_;
+
 public:
-	Inc_Dec(Lex_t *lhs, Keywords_t type) : Statement(lhs, type) {};
+	Inc_Dec(Lex_t *lhs, Keywords_t type) : Statement(type), lhs_(lhs) {};
 	virtual ~Inc_Dec() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
+	virtual Lex_t *get_lhs() const override{ return lhs_; };
 };
 
 
@@ -107,9 +117,7 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_unop(std::vector<Lex_t *> &lex_array);
 int is_unop_stmt(Lex_t *node);
 int is_semicol(Lex_t *node);
-int is_assign(Lex_t *node);
 int is_scope(Lex_t *node);
-int is_scan(Lex_t *node);
 
 
 Statement *parse_assign(std::vector<Lex_t *> &lex_array)
@@ -141,8 +149,12 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 		throw std::logic_error("Syntax error");
 	}
 
+	Assign_type type;
+
 	if (is_scan(lex_array[token_counter(GET_CURRENT)]))
 	{
+		type = Assign_type::INPUT;
+
 		R = new Lex_t(Lex_kind_t::KEYWD, Keywords_t::SCAN);
 
 		if (token_counter(INCREMENT) >= program_size)
@@ -152,14 +164,16 @@ Statement *parse_assign(std::vector<Lex_t *> &lex_array)
 	}
 	else
 	{
+		type = Assign_type::ARITHMETIC;
+
 		R = parse_arithmetic(lex_array);
 	}
 
-	return new Assign(L, R);
+	return new Assign(L, R, type);
 }
 
 
-Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type)
+Statement *parse_if(std::vector<Lex_t *> &lex_array)
 {
 	if (token_counter(INCREMENT) >= program_size)
 	{
@@ -199,10 +213,50 @@ Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type)
 
 	Lex_t *R = new Scope(scope);
 
-	if (type == Keywords_t::IF)
+	return new If(L, R);
+}
+
+
+Statement *parse_while(std::vector<Lex_t *> &lex_array)
+{
+	if (token_counter(INCREMENT) >= program_size)
 	{
-		return new If(L, R);
+		throw std::logic_error("Syntax error");
 	}
+
+	if (is_brace(lex_array[token_counter(GET_CURRENT)]) != Brace_t::LBRACE)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	Lex_t* L = parse_arithmetic(lex_array);
+
+	if(is_scope(lex_array[token_counter(GET_CURRENT)]) != Scope_t::LSCOPE)
+	{
+		throw std::logic_error("Invalid input: bad scope");
+	}
+
+	if (token_counter(INCREMENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	std::vector<Statement*> scope = parse_program(lex_array);
+
+	if (token_counter(GET_CURRENT) >= program_size)
+	{
+		throw std::logic_error("Syntax error");
+	}
+
+	if(is_scope(lex_array[token_counter(GET_CURRENT)]) != Scope_t::RSCOPE)
+	{
+		throw std::logic_error("Invalid input: bad scope in \"if\"");
+	}
+
+	token_counter(INCREMENT);
+
+	Lex_t *R = new Scope(scope);
+
 	return new While(L, R);	
 }
 
@@ -303,10 +357,10 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 			switch (lex_array[token_counter(GET_CURRENT)]->get_data())
 			{
 			case Keywords_t::IF:
-				stmt = parse_if_while(lex_array, Keywords_t::IF);
+				stmt = parse_if(lex_array);
 				break;
 			case Keywords_t::WHILE:
-				stmt = parse_if_while(lex_array, Keywords_t::WHILE);
+				stmt = parse_while(lex_array);
 				break;
 			case Keywords_t::PRINT:
 				stmt = parse_print(lex_array);
@@ -358,34 +412,6 @@ std::string Inc_Dec::name() const
 		return "++";
 	}
 	return "--";
-}
-
-
-int is_assign(Lex_t *node)
-{
-	if (node->get_kind() != Lex_kind_t::KEYWD)
-	{
-		return 0;
-	}
-	if (node->get_data() != Keywords_t::ASSIGN)
-	{
-		return 0;
-	}
-	return 1;
-}
-
-
-int is_scan(Lex_t *node)
-{
-	if (node->get_kind() != Lex_kind_t::KEYWD)
-	{
-		return 0;
-	}
-	if (node->get_data() != Keywords_t::SCAN)
-	{
-		return 0;
-	}
-	return 1;
 }
 
 

@@ -100,7 +100,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
   	(*num_node)++;
   	prev_elem = curr_elem;
 
-  	if (is_binop(curr_node))
+  	if (is_binop(curr_node) || is_assign(curr_node))
 	{
 		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_lhs(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";

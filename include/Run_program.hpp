@@ -19,23 +19,25 @@ void run_program(std::vector<Statement*> prog)
 
 void Assign::run_stmt()
 {
-	std::string name_var = vars[(this->get_lhs())->get_data()];
+	lhs_->calculate();
 
-	if (is_scan(rhs_))
+	std::string var_name = vars[lhs_->get_data()];
+
+	if (type_ == Assign_type::INPUT)
 	{
 		std::cin >> std::ws;
-		std::cin >> VARS[name_var];
+		std::cin >> VARS[var_name];
 	}
 	else
 	{
-		VARS[name_var] = calculate(rhs_);
+		VARS[var_name] = rhs_->calculate();
 	}
 }
 
 
 void If::run_stmt()
 {
-	int condition = calculate(this->get_lhs());
+	int condition = lhs_->calculate();
 
 	if (condition)
 	{
@@ -46,19 +48,19 @@ void If::run_stmt()
 
 void While::run_stmt()
 {
-	int condition = calculate(this->get_lhs());
+	int condition = lhs_->calculate();
 
 	while (condition)
 	{
 		run_program(static_cast<Scope*>(rhs_)->get_lhs());
-		condition = calculate(this->get_lhs());
+		condition = lhs_->calculate();
 	}
 }
 
 
 void Print::run_stmt()
 {
-	int val = calculate(this->get_lhs());
+	int val = lhs_->calculate();
 
 	std::cout << val << std::endl;
 }
@@ -66,15 +68,15 @@ void Print::run_stmt()
 
 void Inc_Dec::run_stmt()
 {
-	std::string name_var = vars[(this->get_lhs())->get_data()];
+	std::string var_name = vars[lhs_->get_data()];
 
 	if (this->get_kind() == Keywords_t::INCREM)
 	{
-		VARS[name_var]++;
+		VARS[var_name]++;
 	}
 	else
 	{
-		VARS[name_var]--;
+		VARS[var_name]--;
 	}
 }
 

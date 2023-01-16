@@ -37,7 +37,7 @@ public:
 	std::string short_name() const;
 	Lex_kind_t get_kind() const { return kind_; };
 	int get_data() const { return data_; };
-	
+	virtual int calculate();
 };
 
 enum UnOp_t { INC, DEC };
@@ -48,7 +48,7 @@ enum Brace_t { LBRACE, RBRACE };
 
 enum Scope_t { LSCOPE, RSCOPE };
 
-enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL };
+enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
 enum Keywords_t { ASSIGN, IF, WHILE, PRINT, SCAN, SEMICOL, INCREM, DECREM };
 
@@ -135,6 +135,14 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			break;
 		case '>':
 			push_compop(lex_array, GREATER);
+			break;
+		case '!':
+			std::cin >> elem;
+			if (elem != '=')
+			{
+				throw std::logic_error("Syntax error");
+			}
+			push_compop(lex_array, NOT_EQUAL);
 			break;
 		case '+':
 		{
@@ -273,6 +281,12 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 }
 
 
+int Lex_t::calculate()
+{
+	return data_;
+}
+
+
 std::string Lex_t::name() const
 {
 	switch (kind_)
@@ -351,6 +365,10 @@ std::string Lex_t::name() const
 		case CompOp_t::EQUAL:
 			type = "==";
 			break;
+		case CompOp_t::NOT_EQUAL:
+			type = "!=";
+			break;
+
 		}
 		return static_cast<std::string>("COMPOP:") + type;
 	}
@@ -377,6 +395,8 @@ std::string Lex_t::short_name() const
 	case Lex_kind_t::KEYWD:
 		switch (data_)
 		{
+		case Keywords_t::ASSIGN:
+			return "=";
 		case Keywords_t::SEMICOL:
 			return ";";
 		case Keywords_t::PRINT:
@@ -413,7 +433,9 @@ std::string Lex_t::short_name() const
 		case CompOp_t::GRorEQ:
 			return "grOReq";
 		case CompOp_t::EQUAL:
-			return "equal";
+			return "==";
+		case CompOp_t::NOT_EQUAL:
+			return "!=";
 		}
 	}
 	return nullptr;
