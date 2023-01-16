@@ -110,11 +110,10 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
-enum Move { INCREMENT, GET_CURRENT };
+enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT };
 
 
 int token_counter(Move move);
-//int calculate(Lex_t *tree);
 void check_brases(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
@@ -140,12 +139,19 @@ int token_counter(Move move)
 	if (move == INCREMENT)
 	{
 		curr_lex++;
-		if (curr_lex > program_size)
+	}
+	else if (move == GET_CURRENT)
+	{
+		return curr_lex;
+	}
+	else
+	{
+		if ((curr_lex + move - USE_CURRENT) >= program_size)
 		{
 			throw std::logic_error("Syntax error");
 		}
 	}
-
+	
 	return curr_lex;
 }
 
@@ -180,11 +186,6 @@ void check_brases(std::vector<Lex_t *> &lex_array)
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *root = parse_bool(lex_array);
-
-	if (token_counter(GET_CURRENT) >= program_size)
-	{
-		throw std::logic_error("Syntax error");
-	}
 
 	return root;
 }
@@ -263,51 +264,32 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *T;
 
-	if (token_counter(GET_CURRENT) >= program_size)
+	if (is_brace(lex_array[token_counter(USE_CURRENT)]) == Brace_t::LBRACE)
 	{
-		throw std::logic_error("Syntax error");
-	}
-
-	if (is_brace(lex_array[token_counter(GET_CURRENT)]) == Brace_t::LBRACE)
-	{
-		if (token_counter(INCREMENT) >= program_size)
-		{
-			throw std::logic_error("Syntax error");
-		}
+		token_counter(INCREMENT);
 
 		T = parse_bool(lex_array);
 
-		if (is_brace(lex_array[token_counter(GET_CURRENT)]) != Brace_t::RBRACE)
+		if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
 		{
-			std::cout << "Попались здесь во время " << lex_array[token_counter(GET_CURRENT)]->name() << std::endl;
-			std::cout << "И после " << lex_array[token_counter(GET_CURRENT) - 1]->name() << std::endl;
-			
 			throw std::logic_error("Invalid input: check brases in arithmetic expression");
 		}
 
-		if (token_counter(INCREMENT) >= program_size)
-		{
-			throw std::logic_error("Syntax error");
-		}
+		token_counter(INCREMENT);
 
 		return T;
 	}
 
-	if ((token_counter(GET_CURRENT) + 1) >= program_size)
-	{
-		throw std::logic_error("Syntax error");
-	}
-
 	int value;
-	int is_v_v = is_val_var(lex_array[token_counter(GET_CURRENT)], &value, lex_array);
+	int is_v_v = is_val_var(lex_array[token_counter(USE_CURRENT)], &value, lex_array);
 
 	if (is_v_v < 0)
 	{
 		throw std::logic_error("Invalid input");
 	}
 
-	int is_un = is_unop(lex_array[token_counter(GET_CURRENT) + 1]);
-	int is_as = is_assign(lex_array[token_counter(GET_CURRENT) + 1]);
+	int is_un = is_unop(lex_array[token_counter(USE_NEXT) + 1]);
+	int is_as = is_assign(lex_array[token_counter(USE_NEXT) + 1]);
 
 	if (is_v_v == Lex_kind_t::VALUE)
 	{
@@ -320,11 +302,11 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 			throw std::logic_error("Assign can use only with variables");
 		}
 
-		T = new Value(lex_array[token_counter(GET_CURRENT)]->get_data());
+		T = new Value(lex_array[token_counter(USE_CURRENT)]->get_data());
 	}
 	else if (is_v_v == Lex_kind_t::VAR)
 	{
-		int num_var = lex_array[token_counter(GET_CURRENT)]->get_data();
+		int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
 		T = new Variable(num_var);
 		if (is_un >= 0)
 		{
@@ -341,15 +323,11 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		}
 		if (is_as)
 		{
-			if ((token_counter(GET_CURRENT) + 1) >= program_size)
-			{
-				throw std::logic_error("Syntax error");
-			}
 			token_counter(INCREMENT);
 			token_counter(INCREMENT);
-			if (is_scan(lex_array[token_counter(GET_CURRENT)]))
+			if (is_scan(lex_array[token_counter(USE_CURRENT)]))
 			{
-				T = new Assign_node(T, lex_array[token_counter(GET_CURRENT)], Assign_type::INPUT);
+				T = new Assign_node(T, lex_array[token_counter(USE_CURRENT)], Assign_type::INPUT);
 			}
 			else
 			{
@@ -570,7 +548,7 @@ int is_val_var(Lex_t *node, int *value, std::vector<Lex_t *> &lex_array)
 	}
 	if (node->get_kind() == Lex_kind_t::VAR)
 	{
-		if (!VARS.contains(vars[node->get_data()]) && !is_assign(lex_array[token_counter(GET_CURRENT) + 1]))
+		if (!VARS.contains(vars[node->get_data()]) && !is_assign(lex_array[token_counter(USE_NEXT) + 1]))
 		{
 			throw std::logic_error("Uninitialized variable");
 		}
