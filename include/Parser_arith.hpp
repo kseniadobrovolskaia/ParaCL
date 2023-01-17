@@ -110,7 +110,7 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
-enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT };
+enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT, USE_NEXT_NEXT };
 
 
 int token_counter(Move move);
@@ -121,10 +121,10 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_M(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_T(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
-int is_val_var(Lex_t *node, int *value, std::vector<Lex_t *> &lex_array);
+int is_val_var(Lex_t *node, int is_assignment);
+int is_assign(Lex_t *node);
 int is_plus_minus(Lex_t *node);
 int is_mul_div(Lex_t *node);
-int is_assign(Lex_t *node);
 int is_compop(Lex_t *node);
 int is_brace(Lex_t *node);
 int is_scan(Lex_t *node);
@@ -280,60 +280,64 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		return T;
 	}
 
-	int value;
-	int is_v_v = is_val_var(lex_array[token_counter(USE_CURRENT)], &value, lex_array);
-
-	if (is_v_v < 0)
+	int is_unary = is_unop(lex_array[token_counter(USE_NEXT) + 1]);
+	int is_assignment;
+	if (is_unary < 0)
 	{
-		throw std::logic_error("Invalid input");
+		is_assignment = is_assign(lex_array[token_counter(USE_NEXT) + 1]);
 	}
-
-	int is_un = is_unop(lex_array[token_counter(USE_NEXT) + 1]);
-	int is_as = is_assign(lex_array[token_counter(USE_NEXT) + 1]);
-
-	if (is_v_v == Lex_kind_t::VALUE)
+	else
 	{
-		if (is_un >= 0)
-		{
-			throw std::logic_error("Unop can use only with variables");
-		}
-		if (is_as)
-		{
-			throw std::logic_error("Assign can use only with variables");
-		}
-
-		T = new Value(lex_array[token_counter(USE_CURRENT)]->get_data());
+		is_assignment = is_assign(lex_array[token_counter(USE_NEXT_NEXT) + 2]);
 	}
-	else if (is_v_v == Lex_kind_t::VAR)
+	
+	int is_v_v = is_val_var(lex_array[token_counter(USE_CURRENT)], is_assignment);
+
+	switch (is_v_v)
 	{
-		int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
-		T = new Variable(num_var);
-		if (is_un >= 0)
+		case -1:
 		{
-			T = new UnOp(static_cast<Variable*>(T), static_cast<UnOp_t>(is_un));
-			if (is_un == UnOp_t::INC)
-			{
-				VARS[vars[num_var]]++;
-			}
-			else
-			{
-				VARS[vars[num_var]]--;
-			}
-			token_counter(INCREMENT);
+			throw std::logic_error("Invalid input");
 		}
-		if (is_as)
+		case Lex_kind_t::VALUE:
 		{
-			token_counter(INCREMENT);
-			token_counter(INCREMENT);
-			if (is_scan(lex_array[token_counter(USE_CURRENT)]))
+			if (is_unary >= 0)
 			{
-				T = new Assign_node(T, lex_array[token_counter(USE_CURRENT)], Assign_type::INPUT);
+				throw std::logic_error("Unary operator can use only with variables");
 			}
-			else
+			if (is_assignment)
 			{
-				T = new Assign_node(T, parse_arithmetic(lex_array), Assign_type::ARITHMETIC);
-				return T;
+				throw std::logic_error("Assignment can use only with variables");
 			}
+
+			T = new Value(lex_array[token_counter(USE_CURRENT)]->get_data());
+			break;
+		}
+		case Lex_kind_t::VAR:
+		{
+			int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
+			T = new Variable(num_var);
+
+			if (is_unary >= 0)
+			{
+				T = new UnOp(static_cast<Variable*>(T), static_cast<UnOp_t>(is_unary));
+				token_counter(INCREMENT);
+			}
+			if (is_assignment)
+			{
+				token_counter(INCREMENT);
+				token_counter(INCREMENT);
+				if (is_scan(lex_array[token_counter(USE_CURRENT)]))
+				{
+					T = new Assign_node(T, lex_array[token_counter(USE_CURRENT)], Assign_type::INPUT);
+				}
+				else
+				{
+					T = new Assign_node(T, parse_arithmetic(lex_array), Assign_type::ARITHMETIC);
+					return T;
+				}
+			}
+			break;
 		}
 	}
 	
@@ -539,20 +543,18 @@ int is_assign(Lex_t *node)
 }
 
 
-int is_val_var(Lex_t *node, int *value, std::vector<Lex_t *> &lex_array)
+int is_val_var(Lex_t *node, int is_assignment)
 {
 	if (node->get_kind() == Lex_kind_t::VALUE)
 	{	
-		*value = node->get_data();
 		return Lex_kind_t::VALUE;
 	}
 	if (node->get_kind() == Lex_kind_t::VAR)
 	{
-		if (!VARS.contains(vars[node->get_data()]) && !is_assign(lex_array[token_counter(USE_NEXT) + 1]))
+		if (!VARS.contains(vars[node->get_data()]) && !is_assignment)
 		{
 			throw std::logic_error("Uninitialized variable");
 		}
-		*value = VARS[vars[node->get_data()]];
 		return Lex_kind_t::VAR;
 	}
 	return -1;

@@ -102,7 +102,7 @@ public:
 	virtual ~Inc_Dec() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
-	virtual Lex_t *get_lhs() const override{ return lhs_; };
+	virtual Lex_t *get_lhs() const override { return lhs_; };
 };
 
 
@@ -118,6 +118,7 @@ Statement *parse_unop(std::vector<Lex_t *> &lex_array);
 int is_unop_stmt(Lex_t *node);
 int is_semicol(Lex_t *node);
 int is_scope(Lex_t *node);
+
 
 
 Statement *parse_assign(std::vector<Lex_t *> &lex_array)
@@ -263,15 +264,6 @@ Statement *parse_unop(std::vector<Lex_t *> &lex_array)
 	L = new Variable(L->get_data());
 	
 	int is_un = is_unop_stmt(lex_array[token_counter(USE_CURRENT)]);
-
-	if (is_un == Keywords_t::INCREM)
-	{
-		VARS[name_lhs]++;
-	}
-	else
-	{
-		VARS[name_lhs]--;
-	}
 	
 	token_counter(INCREMENT);
 
