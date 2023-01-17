@@ -245,6 +245,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 					}
 					default:
 					{
+						std::cout << "В качестве утверждения было передано " << Stmt->name() << std::endl;
 						throw std::logic_error("Arithmetic expression is not a statement");
 					}
 				}

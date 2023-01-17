@@ -317,8 +317,37 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 
 		if (is_unary >= 0)
 		{
-			token_counter(INCREMENT);
-			return new UnOp(T, static_cast<Statements_t>(is_unary));
+			if (dynamic_cast<Variable*>(T) || dynamic_cast<Assign_node*>(T) || dynamic_cast<UnOp*>(T))
+			{
+				token_counter(INCREMENT);
+				return new UnOp(T, static_cast<Statements_t>(is_unary));
+			}
+			else
+			{
+				throw std::logic_error("Unary operator can use only with variables(or assignment or unary operator)");
+			}
+
+			Lex_t *var = T, *tmpvar;
+
+			int flag = 1;
+			while (flag)
+			{
+				if ((tmpvar = dynamic_cast<Variable*>(var)))
+				{
+					flag = 0;
+				}
+				else
+				{
+					var = var->get_var();
+				}
+			}
+
+			std::string var_name = vars[var->get_data()];
+
+			if (!VARS.contains(var_name))
+			{
+				throw std::logic_error("Uninitialized variable");
+			}
 		}
 
 		return T;
@@ -339,10 +368,6 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 	{
 		case Lex_kind_t::VALUE:
 		{
-			if (is_unary >= 0)
-			{
-				throw std::logic_error("Unary operator can use only with variables");
-			}
 			if (is_assignment)
 			{
 				throw std::logic_error("Assignment can use only with variables");
@@ -356,22 +381,18 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 			int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
 			T = new Variable(num_var);
 
-			if (!VARS.contains(vars[num_var]) && !is_assignment)
-			{
-				throw std::logic_error("Uninitialized variable");
-			}
-			else
-			{
-				VARS[vars[num_var]] = 0;
-			}
-
 			if (is_unary >= 0)
 			{
+				if (!VARS.contains(vars[num_var]))
+				{
+					throw std::logic_error("Uninitialized variable");
+				}
 				T = new UnOp(T, static_cast<Statements_t>(is_unary));
 				token_counter(INCREMENT);
 			}
 			if (is_assignment)
 			{
+				VARS[vars[num_var]] = 0;
 				token_counter(INCREMENT);
 				token_counter(INCREMENT);
 				if (is_scan(lex_array[token_counter(USE_CURRENT)]))

@@ -93,11 +93,14 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 	}
 
 	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
+
+	prev_elem = curr_elem;
 	if (is_unop(curr_node) >= 0)
 	{
 		(*num_node)++;
-		file_tree << "\n           node_" << *num_node << "[label = \"" << (static_cast<UnOp*>(curr_node)->get_var())->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"lightcyan2\"];";
-		file_tree << "\n           node_" << *num_node - 1 << "  -> node_" << *num_node << ";\n";
+		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_var(), file_tree, num_node);
+		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
+		prev_elem = curr_elem;
 	}
 
   	(*num_node)++;
