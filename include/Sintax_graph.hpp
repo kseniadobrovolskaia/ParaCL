@@ -83,10 +83,13 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 	case Lex_kind_t::COMPOP:
 		colour = "powderblue";
 		break;
-	case Lex_kind_t::KEYWD:
+	case Lex_kind_t::STMT:
+	case Lex_kind_t::SYMBOL:
 	case Lex_kind_t::UNOP:
 		colour = "pink";
 		break;
+	default:
+		throw std::logic_error("Brace or scope are not a nodes");
 	}
 
 	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
@@ -128,11 +131,11 @@ int is_binop(Lex_t *curr_node)
 
 int is_if_while(Statement *stmt)
 {
-	if (stmt->get_kind() == Keywords_t::IF)
+	if (stmt->get_kind() == Statements_t::IF)
 	{
 		return 1;
 	}
-	if (stmt->get_kind() == Keywords_t::WHILE)
+	if (stmt->get_kind() == Statements_t::WHILE)
 	{
 		return 1;
 	}
@@ -142,7 +145,7 @@ int is_if_while(Statement *stmt)
 
 int is_assign(Statement *stmt)
 {
-	return stmt->get_kind() == Keywords_t::ASSIGN;
+	return stmt->get_kind() == Statements_t::ASSIGN;
 }
 
 

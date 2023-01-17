@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <algorithm>
 #include <fstream>
+#include <typeinfo>
 
 std::unordered_map<std::string, int>VARS;
 std::vector<std::string> vars;
@@ -15,12 +16,13 @@ std::vector<std::string> vars;
 typedef enum Lex_kind_t {
 	BRACE,
 	VAR,
-	KEYWD,
+	STMT,
 	VALUE,
 	SCOPE,
 	UNOP,
 	BINOP,
 	COMPOP,
+	SYMBOL,
 
 } Lex_kind_t;
 
@@ -37,10 +39,10 @@ public:
 	std::string short_name() const;
 	Lex_kind_t get_kind() const { return kind_; };
 	int get_data() const { return data_; };
+	virtual Lex_t* get_var() const { return nullptr; };
 	virtual int calculate();
 };
 
-enum UnOp_t { INC, DEC };
 
 enum BinOp_t { ADD, SUB, MULT, DIV };
 
@@ -50,7 +52,9 @@ enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
-enum Keywords_t { ASSIGN, IF, WHILE, PRINT, SCAN, SEMICOL, INCREM, DECREM };
+enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC };
+
+enum Symbols_t { SEMICOL, SCAN };
 
 
 void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
@@ -58,7 +62,7 @@ void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
 	lex_array.push_back(new Lex_t(Lex_kind_t::BINOP, binop));
 }
 
-void push_unop(std::vector<Lex_t*> &lex_array, UnOp_t unop)
+void push_unop(std::vector<Lex_t*> &lex_array, Statements_t unop)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::UNOP, unop));
 }
@@ -73,9 +77,9 @@ void push_scope(std::vector<Lex_t*> &lex_array, Scope_t scope)
 	lex_array.push_back(new Lex_t(Lex_kind_t::SCOPE, scope));
 }
 
-void push_keyword(std::vector<Lex_t*> &lex_array, Keywords_t kw)
+void push_stmt(std::vector<Lex_t*> &lex_array, Statements_t kw)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::KEYWD, kw));
+	lex_array.push_back(new Lex_t(Lex_kind_t::STMT, kw));
 }
 
 void push_var(std::vector<Lex_t*> &lex_array, int num_var)
@@ -91,6 +95,11 @@ void push_value(std::vector<Lex_t*> &lex_array, int value)
 void push_compop(std::vector<Lex_t*> &lex_array, CompOp_t compop)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::COMPOP, compop));
+}
+
+void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol)
+{
+	lex_array.push_back(new Lex_t(Lex_kind_t::SYMBOL, symbol));
 }
 
 
@@ -109,7 +118,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 		switch (elem)
 		{
 		case ';':
-			push_keyword(lex_array, SEMICOL);
+			push_symbol(lex_array, SEMICOL);
 			break;
 		case '=':
 			switch(prev)
@@ -127,7 +136,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 				push_compop(lex_array, GRorEQ);
 				break;
 			default:
-				push_keyword(lex_array, ASSIGN);
+				push_stmt(lex_array, ASSIGN);
 			}
 			break;
 		case '<':
@@ -213,7 +222,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			push_scope(lex_array, RSCOPE);
 			break;
 		case '?':
-			push_keyword(lex_array, SCAN);
+			push_symbol(lex_array, SCAN);
 			break;
 		}
 
@@ -242,15 +251,15 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 
 			if (word == "if")
 			{
-				push_keyword(lex_array, IF);
+				push_stmt(lex_array, IF);
 			}
 			else if (word == "while")
 			{
-				push_keyword(lex_array, WHILE);
+				push_stmt(lex_array, WHILE);
 			}
 			else if (word == "print")
 			{
-				push_keyword(lex_array, PRINT);
+				push_stmt(lex_array, PRINT);
 			}
 			else
 			{
@@ -294,36 +303,44 @@ std::string Lex_t::name() const
 	case Lex_kind_t::BRACE:
 		return static_cast<std::string>("BRACE:") + ((data_ == Brace_t::LBRACE) ? "LBRACE" : "RBRACE");
 	case Lex_kind_t::UNOP:
-		return static_cast<std::string>("UNOP:") + ((data_ == UnOp_t::INC) ? "INC" : "DEC");
+		return static_cast<std::string>("UNOP:") + ((data_ == Statements_t::INC) ? "INC" : "DEC");
 	case Lex_kind_t::SCOPE:
 		return static_cast<std::string>("SCOPE:") + ((data_ == Scope_t::LSCOPE) ? "LSCOPE" : "RSCOPE");
 	case Lex_kind_t::VALUE:
 		return static_cast<std::string>("VALUE:") + static_cast<std::string>(std::to_string(data_));
-	case Lex_kind_t::KEYWD:
+	case Lex_kind_t::STMT:
 	{
 		std::string type;
 		switch (data_)
 		{
-		case Keywords_t::ASSIGN:
+		case Statements_t::ASSIGN:
 			type = "=";
 			break;
-		case Keywords_t::IF:
+		case Statements_t::IF:
 			type = "if";
 			break;
-		case Keywords_t::WHILE:
+		case Statements_t::WHILE:
 			type = "while";
 			break;
-		case Keywords_t::PRINT:
+		case Statements_t::PRINT:
 			type = "print";
 			break;
-		case Keywords_t::SCAN:
+		}
+		return static_cast<std::string>("STMT:") + type;
+	}
+	case Lex_kind_t::SYMBOL:
+	{
+		std::string type;
+		switch (data_)
+		{
+		case Symbols_t::SCAN:
 			type = "?";
 			break;
-		case Keywords_t::SEMICOL:
+		case Symbols_t::SEMICOL:
 			type = ";";
 			break;
 		}
-		return static_cast<std::string>("KEYWD:") + type;
+		return static_cast<std::string>("SYMBOL:") + type;
 	}	
 	case Lex_kind_t::BINOP:
 	{
@@ -387,26 +404,30 @@ std::string Lex_t::short_name() const
 	case Lex_kind_t::BRACE:
 		return ((data_ == Brace_t::LBRACE) ? "(" : ")");
 	case Lex_kind_t::UNOP:
-		return ((data_ == UnOp_t::INC) ? "++" : "--");
+		return ((data_ == Statements_t::INC) ? "++" : "--");
 	case Lex_kind_t::SCOPE:
 		return ((data_ == Scope_t::LSCOPE) ? "{" : "}");
 	case Lex_kind_t::VALUE:
 		return std::to_string(data_);
-	case Lex_kind_t::KEYWD:
+	case Lex_kind_t::STMT:
 		switch (data_)
 		{
-		case Keywords_t::ASSIGN:
+		case Statements_t::ASSIGN:
 			return "=";
-		case Keywords_t::SEMICOL:
-			return ";";
-		case Keywords_t::PRINT:
+		case Statements_t::PRINT:
 			return "print";
-		case Keywords_t::SCAN:
-			return "?";
-		case Keywords_t::IF:
+		case Statements_t::IF:
 			return "if";
-		case Keywords_t::WHILE:
+		case Statements_t::WHILE:
 			return "while";
+		}
+	case Lex_kind_t::SYMBOL:
+		switch (data_)
+		{
+		case Symbols_t::SEMICOL:
+		return ";";
+		case Symbols_t::SCAN:
+		return "?";
 		}
 	case Lex_kind_t::BINOP:
 		switch (data_)

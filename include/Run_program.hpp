@@ -20,6 +20,20 @@ void run_program(std::vector<Statement*> prog)
 void Assign::run_stmt()
 {
 	lhs_->calculate();
+	Lex_t *var = lhs_, *tmpvar;
+
+	int flag = 1;
+	while (flag)
+	{
+		if ((tmpvar = dynamic_cast<Variable*>(var)))
+		{
+			flag = 0;
+		}
+		else
+		{
+			var = static_cast<UnOp*>(lhs_)->get_var();
+		}
+	}
 
 	std::string var_name = vars[lhs_->get_data()];
 
@@ -68,15 +82,32 @@ void Print::run_stmt()
 
 void Inc_Dec::run_stmt()
 {
-	std::string var_name = vars[lhs_->get_data()];
+	lhs_->calculate();
 
-	if (this->get_kind() == Keywords_t::INCREM)
+	Lex_t *var = lhs_, *tmpvar;
+	
+	int flag = 1;
+	while (flag)
 	{
-		VARS[var_name]++;
+		if ((tmpvar = dynamic_cast<Variable*>(var)))
+		{
+			flag = 0;
+		}
+		else
+		{
+			var = static_cast<UnOp*>(lhs_)->get_var();
+		}
+	}
+	
+	std::string var_name = vars[var->get_data()];
+
+	if (this->get_kind() == Statements_t::INC)
+	{
+		VARS[var_name] += 1;
 	}
 	else
 	{
-		VARS[var_name]--;
+		VARS[var_name] -= 1;
 	}
 }
 

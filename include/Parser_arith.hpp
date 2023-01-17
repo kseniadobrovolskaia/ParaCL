@@ -38,9 +38,10 @@ class Assign_node : public Lex_t {
 
 public:
 	Assign_node() = default;
-  	Assign_node(Lex_t *lhs, Lex_t *rhs, Assign_type type) : Lex_t(Lex_kind_t::KEYWD, Keywords_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
+  	Assign_node(Lex_t *lhs, Lex_t *rhs, Assign_type type) : Lex_t(Lex_kind_t::STMT, Statements_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
+  	virtual Lex_t *get_var() const override { return lhs_; };
   	Assign_type get_type() const { return type_; };
   	virtual int calculate() override;
 };
@@ -97,12 +98,12 @@ public:
 
 class UnOp : public Lex_t {
 
-  	Variable *var_;
+  	Lex_t *var_;
 
 public:
 	UnOp() = default;
-  	UnOp(Variable *var, UnOp_t opcode) : Lex_t(Lex_kind_t::UNOP, opcode), var_(var){};
-  	Lex_t *get_var() const { return var_; };
+  	UnOp(Lex_t *var, Statements_t opcode) : Lex_t(Lex_kind_t::UNOP, opcode), var_(var){};
+  	virtual Lex_t *get_var() const override { return var_; };
   	virtual int calculate() override;
 };
 
@@ -116,12 +117,12 @@ enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT, USE_NEXT_NEXT };
 int token_counter(Move move);
 void check_brases(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
+Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_E(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_M(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_T(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
-int is_val_var(Lex_t *node, int is_assignment);
 int is_assign(Lex_t *node);
 int is_plus_minus(Lex_t *node);
 int is_mul_div(Lex_t *node);
@@ -193,7 +194,7 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *L = parse_E(lex_array);
+	Lex_t *L = parse_asgn(lex_array);
 	Lex_t *R;
 	int is_comp;
 	
@@ -207,8 +208,43 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 		else
 		{
 			token_counter(INCREMENT);
-			R = parse_E(lex_array);	
+			R = parse_asgn(lex_array);	
 			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
+		}
+	}
+}
+
+
+Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
+{
+	Lex_t *L = parse_E(lex_array);
+	Lex_t *R;
+	int is_as;
+	Assign_type type;
+	
+	while (1)
+	{
+		is_as = is_assign(lex_array[token_counter(GET_CURRENT)]);
+		if (!is_as)
+		{
+			return L;
+		}
+		else
+		{
+			token_counter(INCREMENT);
+			if (is_scan(lex_array[token_counter(USE_CURRENT)]))
+			{
+				type = INPUT;
+				R = lex_array[token_counter(USE_CURRENT)];
+				token_counter(INCREMENT);
+			}
+			else
+			{
+				type = ARITHMETIC;
+				R = parse_E(lex_array);	
+			}
+			
+			L = new Assign_node(L, R, type);
 		}
 	}
 }
@@ -277,6 +313,14 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 
 		token_counter(INCREMENT);
 
+		int is_unary = is_unop(lex_array[token_counter(USE_CURRENT)]);
+
+		if (is_unary >= 0)
+		{
+			token_counter(INCREMENT);
+			return new UnOp(T, static_cast<Statements_t>(is_unary));
+		}
+
 		return T;
 	}
 
@@ -291,14 +335,8 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		is_assignment = is_assign(lex_array[token_counter(USE_NEXT_NEXT) + 2]);
 	}
 	
-	int is_v_v = is_val_var(lex_array[token_counter(USE_CURRENT)], is_assignment);
-
-	switch (is_v_v)
+	switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 	{
-		case -1:
-		{
-			throw std::logic_error("Invalid input");
-		}
 		case Lex_kind_t::VALUE:
 		{
 			if (is_unary >= 0)
@@ -318,9 +356,18 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 			int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
 			T = new Variable(num_var);
 
+			if (!VARS.contains(vars[num_var]) && !is_assignment)
+			{
+				throw std::logic_error("Uninitialized variable");
+			}
+			else
+			{
+				VARS[vars[num_var]] = 0;
+			}
+
 			if (is_unary >= 0)
 			{
-				T = new UnOp(static_cast<Variable*>(T), static_cast<UnOp_t>(is_unary));
+				T = new UnOp(T, static_cast<Statements_t>(is_unary));
 				token_counter(INCREMENT);
 			}
 			if (is_assignment)
@@ -339,6 +386,11 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 			}
 			break;
 		}
+		default:
+		{
+			throw std::logic_error("Something strange instead of a variable");
+			break;
+		}
 	}
 	
 	token_counter(INCREMENT);
@@ -350,11 +402,6 @@ int Variable::calculate()
 {
 	std::string var_name = vars[this->get_data()];
 
-	if (!(VARS.contains(var_name)))
-	{
-	 	throw std::runtime_error("Uninitialized variable");
-	}
-
 	return VARS[var_name];
 }
 
@@ -362,8 +409,22 @@ int Variable::calculate()
 int Assign_node::calculate()
 {
 	lhs_->calculate();
+	int flag = 1;
+	Lex_t *var = lhs_, *tmpvar;
+	std::string var_name;
 
-	std::string var_name = vars[lhs_->get_data()];
+	while (flag)
+	{
+		if ((tmpvar = dynamic_cast<Variable*>(var)))
+		{
+			var_name = vars[var->get_data()];
+			flag = 0;
+		}
+		else
+		{
+			var = var->get_var();
+		}
+	}
 
 	if (type_ == Assign_type::INPUT)
 	{
@@ -395,7 +456,7 @@ int BinOp::calculate()
 		case BinOp_t::DIV:
 			if (right == 0)
 			{
-				throw std::runtime_error("Error: division by zero");
+				throw std::runtime_error("Division by zero");
 			}
 			return left / right;
 	}
@@ -405,22 +466,35 @@ int BinOp::calculate()
 
 int UnOp::calculate()
 {
-	std::string var_name = vars[var_->get_data()];
+	var_->calculate();
+	Lex_t *var = var_, *tmpvar;
 
-	if (!(VARS.contains(var_name)))
+	int flag = 1;
+	std::string var_name;
+	
+	while (flag)
 	{
-	 	throw std::logic_error("Uninitialized variable");
+		if ((tmpvar = dynamic_cast<Variable*>(var)))
+		{
+			var_name = vars[var->get_data()];
+			flag = 0;
+		}
+		else
+		{
+			var = static_cast<UnOp*>(var)->get_var();
+		}
 	}
 
 	switch (this->get_data())
 	{
-		case UnOp_t::INC:
-			VARS[var_name]++;
+		case Statements_t::INC:
+			VARS[var_name] += 1;
 			return VARS[var_name];
-		case UnOp_t::DEC:
-			VARS[var_name]--;
+		case Statements_t::DEC:
+			VARS[var_name] -= 1;
 			return VARS[var_name];
 	}
+
 	throw std::logic_error("Error: it is not clear what is in function \"UnOp::calculate\"");
 }
 
@@ -487,11 +561,11 @@ int is_mul_div(Lex_t *node)
 
 int is_scan(Lex_t *node)
 {
-	if (node->get_kind() != Lex_kind_t::KEYWD)
+	if (node->get_kind() != Lex_kind_t::SYMBOL)
 	{
 		return 0;
 	}
-	if (node->get_data() != Keywords_t::SCAN)
+	if (node->get_data() != Symbols_t::SCAN)
 	{
 		return 0;
 	}
@@ -531,34 +605,17 @@ int is_unop(Lex_t *node)
 
 int is_assign(Lex_t *node)
 {
-	if (node->get_kind() != Lex_kind_t::KEYWD)
+	if (node->get_kind() != Lex_kind_t::STMT)
 	{
 		return 0;
 	}
-	if (node->get_data() != Keywords_t::ASSIGN)
+	if (node->get_data() != Statements_t::ASSIGN)
 	{
 		return 0;
 	}
 	return 1;
 }
 
-
-int is_val_var(Lex_t *node, int is_assignment)
-{
-	if (node->get_kind() == Lex_kind_t::VALUE)
-	{	
-		return Lex_kind_t::VALUE;
-	}
-	if (node->get_kind() == Lex_kind_t::VAR)
-	{
-		if (!VARS.contains(vars[node->get_data()]) && !is_assignment)
-		{
-			throw std::logic_error("Uninitialized variable");
-		}
-		return Lex_kind_t::VAR;
-	}
-	return -1;
-}
 
 
 

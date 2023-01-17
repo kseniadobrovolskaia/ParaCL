@@ -9,12 +9,12 @@
 
 class Statement{
 
-	Keywords_t kind_;
+	Statements_t kind_;
 
 public:
-	Statement(Keywords_t kind) : kind_(kind) {};
+	Statement(Statements_t kind) : kind_(kind) {};
 	virtual ~Statement() = default;
-	Keywords_t get_kind() const { return kind_; };
+	Statements_t get_kind() const { return kind_; };
 	virtual std::string name() const = 0;
 	virtual void run_stmt() = 0;
 	virtual Lex_t *get_lhs() const = 0;
@@ -30,7 +30,8 @@ class Assign final : public Statement {
 	Assign_type type_;
 
 public:
-	Assign(Lex_t *lhs, Lex_t *rhs, Assign_type type) : Statement(Keywords_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
+	Assign(Lex_t *lhs, Lex_t *rhs, Assign_type type) :
+	Statement(Statements_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
 	virtual ~Assign() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
@@ -48,7 +49,8 @@ class If final : public Statement {
 	Lex_t *lhs_, *rhs_;
 
 public:
-	If(Lex_t *lhs, Lex_t *rhs) : Statement(Keywords_t::IF), lhs_(lhs), rhs_(rhs){};
+	If(Lex_t *lhs, Lex_t *rhs) :
+	Statement(Statements_t::IF), lhs_(lhs), rhs_(rhs){};
 	virtual ~If() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
@@ -65,7 +67,8 @@ class While final : public Statement {
 	Lex_t *lhs_, *rhs_;
 
 public:
-	While(Lex_t *lhs, Lex_t *rhs) : Statement(Keywords_t::WHILE), lhs_(lhs), rhs_(rhs){};
+	While(Lex_t *lhs, Lex_t *rhs) :
+	Statement(Statements_t::WHILE), lhs_(lhs), rhs_(rhs){};
 	virtual ~While() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
@@ -82,7 +85,8 @@ class Print final : public Statement {
 	Lex_t *lhs_;
 
 public:
-	Print(Lex_t *lhs) : Statement(Keywords_t::PRINT), lhs_(lhs) {};
+	Print(Lex_t *lhs) :
+	Statement(Statements_t::PRINT), lhs_(lhs) {};
 	virtual ~Print() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
@@ -98,7 +102,8 @@ class Inc_Dec final : public Statement {
 	Lex_t *lhs_;
 
 public:
-	Inc_Dec(Lex_t *lhs, Keywords_t type) : Statement(type), lhs_(lhs) {};
+	Inc_Dec(Lex_t *lhs, Statements_t type) :
+	Statement(type), lhs_(lhs) {};
 	virtual ~Inc_Dec() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
@@ -111,7 +116,7 @@ public:
 
 
 std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array);
-Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Keywords_t type);
+Statement *parse_if_while(std::vector<Lex_t *> &lex_array, Statements_t type);
 Statement *parse_assign(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_unop(std::vector<Lex_t *> &lex_array);
@@ -119,50 +124,6 @@ int is_unop_stmt(Lex_t *node);
 int is_semicol(Lex_t *node);
 int is_scope(Lex_t *node);
 
-
-
-Statement *parse_assign(std::vector<Lex_t *> &lex_array)
-{
-	Lex_t *R;
-	Lex_t *L = lex_array[token_counter(USE_CURRENT)];
-
-	token_counter(INCREMENT);
-
-	std::string name_lhs = vars[L->get_data()];
-
-	if (!(VARS.contains(name_lhs)))
-	{
-	 	VARS[name_lhs] = 0;
-	}
-
-	L = new Variable(L->get_data());
-
-	if(!is_assign(lex_array[token_counter(USE_CURRENT)]))
-	{
-		throw std::logic_error("Invalid input: bad assignment");
-	}
-
-	token_counter(INCREMENT);
-
-	Assign_type type;
-
-	if (is_scan(lex_array[token_counter(USE_CURRENT)]))
-	{
-		type = Assign_type::INPUT;
-
-		R = new Lex_t(Lex_kind_t::KEYWD, Keywords_t::SCAN);
-
-		token_counter(INCREMENT);
-	}
-	else
-	{
-		type = Assign_type::ARITHMETIC;
-
-		R = parse_arithmetic(lex_array);
-	}
-
-	return new Assign(L, R, type);
-}
 
 
 Statement *parse_if(std::vector<Lex_t *> &lex_array)
@@ -178,7 +139,7 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::LSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope");
+		throw std::logic_error("Invalid input: bad scope in \"if\"");
 	}
 
 	token_counter(INCREMENT);
@@ -211,7 +172,7 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::LSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope");
+		throw std::logic_error("Invalid input: bad scope in \"while\"");
 	}
 
 	token_counter(INCREMENT);
@@ -220,7 +181,7 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope in \"if\"");
+		throw std::logic_error("Invalid input: bad scope in \"while\"");
 	}
 
 	token_counter(INCREMENT);
@@ -239,36 +200,12 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 
 	if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
 	{
-		throw std::logic_error("Invalid input: bad semicols");
+		throw std::logic_error("Invalid input: bad semicols in \"print\"");
 	}
 
 	token_counter(INCREMENT);
 
 	return new Print(L);
-}
-
-
-Statement *parse_unop(std::vector<Lex_t *> &lex_array)
-{
-	Lex_t *L = lex_array[token_counter(USE_CURRENT)];
-
-	token_counter(INCREMENT);
-
-	std::string name_lhs = vars[L->get_data()];
-
-	if (!(VARS.contains(name_lhs)))
-	{
-	 	throw std::runtime_error("Uninitialized variable witn unop");
-	}
-
-	L = new Variable(L->get_data());
-	
-	int is_un = is_unop_stmt(lex_array[token_counter(USE_CURRENT)]);
-	
-	token_counter(INCREMENT);
-
-	return new Inc_Dec(L, static_cast<Keywords_t>(is_un));
-
 }
 
 
@@ -280,47 +217,71 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 
 	while (token_counter(GET_CURRENT) < size)
 	{		
-		if (lex_array[token_counter(USE_CURRENT)]->get_kind() == Lex_kind_t::VAR)
+		switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 		{
-			if(is_unop(lex_array[token_counter(USE_NEXT) + 1]) >= 0) 
+			case Lex_kind_t::BRACE:
+			case Lex_kind_t::VAR:
 			{
-				stmt = parse_unop(lex_array);
-			}
-			else
-			{
-				stmt = parse_assign(lex_array);
-			}
-			
-			if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
-			{
-				throw std::logic_error("Invalid input: bad semicols");
-			}
-			token_counter(INCREMENT);
-		}
-		else if (lex_array[token_counter(USE_CURRENT)]->get_kind() == Lex_kind_t::KEYWD)
-		{
-			switch (lex_array[token_counter(USE_CURRENT)]->get_data())
-			{
-			case Keywords_t::IF:
-				stmt = parse_if(lex_array);
+				Lex_t *Stmt = parse_arithmetic(lex_array);
+
+				switch (Stmt->get_kind())
+				{
+					case Lex_kind_t::UNOP:
+					{
+						stmt = new Inc_Dec(static_cast<UnOp*>(Stmt)->get_var(),
+						static_cast<Statements_t>(Stmt->get_data()));
+						break;
+					}
+					case Lex_kind_t::STMT:
+					{
+						if (Stmt->get_data() != Statements_t::ASSIGN)
+						{
+							throw std::logic_error("Invalid input");
+						}
+						stmt = new Assign(static_cast<Assign_node*>(Stmt)->get_lhs(),
+						static_cast<Assign_node*>(Stmt)->get_rhs(),
+						static_cast<Assign_node*>(Stmt)->get_type());
+						break;
+					}
+					default:
+					{
+						throw std::logic_error("Arithmetic expression is not a statement");
+					}
+				}
+				
+				if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
+				{
+					throw std::logic_error("Invalid input: bad semicols");
+				}
+				token_counter(INCREMENT);
 				break;
-			case Keywords_t::WHILE:
-				stmt = parse_while(lex_array);
-				break;
-			case Keywords_t::PRINT:
-				stmt = parse_print(lex_array);
+			}
+			case Lex_kind_t::STMT:
+			{
+				switch (lex_array[token_counter(USE_CURRENT)]->get_data())
+				{
+				case Statements_t::IF:
+					stmt = parse_if(lex_array);
+					break;
+				case Statements_t::WHILE:
+					stmt = parse_while(lex_array);
+					break;
+				case Statements_t::PRINT:
+					stmt = parse_print(lex_array);
+					break;
+				}
 				break;
 			}
-		}
-		else
-		{
-			if(is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::RSCOPE)
+			default:
 			{
-				return prog_elems;
-			}
-			else
-			{
-				throw std::logic_error("Invalid input: bad program building");
+				if(is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::RSCOPE)
+				{
+					return prog_elems;
+				}
+				else
+				{
+					throw std::logic_error("Invalid input: bad program building");
+				}
 			}
 		}
 
@@ -352,7 +313,7 @@ std::string Print::name() const
 
 std::string Inc_Dec::name() const
 {
-	if (this->get_kind() == Keywords_t::INCREM)
+	if (this->get_kind() == Statements_t::INC)
 	{
 		return "++";
 	}
@@ -366,11 +327,11 @@ int is_unop_stmt(Lex_t *node)
 	{
 		return 0;
 	}
-	if (node->get_data() == UnOp_t::INC)
+	if (node->get_data() == Statements_t::INC)
 	{
-		return Keywords_t::INCREM;
+		return Statements_t::INC;
 	}
-	return Keywords_t::DECREM;
+	return Statements_t::DEC;
 }
 
 
@@ -386,11 +347,11 @@ int is_scope(Lex_t *node)
 
 int is_semicol(Lex_t *node)
 {
-	if (node->get_kind() != Lex_kind_t::KEYWD)
+	if (node->get_kind() != Lex_kind_t::SYMBOL)
 	{
 		return 0;
 	}
-	if (node->get_data() != Keywords_t::SEMICOL)
+	if (node->get_data() != Symbols_t::SEMICOL)
 	{
 		return 0;
 	}
