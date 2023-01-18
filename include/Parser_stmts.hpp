@@ -26,18 +26,17 @@ public:
 
 class Assign final : public Statement {
 
-	Lex_t *lhs_, *rhs_;
-	Assign_type type_;
+	Lex_t *lhs_;
+	//Assign_type type_;
 
 public:
-	Assign(Lex_t *lhs, Lex_t *rhs, Assign_type type) :
-	Statement(Statements_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
+	Assign(Lex_t *lhs) :
+	Statement(Statements_t::ASSIGN), lhs_(lhs) {};
 	virtual ~Assign() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
-  	Lex_t *get_rhs() const { return rhs_; };
-  	Assign_type get_type() const { return type_; };
+  	Assign_type get_type() const { return static_cast<Assign_node*>(lhs_)->get_type(); };
 };
 
 
@@ -238,9 +237,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 						{
 							throw std::logic_error("Invalid input");
 						}
-						stmt = new Assign(static_cast<Assign_node*>(Stmt)->get_lhs(),
-						static_cast<Assign_node*>(Stmt)->get_rhs(),
-						static_cast<Assign_node*>(Stmt)->get_type());
+						stmt = new Assign(Stmt);
 						break;
 					}
 					default:

@@ -20,32 +20,6 @@ void run_program(std::vector<Statement*> prog)
 void Assign::run_stmt()
 {
 	lhs_->calculate();
-	Lex_t *var = lhs_, *tmpvar;
-
-	int flag = 1;
-	while (flag)
-	{
-		if ((tmpvar = dynamic_cast<Variable*>(var)))
-		{
-			flag = 0;
-		}
-		else
-		{
-			var = static_cast<UnOp*>(lhs_)->get_var();
-		}
-	}
-
-	std::string var_name = vars[lhs_->get_data()];
-
-	if (type_ == Assign_type::INPUT)
-	{
-		std::cin >> std::ws;
-		std::cin >> VARS[var_name];
-	}
-	else
-	{
-		VARS[var_name] = rhs_->calculate();
-	}
 }
 
 
@@ -95,7 +69,7 @@ void Inc_Dec::run_stmt()
 		}
 		else
 		{
-			var = static_cast<UnOp*>(lhs_)->get_var();
+			var = var->get_var();
 		}
 	}
 	

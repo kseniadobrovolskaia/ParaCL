@@ -8,7 +8,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
 int is_binop(Lex_t *curr_node);
 int is_if_while(Statement *stmt);
-int is_assign(Statement *stmt);
+//int is_assign(Statement *stmt);
 
 
 
@@ -42,12 +42,12 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 		file_tree << "\n           node_" << stmt_type << "  -> node_" << stmt_type + 1 << ";\n";
 		prev_num_node = num_node;
 
-		if (is_assign(prog[prog_elem]))
+		/*if (is_assign(prog[prog_elem]))
 		{
 			create_statement_nodes(static_cast<Assign*>(prog[prog_elem])->get_rhs(), file_tree, &num_node);
 			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 		}
-		else if (is_if_while(prog[prog_elem]))
+		else */if (is_if_while(prog[prog_elem]))
 		{
 			file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 			num_node++;
@@ -98,7 +98,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 	if (is_unop(curr_node) >= 0)
 	{
 		(*num_node)++;
-		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_var(), file_tree, num_node);
+		create_statement_nodes(curr_node->get_var(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
 	}
@@ -146,10 +146,10 @@ int is_if_while(Statement *stmt)
 }
 
 
-int is_assign(Statement *stmt)
+/*int is_assign(Statement *stmt)
 {
 	return stmt->get_kind() == Statements_t::ASSIGN;
-}
+}*/
 
 
 #endif

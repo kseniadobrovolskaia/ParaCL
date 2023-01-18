@@ -186,45 +186,22 @@ void check_brases(std::vector<Lex_t *> &lex_array)
 
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *root = parse_bool(lex_array);
+	Lex_t *root = parse_asgn(lex_array);
 
 	return root;
 }
 
 
-Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
-{
-	Lex_t *L = parse_asgn(lex_array);
-	Lex_t *R;
-	int is_comp;
-	
-	while (1)
-	{
-		is_comp = is_compop(lex_array[token_counter(GET_CURRENT)]);
-		if (is_comp < 0)
-		{
-			return L;
-		}
-		else
-		{
-			token_counter(INCREMENT);
-			R = parse_asgn(lex_array);	
-			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
-		}
-	}
-}
-
-
 Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *L = parse_E(lex_array);
+	Lex_t *L = parse_bool(lex_array);
 	Lex_t *R;
 	int is_as;
 	Assign_type type;
 	
 	while (1)
 	{
-		is_as = is_assign(lex_array[token_counter(GET_CURRENT)]);
+		is_as = is_assign(lex_array[token_counter(USE_CURRENT)]);
 		if (!is_as)
 		{
 			return L;
@@ -234,6 +211,7 @@ Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 			token_counter(INCREMENT);
 			if (is_scan(lex_array[token_counter(USE_CURRENT)]))
 			{
+				std::cout << "устанавливаем тип ноды на input" << std::endl;
 				type = INPUT;
 				R = lex_array[token_counter(USE_CURRENT)];
 				token_counter(INCREMENT);
@@ -241,14 +219,37 @@ Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 			else
 			{
 				type = ARITHMETIC;
-				R = parse_E(lex_array);	
+				R = parse_bool(lex_array);	
 			}
 			
 			L = new Assign_node(L, R, type);
 		}
 	}
 }
+
+
+Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
+{
+	Lex_t *L = parse_E(lex_array);
+	Lex_t *R;
+	int is_comp;
 	
+	while (1)
+	{
+		is_comp = is_compop(lex_array[token_counter(USE_CURRENT)]);
+		if (is_comp < 0)
+		{
+			return L;
+		}
+		else
+		{
+			token_counter(INCREMENT);
+			R = parse_E(lex_array);	
+			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
+		}
+	}
+}
+
 
 Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 {
@@ -258,7 +259,7 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 	
 	while (1)
 	{
-		is_p_m = is_plus_minus(lex_array[token_counter(GET_CURRENT)]);
+		is_p_m = is_plus_minus(lex_array[token_counter(USE_CURRENT)]);
 		if (is_p_m < 0)
 		{
 			return L;
@@ -281,7 +282,7 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 
 	while (1)
 	{
-		is_m_d = is_mul_div(lex_array[token_counter(GET_CURRENT)]);
+		is_m_d = is_mul_div(lex_array[token_counter(USE_CURRENT)]);
 		if (is_m_d < 0)
 		{
 			return L;
@@ -327,7 +328,7 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 				throw std::logic_error("Unary operator can use only with variables(or assignment or unary operator)");
 			}
 
-			Lex_t *var = T, *tmpvar;
+			/*Lex_t *var = T, *tmpvar;
 
 			int flag = 1;
 			while (flag)
@@ -347,14 +348,14 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 			if (!VARS.contains(var_name))
 			{
 				throw std::logic_error("Uninitialized variable");
-			}
+			}*/
 		}
 
 		return T;
 	}
 
 	int is_unary = is_unop(lex_array[token_counter(USE_NEXT) + 1]);
-	int is_assignment;
+	/*int is_assignment;
 	if (is_unary < 0)
 	{
 		is_assignment = is_assign(lex_array[token_counter(USE_NEXT) + 1]);
@@ -362,16 +363,16 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 	else
 	{
 		is_assignment = is_assign(lex_array[token_counter(USE_NEXT_NEXT) + 2]);
-	}
+	}*/
 	
 	switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 	{
 		case Lex_kind_t::VALUE:
 		{
-			if (is_assignment)
+			/*if (is_assignment)
 			{
 				throw std::logic_error("Assignment can use only with variables");
-			}
+			}*/
 
 			T = new Value(lex_array[token_counter(USE_CURRENT)]->get_data());
 			break;
@@ -383,14 +384,15 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 
 			if (is_unary >= 0)
 			{
-				if (!VARS.contains(vars[num_var]))
+
+				/*if (!VARS.contains(vars[num_var]))
 				{
 					throw std::logic_error("Uninitialized variable");
-				}
+				}*/
 				T = new UnOp(T, static_cast<Statements_t>(is_unary));
 				token_counter(INCREMENT);
 			}
-			if (is_assignment)
+			/*if (is_assignment)
 			{
 				VARS[vars[num_var]] = 0;
 				token_counter(INCREMENT);
@@ -404,8 +406,12 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 					T = new Assign_node(T, parse_arithmetic(lex_array), Assign_type::ARITHMETIC);
 					return T;
 				}
-			}
+			}*/
 			break;
+		}
+		case Lex_kind_t::UNOP:
+		{
+			std::cout << "UNOP" << std::endl;
 		}
 		default:
 		{
@@ -423,16 +429,30 @@ int Variable::calculate()
 {
 	std::string var_name = vars[this->get_data()];
 
+	if (!VARS.contains(var_name))
+	{
+		std::cout << "variable calculate: " << var_name << " uninit" << std::endl;
+		throw std::logic_error("Uninitialized variable");
+	}
+
 	return VARS[var_name];
 }
 
 
 int Assign_node::calculate()
 {
-	lhs_->calculate();
 	int flag = 1;
 	Lex_t *var = lhs_, *tmpvar;
 	std::string var_name;
+
+	if (dynamic_cast<Variable*>(var))
+	{
+		var_name = vars[var->get_data()];
+		if (!VARS.contains(var_name))
+		{
+			VARS[var_name] = 0;
+		}
+	}
 
 	while (flag)
 	{
@@ -449,13 +469,18 @@ int Assign_node::calculate()
 
 	if (type_ == Assign_type::INPUT)
 	{
+		std::cout << "тип ноды на input значит должны вводить число" << std::endl;
+				
 		std::cin >> std::ws;
 		std::cin >> VARS[var_name];
+		std::cout << "тип ноды на input значит должны вводить число" << std::endl;
+		std::cout << "ввели  число" << VARS[var_name] << " now " << var_name << " is " << VARS[var_name] << std::endl;
+		
+		return VARS[var_name];
 	}
-	else
-	{
-		VARS[var_name] = rhs_->calculate();
-	}
+
+	lhs_->calculate();
+	VARS[var_name] = rhs_->calculate();
 
 	return VARS[var_name];
 }
@@ -465,6 +490,9 @@ int BinOp::calculate()
 {
 	int left = lhs_->calculate();
 	int right = rhs_->calculate();
+
+	std::cout << "это умножение " << left << " на " << right << std::endl;
+		
 
 	switch (this->get_data())
 	{
