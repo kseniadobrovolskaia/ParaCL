@@ -9,6 +9,7 @@ void build_sintax_graph(std::vector<Statement*> prog);
 void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node);
 void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
 
+int is_if_long_form(Statement *stmt);
 int is_if_while(Statement *stmt);
 int is_assign(Statement *stmt);
 int is_unop(Statement *stmt);
@@ -86,6 +87,18 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 				num_node++;
 				create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_rhs())->get_lhs(), file_tree);
 				file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+				if (is_if_long_form(prog[prog_elem]))
+				{
+					prev_num_node = num_node;
+					file_tree << "\n           node_" << num_node << "[label = \"else\", style=\"filled\", shape=\"record\", fillcolor = \"pink\"];";
+					num_node++;
+					file_tree << "\n           node_" << num_node - 1 << "  -> node_" << num_node << ";\n";
+			
+					file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
+					num_node++;
+					create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_else())->get_lhs(), file_tree);
+					file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+				}
 			}
 		}
 	}
@@ -185,5 +198,18 @@ int is_unop(Statement *stmt)
 	return 0;
 }
 
+
+int is_if_long_form(Statement *stmt)
+{
+	if (stmt->get_kind() != Statements_t::IF)
+	{
+		return 0;
+	}
+	if (static_cast<If*>(stmt)->get_else())
+	{
+		return 1;
+	}
+	return 0;
+}
 
 #endif

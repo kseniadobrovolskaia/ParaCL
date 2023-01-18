@@ -47,15 +47,17 @@ public:
 class If final : public Statement {
 
 	Lex_t *lhs_, *rhs_;
+	Lex_t *else_ = nullptr;
 
 public:
-	If(Lex_t *lhs, Lex_t *rhs) :
-	Statement(Statements_t::IF), lhs_(lhs), rhs_(rhs){};
+	If(Lex_t *lhs, Lex_t *rhs, Lex_t * Else) : 
+	Statement(Statements_t::IF), lhs_(lhs), rhs_(rhs), else_(Else){};
 	virtual ~If() = default;
 	virtual std::string name() const override;
 	virtual void run_stmt() override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
+  	Lex_t *get_else() const { return else_; };
 };
 
 
@@ -129,6 +131,13 @@ void If::run_stmt()
 	if (condition)
 	{
 		run_program(static_cast<Scope*>(rhs_)->get_lhs());
+	}
+	else
+	{
+		if (else_)
+		{
+			run_program(static_cast<Scope*>(else_)->get_lhs());
+		}
 	}
 }
 

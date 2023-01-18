@@ -13,14 +13,14 @@ int main(int argc, char const *argv[])
 	{
 		std::vector<Lex_t*> lexems = lex_string(vars);
 		program_size = lexems.size();
-		
+
 		std::vector<Statement*> prog = parse_program(lexems);
 		build_sintax_graph(prog);
 
 		run_program(prog);
 
-		system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
-				"shotwell sintax_tree.png");
+		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
+		//		"shotwell sintax_tree.png");
 	
 	}
 	catch(std::exception & ex)

@@ -121,8 +121,31 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 	token_counter(INCREMENT);
 
 	Lex_t *R = new Scope(scope);
+	Lex_t *Else = nullptr;
 
-	return new If(L, R);
+	if (token_counter(GET_CURRENT) < program_size && is_else(lex_array[token_counter(USE_CURRENT)]))
+	{
+		token_counter(INCREMENT);
+
+		if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::LSCOPE)
+		{
+			throw std::logic_error("Invalid input: bad scope in \"else\"");
+		}
+
+		token_counter(INCREMENT);
+
+		std::vector<Statement*> scope = parse_program(lex_array);
+
+		if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
+		{
+			throw std::logic_error("Invalid input: bad scope in \"else\"");
+		}
+
+		token_counter(INCREMENT);
+		Else = new Scope(scope);
+	}
+
+	return new If(L, R, Else);
 }
 
 

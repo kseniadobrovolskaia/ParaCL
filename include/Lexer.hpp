@@ -66,7 +66,7 @@ enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
 enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC };
 
-enum Symbols_t { SEMICOL, SCAN };
+enum Symbols_t { SEMICOL, SCAN, ELSE };
 
 
 
@@ -273,6 +273,10 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			{
 				push_stmt(lex_array, IF);
 			}
+			else if (word == "else")
+			{
+				push_symbol(lex_array, ELSE);
+			}
 			else if (word == "while")
 			{
 				push_stmt(lex_array, WHILE);
@@ -350,6 +354,9 @@ std::string Lex_t::name() const
 		std::string type;
 		switch (data_)
 		{
+		case Symbols_t::ELSE:
+			type = "else";
+			break;
 		case Symbols_t::SCAN:
 			type = "?";
 			break;
@@ -445,10 +452,12 @@ std::string Lex_t::short_name() const
 	case Lex_kind_t::SYMBOL:
 		switch (data_)
 		{
+		case Symbols_t::ELSE:
+			return "else";
 		case Symbols_t::SEMICOL:
-		return ";";
+			return ";";
 		case Symbols_t::SCAN:
-		return "?";
+			return "?";
 		}
 	case Lex_kind_t::BINOP:
 		switch (data_)

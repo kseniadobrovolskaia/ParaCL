@@ -30,6 +30,7 @@ int is_brace(Lex_t *node);
 int is_binop(Lex_t *node);
 int is_scope(Lex_t *node);
 int is_scan(Lex_t *node);
+int is_else(Lex_t *node);
 int is_unop(Lex_t *node);
 
 
@@ -376,6 +377,18 @@ int is_semicol(Lex_t *node)
 }
 
 
+int is_else(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::SYMBOL)
+	{
+		return 0;
+	}
+	if (node->get_data() != Symbols_t::ELSE)
+	{
+		return 0;
+	}
+	return 1;
+}
 
 
 #endif
