@@ -4,12 +4,41 @@
 #include "Parser_stmts.hpp"
 
 
+void build_sintax_graph(std::vector<Statement*> prog);
+
 void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node);
 void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
-int is_binop(Lex_t *curr_node);
-int is_if_while(Statement *stmt);
-//int is_assign(Statement *stmt);
 
+int is_if_while(Statement *stmt);
+int is_assign(Statement *stmt);
+int is_unop(Statement *stmt);
+
+
+
+//-----------------------------------------------------BUILD_SINTAX_GRAPH------------------------------------------------------------------------------------------
+
+
+void build_sintax_graph(std::vector<Statement*> prog)
+{
+	std::ofstream file_tree;
+
+	file_tree.open("sintax_tree.txt");
+
+	if (!(file_tree.is_open()))
+	{
+	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
+	  exit(EXIT_FAILURE);
+	}
+
+	file_tree << "digraph G{\n           node_0[label = \"Program\", style=\"filled\", shape=\"record\", fillcolor = \"purple\"];";
+	create_scope_nodes(prog, file_tree);
+
+	file_tree << "}";
+	file_tree.close();	
+}
+
+
+//-------------------------------------------------------NODE_CREATORS------------------------------------------------------------------------------------------
 
 
 void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
@@ -32,27 +61,32 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 		
 		num_node++;
 
-		stmt_type = num_node;
-		file_tree << "\n           node_" << num_node << "[label = \"" << prog[prog_elem]->name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"pink\"];";
-		file_tree << "\n           node_" << stmt << "  -> node_" << stmt_type << ";\n";
-		
-		num_node++;
-		
-		create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
-		file_tree << "\n           node_" << stmt_type << "  -> node_" << stmt_type + 1 << ";\n";
-		prev_num_node = num_node;
-
-		/*if (is_assign(prog[prog_elem]))
+		if (is_unop(prog[prog_elem]) || is_assign(prog[prog_elem]))
 		{
-			create_statement_nodes(static_cast<Assign*>(prog[prog_elem])->get_rhs(), file_tree, &num_node);
-			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+			create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
+			file_tree << "\n           node_" << stmt << "  -> node_" << stmt + 1 << ";\n";
 		}
-		else */if (is_if_while(prog[prog_elem]))
+		else
 		{
-			file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
+			stmt_type = num_node;
+
+			file_tree << "\n           node_" << num_node << "[label = \"" << prog[prog_elem]->name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"pink\"];";
+			file_tree << "\n           node_" << stmt << "  -> node_" << stmt_type << ";\n";
+			
 			num_node++;
-			create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_rhs())->get_lhs(), file_tree);
-			file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+
+			create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
+			file_tree << "\n           node_" << stmt_type << "  -> node_" << stmt_type + 1 << ";\n";
+
+			prev_num_node = num_node;
+
+			if (is_if_while(prog[prog_elem]))
+			{
+				file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
+				num_node++;
+				create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_rhs())->get_lhs(), file_tree);
+				file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
+			}
 		}
 	}
 }
@@ -118,18 +152,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 }
 
 
-int is_binop(Lex_t *curr_node)
-{
-	if (curr_node->get_kind() == Lex_kind_t::BINOP)
-	{
-		return 1;
-	}
-	if (curr_node->get_kind() == Lex_kind_t::COMPOP)
-	{
-		return 1;
-	}
-	return 0;
-}
+//---------------------------------------------------------ISERS------------------------------------------------------------------------------------------
 
 
 int is_if_while(Statement *stmt)
@@ -146,10 +169,21 @@ int is_if_while(Statement *stmt)
 }
 
 
-/*int is_assign(Statement *stmt)
+int is_assign(Statement *stmt)
 {
 	return stmt->get_kind() == Statements_t::ASSIGN;
-}*/
+}
+
+
+int is_unop(Statement *stmt)
+{
+	if ((stmt->get_kind() == Statements_t::INC) ||
+	(stmt->get_kind() == Statements_t::DEC))
+	{
+		return 1;
+	}
+	return 0;
+}
 
 
 #endif

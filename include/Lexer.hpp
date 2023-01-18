@@ -1,19 +1,25 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <vector>
+
+#include <algorithm>
+#include <typeinfo>
 #include <iostream>
-#include <string>
 #include <cstdlib>
 #include <ctype.h>
-#include <algorithm>
 #include <fstream>
-#include <typeinfo>
+#include <string>
+#include <vector>
+
 
 std::unordered_map<std::string, int>VARS;
 std::vector<std::string> vars;
 
-typedef enum Lex_kind_t {
+
+//--------------------------------------------LEX_KIND--------------------------------------------------------
+
+
+enum Lex_kind_t {
 	BRACE,
 	VAR,
 	STMT,
@@ -24,7 +30,10 @@ typedef enum Lex_kind_t {
 	COMPOP,
 	SYMBOL,
 
-} Lex_kind_t;
+};
+
+
+//--------------------------------------------LEX_CLASS-------------------------------------------------------
 
 
 class Lex_t
@@ -40,8 +49,11 @@ public:
 	Lex_kind_t get_kind() const { return kind_; };
 	int get_data() const { return data_; };
 	virtual Lex_t* get_var() const { return nullptr; };
-	virtual int calculate();
+	virtual int calculate() { return data_; };
 };
+
+
+//--------------------------------------------LEX_DATA--------------------------------------------------------
 
 
 enum BinOp_t { ADD, SUB, MULT, DIV };
@@ -55,6 +67,11 @@ enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC };
 
 enum Symbols_t { SEMICOL, SCAN };
+
+
+
+//-----------------------------------------PUSH_IN_LEX_ARRAY---------------------------------------------------
+
 
 
 void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
@@ -101,6 +118,9 @@ void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::SYMBOL, symbol));
 }
+
+
+//---------------------------------------------LEX_STRING---------------------------------------------------
 
 
 std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
@@ -290,10 +310,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 }
 
 
-int Lex_t::calculate()
-{
-	return data_;
-}
+//------------------------------------------------NAMES---------------------------------------------------
 
 
 std::string Lex_t::name() const
@@ -307,7 +324,7 @@ std::string Lex_t::name() const
 	case Lex_kind_t::SCOPE:
 		return static_cast<std::string>("SCOPE:") + ((data_ == Scope_t::LSCOPE) ? "LSCOPE" : "RSCOPE");
 	case Lex_kind_t::VALUE:
-		return static_cast<std::string>("VALUE:") + static_cast<std::string>(std::to_string(data_));
+		return static_cast<std::string>("VALUE:") + std::to_string(data_);
 	case Lex_kind_t::STMT:
 	{
 		std::string type;
@@ -395,6 +412,10 @@ std::string Lex_t::name() const
 	return nullptr;
 }
 
+
+//---------------------------------------SHORT_NAMES---------------------------------------------------
+
+
 std::string Lex_t::short_name() const
 {
 	switch (kind_)
@@ -461,8 +482,6 @@ std::string Lex_t::short_name() const
 	}
 	return nullptr;
 }
-
-
 
 
 
