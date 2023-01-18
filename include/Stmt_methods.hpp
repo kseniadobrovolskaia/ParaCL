@@ -18,7 +18,7 @@ public:
 	virtual ~Statement() = default;
 	Statements_t get_kind() const { return kind_; };
 	virtual std::string name() const = 0;
-	virtual void run_stmt() = 0;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) = 0;
 	virtual Lex_t *get_lhs() const = 0;
 };
 
@@ -35,7 +35,7 @@ public:
 	Statement(Statements_t::ASSIGN), lhs_(lhs) {};
 	virtual ~Assign() = default;
 	virtual std::string name() const override;
-	virtual void run_stmt() override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Assign_type get_type() const { return static_cast<Assign_node*>(lhs_)->get_type(); };
 };
@@ -54,7 +54,7 @@ public:
 	Statement(Statements_t::IF), lhs_(lhs), rhs_(rhs), else_(Else){};
 	virtual ~If() = default;
 	virtual std::string name() const override;
-	virtual void run_stmt() override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	Lex_t *get_else() const { return else_; };
@@ -73,7 +73,7 @@ public:
 	Statement(Statements_t::WHILE), lhs_(lhs), rhs_(rhs){};
 	virtual ~While() = default;
 	virtual std::string name() const override;
-	virtual void run_stmt() override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
 };
@@ -91,7 +91,7 @@ public:
 	Statement(Statements_t::PRINT), lhs_(lhs) {};
 	virtual ~Print() = default;
 	virtual std::string name() const override;
-	virtual void run_stmt() override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
 };
 
@@ -108,63 +108,63 @@ public:
 	Statement(static_cast<Statements_t>(lhs->get_data())), lhs_(lhs) {};
 	virtual ~Inc_Dec() = default;
 	virtual std::string name() const override;
-	virtual void run_stmt() override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 	virtual Lex_t *get_lhs() const override { return lhs_; };
 };
 
 
 //--------------------------------------------RUN_STATEMENTS------------------------------------------------
 
-void run_program(std::vector<Statement*> prog);
+void run_program(std::vector<Statement*> prog, std::istream & istr, std::ostream & ostr);
 
 
-void Assign::run_stmt()
+void Assign::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	lhs_->calculate();
+	lhs_->calculate(istr);
 }
 
 
-void If::run_stmt()
+void If::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	int condition = lhs_->calculate();
+	int condition = lhs_->calculate(istr);
 
 	if (condition)
 	{
-		run_program(static_cast<Scope*>(rhs_)->get_lhs());
+		run_program(static_cast<Scope*>(rhs_)->get_lhs(), istr, ostr);
 	}
 	else
 	{
 		if (else_)
 		{
-			run_program(static_cast<Scope*>(else_)->get_lhs());
+			run_program(static_cast<Scope*>(else_)->get_lhs(), istr, ostr);
 		}
 	}
 }
 
 
-void While::run_stmt()
+void While::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	int condition = lhs_->calculate();
+	int condition = lhs_->calculate(istr);
 
 	while (condition)
 	{
-		run_program(static_cast<Scope*>(rhs_)->get_lhs());
-		condition = lhs_->calculate();
+		run_program(static_cast<Scope*>(rhs_)->get_lhs(), istr, ostr);
+		condition = lhs_->calculate(istr);
 	}
 }
 
 
-void Print::run_stmt()
+void Print::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	int val = lhs_->calculate();
-
-	std::cout << val << std::endl;
+	int val = lhs_->calculate(istr);
+	
+	ostr << val << std::endl;
 }
 
 
-void Inc_Dec::run_stmt()
+void Inc_Dec::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	lhs_->calculate();
+	lhs_->calculate(istr);
 }
 
 

@@ -89,6 +89,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 
 		prog_elems.push_back(stmt);
 	}
+
 	return prog_elems;
 }
 

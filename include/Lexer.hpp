@@ -49,7 +49,7 @@ public:
 	Lex_kind_t get_kind() const { return kind_; };
 	int get_data() const { return data_; };
 	virtual Lex_t* get_var() const { return nullptr; };
-	virtual int calculate() { return data_; };
+	virtual int calculate(std::istream & istr) { return data_; };
 };
 
 
@@ -123,15 +123,15 @@ void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol)
 //---------------------------------------------LEX_STRING---------------------------------------------------
 
 
-std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
+std::vector<Lex_t*> lex_string(std::vector<std::string> &vars, std::istream & istr)
 {
 	static int num_var = 0;
 	char elem, prev = '\0';
 	std::string word;
 	std::vector <Lex_t*> lex_array;
 
-	std::cin >> std::noskipws;
-	std::cin >> elem;
+	istr >> std::noskipws;
+	istr >> elem;
 	
 	while (elem != '.')
 	{
@@ -166,7 +166,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			push_compop(lex_array, GREATER);
 			break;
 		case '!':
-			std::cin >> elem;
+			istr >> elem;
 			if (elem != '=')
 			{
 				throw std::logic_error("Syntax error");
@@ -207,7 +207,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 				while (elem != '/' || prev != '*')
 				{
 					prev = elem;
-					std::cin >> elem;
+					istr >> elem;
 				}
 			}
 			else
@@ -221,7 +221,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 				lex_array.pop_back();
 				while (elem != '\n')
 				{
-					std::cin >> elem;
+					istr >> elem;
 				}
 			}
 			else
@@ -252,7 +252,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			{
 				word += elem;
 				prev = elem;
-				std::cin >> elem;
+				istr >> elem;
 			}
 
 			push_value(lex_array, std::stoi(word));
@@ -266,7 +266,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 			{
 				word += elem;
 				prev = elem;
-				std::cin >> elem;
+				istr >> elem;
 			}
 
 			if (word == "if")
@@ -307,7 +307,7 @@ std::vector<Lex_t*> lex_string(std::vector<std::string> &vars)
 
 	    prev = elem;
 	    
-	    std::cin >> elem;
+	    istr >> elem;
 	}
 
 	return lex_array;

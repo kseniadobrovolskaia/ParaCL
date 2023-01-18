@@ -22,7 +22,7 @@ class Variable : public Lex_t {
 	
 public:
  	Variable(int num_var) : Lex_t(Lex_kind_t::VAR, num_var){};
- 	virtual int calculate() override;
+ 	virtual int calculate(std::istream & istr) override;
 };
 
 
@@ -42,7 +42,7 @@ public:
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual Lex_t *get_var() const override { return lhs_; };
   	Assign_type get_type() const { return type_; };
-  	virtual int calculate() override;
+  	virtual int calculate(std::istream & istr) override;
 };
 
 
@@ -72,7 +72,7 @@ public:
   	BinOp(Lex_t *lhs, Lex_t *rhs, BinOp_t opcode) : Lex_t(Lex_kind_t::BINOP, opcode), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
-  	virtual int calculate() override;
+  	virtual int calculate(std::istream & istr) override;
 };
 
 
@@ -88,7 +88,7 @@ public:
   	CompOp(Lex_t *lhs, Lex_t *rhs, CompOp_t opcode) : Lex_t(Lex_kind_t::COMPOP, opcode), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
-  	virtual int calculate() override;
+  	virtual int calculate(std::istream & istr) override;
 };
 
 
@@ -103,14 +103,14 @@ public:
 	UnOp() = default;
   	UnOp(Lex_t *var, Statements_t opcode) : Lex_t(Lex_kind_t::UNOP, opcode), var_(var){};
   	virtual Lex_t *get_var() const override { return var_; };
-  	virtual int calculate() override;
+  	virtual int calculate(std::istream & istr) override;
 };
 
 
 //---------------------------------------------CALCULATE----------------------------------------------------
 
 
-int Variable::calculate()
+int Variable::calculate(std::istream & istr)
 {
 	std::string var_name = vars[this->get_data()];
 
@@ -123,7 +123,7 @@ int Variable::calculate()
 }
 
 
-int Assign_node::calculate()
+int Assign_node::calculate(std::istream & istr)
 {
 	Lex_t *var = lhs_;
 	std::string var_name;
@@ -145,26 +145,26 @@ int Assign_node::calculate()
 		var_name = vars[var->get_data()];
 	}
 
-	lhs_->calculate();
+	lhs_->calculate(istr);
 
 	if (type_ == Assign_type::INPUT)
 	{		
-		std::cin >> std::ws;
-		std::cin >> VARS[var_name];
+		istr >> std::ws;
+		istr >> VARS[var_name];
 		
 		return VARS[var_name];
 	}
 
-	VARS[var_name] = rhs_->calculate();
+	VARS[var_name] = rhs_->calculate(istr);
 
 	return VARS[var_name];
 }
 
 
-int BinOp::calculate()
+int BinOp::calculate(std::istream & istr)
 {
-	int left = lhs_->calculate();
-	int right = rhs_->calculate();
+	int left = lhs_->calculate(istr);
+	int right = rhs_->calculate(istr);
 
 	switch (this->get_data())
 	{
@@ -185,9 +185,9 @@ int BinOp::calculate()
 }
 
 
-int UnOp::calculate()
+int UnOp::calculate(std::istream & istr)
 {
-	var_->calculate();
+	var_->calculate(istr);
 	Lex_t *var = var_;
 
 	std::string var_name;
@@ -213,10 +213,10 @@ int UnOp::calculate()
 }
 
 
-int CompOp::calculate()
+int CompOp::calculate(std::istream & istr)
 {
-	int left = lhs_->calculate();
-	int right = rhs_->calculate();
+	int left = lhs_->calculate(istr);
+	int right = rhs_->calculate(istr);
 
 	switch (this->get_data())
 	{
