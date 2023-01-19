@@ -144,7 +144,7 @@ int Assign_node::calculate(std::istream & istr)
 		}
 		var_name = vars[var->get_data()];
 	}
-
+	
 	lhs_->calculate(istr);
 
 	if (type_ == Assign_type::INPUT)

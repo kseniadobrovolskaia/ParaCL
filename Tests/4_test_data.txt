@@ -1,0 +1,14 @@
+//Test 4
+
+
+while ((x=?)!= 0)
+{
+if ((y=?)<0)
+{
+print 0-y;
+}
+else
+{
+print y;
+}
+}.

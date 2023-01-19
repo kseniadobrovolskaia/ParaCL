@@ -1,0 +1,10 @@
+//Input Test 2
+
+
+while(n-- >0)
+{
+tmp = fst;
+snd = (fst=snd) + tmp;
+}
+
+print snd;.

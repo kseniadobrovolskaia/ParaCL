@@ -1,0 +1,13 @@
+//Input Test 1
+
+
+fact = 1;
+
+while (n > 0)
+{
+	fact = fact * n;
+	n--;
+}
+
+print fact;.
+

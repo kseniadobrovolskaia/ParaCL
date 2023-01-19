@@ -11,8 +11,8 @@ export CXX CXXFLAGS
 
 subsystem:
 	cd ParaCL && $(MAKE)
-	#cd Tests && $(MAKE)
+	cd Tests && $(MAKE)
 
 clean:
 	cd ParaCL && $(MAKE) $@
-	#cd Tests && $(MAKE) $@
+	cd Tests && $(MAKE) $@

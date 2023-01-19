@@ -9,7 +9,7 @@
 int program_size;
 
 
-enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT, USE_NEXT_NEXT };
+enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT, RESET };
 
 int token_counter(Move move);
 
@@ -48,6 +48,10 @@ int token_counter(Move move)
 	else if (move == GET_CURRENT)
 	{
 		return curr_lex;
+	}
+	else if (move == RESET)
+	{
+		curr_lex = 0;
 	}
 	else
 	{

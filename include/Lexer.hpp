@@ -123,9 +123,9 @@ void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol)
 //---------------------------------------------LEX_STRING---------------------------------------------------
 
 
-std::vector<Lex_t*> lex_string(std::vector<std::string> &vars, std::istream & istr)
+std::vector<Lex_t*> lex_string(std::istream & istr)
 {
-	static int num_var = 0;
+	int num_var = 0;
 	char elem, prev = '\0';
 	std::string word;
 	std::vector <Lex_t*> lex_array;
