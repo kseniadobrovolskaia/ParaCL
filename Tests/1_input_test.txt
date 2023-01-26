@@ -9,5 +9,5 @@ while (n > 0)
 	n--;
 }
 
-print fact;.
+print fact;
 

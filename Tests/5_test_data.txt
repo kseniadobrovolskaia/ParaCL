@@ -10,4 +10,4 @@ print a--;
 else
 {
 print b++;
-}.
+}

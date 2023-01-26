@@ -6,6 +6,7 @@
 #include <typeinfo>
 #include <iostream>
 #include <cstdlib>
+#include <stdio.h>
 #include <ctype.h>
 #include <fstream>
 #include <string>
@@ -131,9 +132,8 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 	std::vector <Lex_t*> lex_array;
 
 	istr >> std::noskipws;
-	istr >> elem;
 	
-	while (elem != '.')
+	while (istr >> elem)
 	{
 		switch (elem)
 		{
@@ -244,70 +244,76 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 		case '?':
 			push_symbol(lex_array, SCAN);
 			break;
-		}
-
-		if (std::isdigit(elem))
+		default:
 		{
-			while (std::isdigit(elem))
+			if (std::isdigit(elem))
 			{
-				word += elem;
-				prev = elem;
-				istr >> elem;
-			}
-
-			push_value(lex_array, std::stoi(word));
-			word.clear();
-			continue;
-		}
-		
-		if (std::isalpha(elem) || elem == '_')
-		{
-			while (std::isalpha(elem) || std::isdigit(elem) || elem == '_')
-			{
-				word += elem;
-				prev = elem;
-				istr >> elem;
-			}
-
-			if (word == "if")
-			{
-				push_stmt(lex_array, IF);
-			}
-			else if (word == "else")
-			{
-				push_symbol(lex_array, ELSE);
-			}
-			else if (word == "while")
-			{
-				push_stmt(lex_array, WHILE);
-			}
-			else if (word == "print")
-			{
-				push_stmt(lex_array, PRINT);
-			}
-			else
-			{
-				std::vector<std::string>::iterator itr = std::find(vars.begin(), vars.end(), word);
-				if (itr == vars.end())
+				while (std::isdigit(elem))
 				{
-					push_var(lex_array, num_var);
-					vars.push_back(word);
-					num_var++;					
+					word += elem;
+					prev = elem;
+					istr >> elem;
+				}
+
+				istr.putback(elem);
+
+				push_value(lex_array, std::stoi(word));
+				word.clear();
+				continue;
+			}
+			else if (std::isalpha(elem) || elem == '_')
+			{
+				while (std::isalpha(elem) || std::isdigit(elem) || elem == '_')
+				{
+					word += elem;
+					prev = elem;
+					istr >> elem;
+				}
+
+				istr.putback(elem);
+
+				if (word == "if")
+				{
+					push_stmt(lex_array, IF);
+				}
+				else if (word == "else")
+				{
+					push_symbol(lex_array, ELSE);
+				}
+				else if (word == "while")
+				{
+					push_stmt(lex_array, WHILE);
+				}
+				else if (word == "print")
+				{
+					push_stmt(lex_array, PRINT);
 				}
 				else
 				{
-					push_var(lex_array, std::distance(vars.begin(), itr));
+					std::vector<std::string>::iterator itr = std::find(vars.begin(), vars.end(), word);
+					if (itr == vars.end())
+					{
+						push_var(lex_array, num_var);
+						vars.push_back(word);
+						num_var++;					
+					}
+					else
+					{
+						push_var(lex_array, std::distance(vars.begin(), itr));
+					}
 				}
 
+				word.clear();
+				continue;
 			}
-
-			word.clear();
-			continue;
+			else if (!isspace(elem))
+			{
+				throw std::logic_error("Syntax error");
+			}
+		}
 		}
 
 	    prev = elem;
-	    
-	    istr >> elem;
 	}
 
 	return lex_array;
