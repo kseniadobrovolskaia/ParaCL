@@ -11,7 +11,26 @@ int main(int argc, char const *argv[])
 {
 	try
 	{
-		std::vector<Lex_t*> lexems = lex_string(std::cin);
+		std::vector<Lex_t*> lexems;
+
+		if (argc > 1)
+		{
+			std::ifstream data;
+
+			data.open(argv[1]);
+			if (!(data.is_open()))
+			{
+				std::cerr << "File \"" << argv[1] << "\" did not open" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+
+			lexems = lex_string(data);
+		}
+		else
+		{
+			lexems = lex_string(std::cin);
+		}
+
 		program_size = lexems.size();
 
 		std::vector<Statement*> prog = parse_program(lexems);
