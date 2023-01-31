@@ -11,7 +11,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <signal.h>
 
+int EoF = 0;
 
 std::unordered_map<std::string, int>VARS;
 std::vector<std::string> vars;
@@ -122,6 +124,10 @@ void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol)
 
 
 //---------------------------------------------LEX_STRING---------------------------------------------------
+void handler(int signo)
+{
+	EoF = 1;
+}
 
 
 std::vector<Lex_t*> lex_string(std::istream & istr)
@@ -131,10 +137,17 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 	std::string word;
 	std::vector <Lex_t*> lex_array;
 
+	signal(SIGINT, handler);
+
 	istr >> std::noskipws;
 	
 	while (istr >> elem)
-	{
+	{	
+		if (EoF)
+		{
+			break;
+		}
+		
 		switch (elem)
 		{
 		case ';':

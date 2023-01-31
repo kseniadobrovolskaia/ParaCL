@@ -14,6 +14,7 @@ enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT, RESET };
 int token_counter(Move move);
 
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
+Lex_t *parse_negative(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_unary(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
@@ -159,7 +160,7 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 
 Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *L = parse_unary(lex_array);
+	Lex_t *L = parse_negative(lex_array);
 	Lex_t *R;
 	int is_m_d;
 
@@ -173,12 +174,34 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 		else
 		{
 			token_counter(INCREMENT);
-			R = parse_unary(lex_array);
+			R = parse_negative(lex_array);
 			L = new BinOp(L, R, static_cast<BinOp_t>(is_m_d));
 		}
 	}
 }
 
+
+Lex_t *parse_negative(std::vector<Lex_t *> &lex_array)
+{
+	Lex_t *L = new Value(0);
+	Lex_t *R;
+
+	int is_p_m = is_plus_minus(lex_array[token_counter(USE_CURRENT)]);
+
+	if ((is_p_m > 0) && (static_cast<BinOp_t>(is_p_m) == BinOp_t::SUB))
+	{
+		token_counter(INCREMENT);
+		R = parse_unary(lex_array);
+		L = new BinOp(L, R, BinOp_t::SUB);
+	}
+	else
+	{
+		L = parse_unary(lex_array);
+	}
+
+	return L;
+}
+			
 
 Lex_t *parse_unary(std::vector<Lex_t *> &lex_array)
 {
@@ -231,9 +254,19 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		case Lex_kind_t::VAR:
 		{
 			int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
+			
 			T = new Variable(num_var);
 			break;
 		}
+		// case Lex_kind_t::BINOP:
+		// {
+		// 	if (lex_array[token_counter(USE_CURRENT)]->get_data() == BinOp_t::SUB)
+		// 	{
+		// 		negative = 1;
+		// 		token_counter(INCREMENT);
+		// 		return parse_T(lex_array);
+		// 	}
+		// }
 		default:
 		{
 			throw std::logic_error("Something strange instead of a value/variable");
