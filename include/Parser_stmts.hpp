@@ -96,6 +96,8 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 
 Statement *parse_if(std::vector<Lex_t *> &lex_array)
 {
+	Lex_t *scop;
+
 	token_counter(INCREMENT);
 
 	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
@@ -110,6 +112,8 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 		throw std::logic_error("Invalid input: bad scope in \"if\"");
 	}
 
+	scop = lex_array[token_counter(USE_CURRENT)];
+
 	token_counter(INCREMENT);
 
 	std::vector<Statement*> scope = parse_program(lex_array);
@@ -121,7 +125,7 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 
 	token_counter(INCREMENT);
 
-	Lex_t *R = new Scope(scope);
+	Lex_t *R = new Scope(scope, *scop);
 	Lex_t *Else = nullptr;
 
 	if (token_counter(GET_CURRENT) < program_size && is_else(lex_array[token_counter(USE_CURRENT)]))
@@ -133,6 +137,8 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 			throw std::logic_error("Invalid input: bad scope in \"else\"");
 		}
 
+		scop = lex_array[token_counter(USE_CURRENT)];
+
 		token_counter(INCREMENT);
 
 		std::vector<Statement*> scope = parse_program(lex_array);
@@ -143,7 +149,7 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 		}
 
 		token_counter(INCREMENT);
-		Else = new Scope(scope);
+		Else = new Scope(scope, *scop);
 	}
 
 	return new If(L, R, Else);
@@ -152,6 +158,8 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 
 Statement *parse_while(std::vector<Lex_t *> &lex_array)
 {
+	Lex_t *scop;
+
 	token_counter(INCREMENT);
 
 	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
@@ -166,6 +174,8 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 		throw std::logic_error("Invalid input: bad scope in \"while\"");
 	}
 
+	scop = lex_array[token_counter(USE_CURRENT)];
+
 	token_counter(INCREMENT);
 
 	std::vector<Statement*> scope = parse_program(lex_array);
@@ -177,7 +187,7 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 
 	token_counter(INCREMENT);
 
-	Lex_t *R = new Scope(scope);
+	Lex_t *R = new Scope(scope, *scop);
 
 	return new While(L, R);
 }

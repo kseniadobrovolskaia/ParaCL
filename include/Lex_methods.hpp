@@ -11,7 +11,7 @@
 class Value : public Lex_t {
 
 public:
-	Value(int num) : Lex_t(Lex_kind_t::VALUE, num){};
+	Value(const Lex_t &val) : Lex_t(val){};
 };
 
 
@@ -21,7 +21,7 @@ public:
 class Variable : public Lex_t {
 	
 public:
- 	Variable(int num_var) : Lex_t(Lex_kind_t::VAR, num_var){};
+ 	Variable(const Lex_t &var) : Lex_t(var){};
  	virtual int calculate(std::istream & istr) override;
 };
 
@@ -37,7 +37,7 @@ class Assign_node : public Lex_t {
 
 public:
 	Assign_node() = default;
-  	Assign_node(Lex_t *lhs, Lex_t *rhs, Assign_type type) : Lex_t(Lex_kind_t::STMT, Statements_t::ASSIGN), lhs_(lhs), rhs_(rhs), type_(type) {};
+  	Assign_node(Lex_t *lhs, Lex_t *rhs, Assign_type type, const Lex_t &ass) : Lex_t(ass), lhs_(lhs), rhs_(rhs), type_(type) {};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual Lex_t *get_var() const override { return lhs_; };
@@ -55,7 +55,7 @@ class Scope : public Lex_t {
 	std::vector<Statement*> lhs_;
 
 public:
-	Scope(std::vector <Statement*> lhs) : Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE), lhs_(lhs){};
+	Scope(std::vector <Statement*> lhs, const Lex_t &scope) : Lex_t(scope), lhs_(lhs){};
 	std::vector<Statement*> get_lhs() const { return lhs_; };
 };
 
@@ -69,7 +69,7 @@ class BinOp : public Lex_t {
 
 public:
 	BinOp() = default;
-  	BinOp(Lex_t *lhs, Lex_t *rhs, BinOp_t opcode) : Lex_t(Lex_kind_t::BINOP, opcode), lhs_(lhs), rhs_(rhs){};
+  	BinOp(Lex_t *lhs, Lex_t *rhs, Lex_t binop) : Lex_t(binop), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual int calculate(std::istream & istr) override;
@@ -85,7 +85,7 @@ class CompOp : public Lex_t {
 
 public:
 	CompOp() = default;
-  	CompOp(Lex_t *lhs, Lex_t *rhs, CompOp_t opcode) : Lex_t(Lex_kind_t::COMPOP, opcode), lhs_(lhs), rhs_(rhs){};
+  	CompOp(Lex_t *lhs, Lex_t *rhs, Lex_t compop) : Lex_t(compop), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual int calculate(std::istream & istr) override;
@@ -101,7 +101,7 @@ class UnOp : public Lex_t {
 
 public:
 	UnOp() = default;
-  	UnOp(Lex_t *var, Statements_t opcode) : Lex_t(Lex_kind_t::UNOP, opcode), var_(var){};
+  	UnOp(Lex_t *var, Lex_t unop) : Lex_t(unop), var_(var){};
   	virtual Lex_t *get_var() const override { return var_; };
   	virtual int calculate(std::istream & istr) override;
 };

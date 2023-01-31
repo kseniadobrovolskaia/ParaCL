@@ -81,6 +81,7 @@ Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_bool(lex_array);
 	Lex_t *R;
+	Lex_t *as;
 	int is_as;
 	Assign_type type;
 	
@@ -93,6 +94,7 @@ Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			as = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
 			if (is_scan(lex_array[token_counter(USE_CURRENT)]))
 			{
@@ -106,7 +108,7 @@ Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 				R = parse_bool(lex_array);	
 			}
 			
-			L = new Assign_node(L, R, type);
+			L = new Assign_node(L, R, type, *as);
 		}
 	}
 }
@@ -116,6 +118,7 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_E(lex_array);
 	Lex_t *R;
+	Lex_t *comp;
 	int is_comp;
 	
 	while (1)
@@ -127,9 +130,10 @@ Lex_t *parse_bool(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			comp = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
 			R = parse_E(lex_array);	
-			L = new CompOp(L, R, static_cast<CompOp_t>(is_comp));
+			L = new CompOp(L, R, *comp);
 		}
 	}
 }
@@ -139,6 +143,7 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_M(lex_array);
 	Lex_t *R;
+	Lex_t *expr;
 	int is_p_m;
 	
 	while (1)
@@ -150,9 +155,10 @@ Lex_t *parse_E(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			expr = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
 			R = parse_M(lex_array);	
-			L = new BinOp(L, R, static_cast<BinOp_t>(is_p_m));
+			L = new BinOp(L, R, *expr);
 		}
 	}
 }
@@ -162,6 +168,7 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_negative(lex_array);
 	Lex_t *R;
+	Lex_t *mult;
 	int is_m_d;
 
 	while (1)
@@ -173,9 +180,10 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			mult = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
 			R = parse_negative(lex_array);
-			L = new BinOp(L, R, static_cast<BinOp_t>(is_m_d));
+			L = new BinOp(L, R, *mult);
 		}
 	}
 }
@@ -183,16 +191,18 @@ Lex_t *parse_M(std::vector<Lex_t *> &lex_array)
 
 Lex_t *parse_negative(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *L = new Value(0);
+	Lex_t *L;
 	Lex_t *R;
+	Lex_t *neg;
 
 	int is_p_m = is_plus_minus(lex_array[token_counter(USE_CURRENT)]);
 
 	if ((is_p_m > 0) && (static_cast<BinOp_t>(is_p_m) == BinOp_t::SUB))
 	{
+		neg = lex_array[token_counter(USE_CURRENT)];
 		token_counter(INCREMENT);
 		R = parse_unary(lex_array);
-		L = new BinOp(L, R, BinOp_t::SUB);
+		L = new BinOp(new Value(Lex_t(Lex_kind_t:: VALUE, 0, neg->get_str())), R, *neg);
 	}
 	else
 	{
@@ -206,6 +216,7 @@ Lex_t *parse_negative(std::vector<Lex_t *> &lex_array)
 Lex_t *parse_unary(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *L = parse_T(lex_array);
+	Lex_t *unop;
 	int is_unary;
 
 	while (1)
@@ -217,8 +228,9 @@ Lex_t *parse_unary(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			unop = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
-			L = new UnOp(L, static_cast<Statements_t>(is_unary));
+			L = new UnOp(L, *unop);
 		}
 	}
 }
@@ -248,25 +260,14 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 	{
 		case Lex_kind_t::VALUE:
 		{
-			T = new Value(lex_array[token_counter(USE_CURRENT)]->get_data());
+			T = new Value(*lex_array[token_counter(USE_CURRENT)]);
 			break;
 		}
 		case Lex_kind_t::VAR:
 		{
-			int num_var = lex_array[token_counter(USE_CURRENT)]->get_data();
-			
-			T = new Variable(num_var);
+			T = new Variable(*lex_array[token_counter(USE_CURRENT)]);
 			break;
 		}
-		// case Lex_kind_t::BINOP:
-		// {
-		// 	if (lex_array[token_counter(USE_CURRENT)]->get_data() == BinOp_t::SUB)
-		// 	{
-		// 		negative = 1;
-		// 		token_counter(INCREMENT);
-		// 		return parse_T(lex_array);
-		// 	}
-		// }
 		default:
 		{
 			throw std::logic_error("Something strange instead of a value/variable");

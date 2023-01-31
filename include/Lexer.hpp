@@ -43,13 +43,16 @@ class Lex_t
 {
 	Lex_kind_t kind_;
 	int data_;
+	int num_str_;
 
 public:
-	Lex_t(Lex_kind_t kind, int data) : kind_(kind), data_(data){};
+	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){};
+	Lex_t(const Lex_t &rhs) : kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_){};
 	virtual ~Lex_t() = default;
 	std::string name() const;
 	std::string short_name() const;
 	Lex_kind_t get_kind() const { return kind_; };
+	int get_str() const {return num_str_; };
 	int get_data() const { return data_; };
 	virtual Lex_t* get_var() const { return nullptr; };
 	virtual int calculate(std::istream & istr) { return data_; };
@@ -77,49 +80,49 @@ enum Symbols_t { SEMICOL, SCAN, ELSE };
 
 
 
-void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop)
+void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::BINOP, binop));
+	lex_array.push_back(new Lex_t(Lex_kind_t::BINOP, binop, num_str));
 }
 
-void push_unop(std::vector<Lex_t*> &lex_array, Statements_t unop)
+void push_unop(std::vector<Lex_t*> &lex_array, Statements_t unop, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::UNOP, unop));
+	lex_array.push_back(new Lex_t(Lex_kind_t::UNOP, unop, num_str));
 }
 
-void push_brace(std::vector<Lex_t*> &lex_array, Brace_t brace)
+void push_brace(std::vector<Lex_t*> &lex_array, Brace_t brace, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::BRACE, brace));
+	lex_array.push_back(new Lex_t(Lex_kind_t::BRACE, brace, num_str));
 }
 
-void push_scope(std::vector<Lex_t*> &lex_array, Scope_t scope)
+void push_scope(std::vector<Lex_t*> &lex_array, Scope_t scope, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::SCOPE, scope));
+	lex_array.push_back(new Lex_t(Lex_kind_t::SCOPE, scope, num_str));
 }
 
-void push_stmt(std::vector<Lex_t*> &lex_array, Statements_t kw)
+void push_stmt(std::vector<Lex_t*> &lex_array, Statements_t kw, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::STMT, kw));
+	lex_array.push_back(new Lex_t(Lex_kind_t::STMT, kw, num_str));
 }
 
-void push_var(std::vector<Lex_t*> &lex_array, int num_var)
+void push_var(std::vector<Lex_t*> &lex_array, int num_var, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::VAR, num_var));
+	lex_array.push_back(new Lex_t(Lex_kind_t::VAR, num_var, num_str));
 }
 
-void push_value(std::vector<Lex_t*> &lex_array, int value)
+void push_value(std::vector<Lex_t*> &lex_array, int value, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::VALUE, value));
+	lex_array.push_back(new Lex_t(Lex_kind_t::VALUE, value, num_str));
 }
 
-void push_compop(std::vector<Lex_t*> &lex_array, CompOp_t compop)
+void push_compop(std::vector<Lex_t*> &lex_array, CompOp_t compop, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::COMPOP, compop));
+	lex_array.push_back(new Lex_t(Lex_kind_t::COMPOP, compop, num_str));
 }
 
-void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol)
+void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::SYMBOL, symbol));
+	lex_array.push_back(new Lex_t(Lex_kind_t::SYMBOL, symbol, num_str));
 }
 
 
@@ -132,7 +135,7 @@ void handler(int signo)
 
 std::vector<Lex_t*> lex_string(std::istream & istr)
 {
-	int num_var = 0;
+	int num_var = 0, num_str = 1;
 	char elem, prev = '\0';
 	std::string word;
 	std::vector <Lex_t*> lex_array;
@@ -150,33 +153,36 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 		
 		switch (elem)
 		{
+		case '\n':
+			num_str++;
+			break;
 		case ';':
-			push_symbol(lex_array, SEMICOL);
+			push_symbol(lex_array, SEMICOL, num_str);
 			break;
 		case '=':
 			switch(prev)
 			{
 			case '=':
 				lex_array.pop_back();
-				push_compop(lex_array, EQUAL);
+				push_compop(lex_array, EQUAL, num_str);
 				break;
 			case '<':
 				lex_array.pop_back();
-				push_compop(lex_array, LESorEQ);
+				push_compop(lex_array, LESorEQ, num_str);
 				break;
 			case '>':
 				lex_array.pop_back();
-				push_compop(lex_array, GRorEQ);
+				push_compop(lex_array, GRorEQ, num_str);
 				break;
 			default:
-				push_stmt(lex_array, ASSIGN);
+				push_stmt(lex_array, ASSIGN, num_str);
 			}
 			break;
 		case '<':
-			push_compop(lex_array, LESS);
+			push_compop(lex_array, LESS, num_str);
 			break;
 		case '>':
-			push_compop(lex_array, GREATER);
+			push_compop(lex_array, GREATER, num_str);
 			break;
 		case '!':
 			istr >> elem;
@@ -184,18 +190,18 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			{
 				throw std::logic_error("Syntax error");
 			}
-			push_compop(lex_array, NOT_EQUAL);
+			push_compop(lex_array, NOT_EQUAL, num_str);
 			break;
 		case '+':
 		{
 			if (prev == '+')
 			{
 				lex_array.pop_back();
-				push_unop(lex_array, INC);
+				push_unop(lex_array, INC, num_str);
 			}
 			else
 			{
-				push_binop(lex_array, ADD);
+				push_binop(lex_array, ADD, num_str);
 			}
 
 			break;
@@ -204,12 +210,12 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			if (prev == '-')
 			{
 				lex_array.pop_back();
-				push_unop(lex_array, DEC);
+				push_unop(lex_array, DEC, num_str);
 				break;
 			}
 			else
 			{
-				push_binop(lex_array, SUB);
+				push_binop(lex_array, SUB, num_str);
 			}
 
 			break;
@@ -225,7 +231,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			}
 			else
 			{
-				push_binop(lex_array, MULT);
+				push_binop(lex_array, MULT, num_str);
 			}
 			break;
 		case '/':
@@ -239,23 +245,23 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			}
 			else
 			{
-				push_binop(lex_array, DIV);
+				push_binop(lex_array, DIV, num_str);
 			}
 			break;
 		case '(':
-			push_brace(lex_array, LBRACE);
+			push_brace(lex_array, LBRACE, num_str);
 			break;
 		case ')':
-			push_brace(lex_array, RBRACE);
+			push_brace(lex_array, RBRACE, num_str);
 			break;
 		case '{':
-			push_scope(lex_array, LSCOPE);
+			push_scope(lex_array, LSCOPE, num_str);
 			break;
 		case '}':
-			push_scope(lex_array, RSCOPE);
+			push_scope(lex_array, RSCOPE, num_str);
 			break;
 		case '?':
-			push_symbol(lex_array, SCAN);
+			push_symbol(lex_array, SCAN, num_str);
 			break;
 		default:
 		{
@@ -270,7 +276,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 
 				istr.putback(elem);
 
-				push_value(lex_array, std::stoi(word));
+				push_value(lex_array, std::stoi(word), num_str);
 				word.clear();
 				continue;
 			}
@@ -287,32 +293,32 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 
 				if (word == "if")
 				{
-					push_stmt(lex_array, IF);
+					push_stmt(lex_array, IF, num_str);
 				}
 				else if (word == "else")
 				{
-					push_symbol(lex_array, ELSE);
+					push_symbol(lex_array, ELSE, num_str);
 				}
 				else if (word == "while")
 				{
-					push_stmt(lex_array, WHILE);
+					push_stmt(lex_array, WHILE, num_str);
 				}
 				else if (word == "print")
 				{
-					push_stmt(lex_array, PRINT);
+					push_stmt(lex_array, PRINT, num_str);
 				}
 				else
 				{
 					std::vector<std::string>::iterator itr = std::find(vars.begin(), vars.end(), word);
 					if (itr == vars.end())
 					{
-						push_var(lex_array, num_var);
+						push_var(lex_array, num_var, num_str);
 						vars.push_back(word);
 						num_var++;					
 					}
 					else
 					{
-						push_var(lex_array, std::distance(vars.begin(), itr));
+						push_var(lex_array, std::distance(vars.begin(), itr), num_str);
 					}
 				}
 
