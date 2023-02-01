@@ -69,7 +69,7 @@ class BinOp : public Lex_t {
 
 public:
 	BinOp() = default;
-  	BinOp(Lex_t *lhs, Lex_t *rhs, Lex_t binop) : Lex_t(binop), lhs_(lhs), rhs_(rhs){};
+  	BinOp(Lex_t *lhs, Lex_t *rhs, const Lex_t &binop) : Lex_t(binop), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual int calculate(std::istream & istr) override;
@@ -85,7 +85,7 @@ class CompOp : public Lex_t {
 
 public:
 	CompOp() = default;
-  	CompOp(Lex_t *lhs, Lex_t *rhs, Lex_t compop) : Lex_t(compop), lhs_(lhs), rhs_(rhs){};
+  	CompOp(Lex_t *lhs, Lex_t *rhs, const Lex_t &compop) : Lex_t(compop), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual int calculate(std::istream & istr) override;
@@ -101,7 +101,7 @@ class UnOp : public Lex_t {
 
 public:
 	UnOp() = default;
-  	UnOp(Lex_t *var, Lex_t unop) : Lex_t(unop), var_(var){};
+  	UnOp(Lex_t *var, const Lex_t &unop) : Lex_t(unop), var_(var){};
   	virtual Lex_t *get_var() const override { return var_; };
   	virtual int calculate(std::istream & istr) override;
 };
@@ -116,7 +116,7 @@ int Variable::calculate(std::istream & istr)
 
 	if (!VARS.contains(var_name))
 	{
-		throw std::logic_error("Uninitialized variable");
+		throw_exception("Uninitialized variable\n", this->get_num());
 	}
 
 	return VARS[var_name];
@@ -177,11 +177,13 @@ int BinOp::calculate(std::istream & istr)
 		case BinOp_t::DIV:
 			if (right == 0)
 			{
-				throw std::runtime_error("Division by zero");
+				throw_exception("Division by zero\n", this->get_num());
 			}
 			return left / right;
 	}
-	throw std::logic_error("Error: it is not clear what is in function \"BinOp::calculate\"");
+
+	throw_exception("Error: it is not clear what is in function \"BinOp::calculate\"\n", this->get_num());
+	return 1;
 }
 
 
@@ -209,7 +211,8 @@ int UnOp::calculate(std::istream & istr)
 			return VARS[var_name];
 	}
 
-	throw std::logic_error("Error: it is not clear what is in function \"UnOp::calculate\"");
+	throw_exception("Error: it is not clear what is in function \"UnOp::calculate\"\n", this->get_num());
+	return 1;
 }
 
 
@@ -233,7 +236,9 @@ int CompOp::calculate(std::istream & istr)
 		case CompOp_t::NOT_EQUAL:
 			return left != right;
 	}
-	throw std::logic_error("Error: it is not clear what is in function \"CompOp::calculate\"");
+
+	throw_exception("Error: it is not clear what is in function \"CompOp::calculate\"\n", this->get_num());
+	return 1;
 }
 
 

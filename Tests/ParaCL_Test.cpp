@@ -18,19 +18,19 @@ int main()
 
 			data.open(name_data);
 			if (!(data.is_open()))
-		  {
-		    std::cerr << "File \"" << name_data << "\" did not open" << std::endl;
-		    exit(EXIT_FAILURE);
-		  }
+			{
+			  std::cerr << "File \"" << name_data << "\" did not open" << std::endl;
+			  exit(EXIT_FAILURE);
+			}
 
 			std::ifstream input;
 
 			input.open(name_input);
 			if (!(input.is_open()))
-		  {
-		    std::cerr << "File \"" << name_input << "\" did not open" << std::endl;
-		    exit(EXIT_FAILURE);
-		  }
+			{
+			  std::cerr << "File \"" << name_input << "\" did not open" << std::endl;
+			  exit(EXIT_FAILURE);
+			}
 
 			std::ofstream results;
 
@@ -41,12 +41,7 @@ int main()
 			  exit(EXIT_FAILURE);
 			}
 
-			data >> std::noskipws;
-			input >> std::noskipws;
-
 			std::vector<Lex_t*> lexems = lex_string(data);
-			
-			program_size = lexems.size();
 			
 			std::vector<Statement*> prog = parse_program(lexems);
 			
@@ -91,8 +86,6 @@ int main()
 			
 	  	std::vector<Lex_t*> lexems = lex_string(input_data);
 	 
-			program_size = lexems.size();
-
 			std::vector<Statement*> prog = parse_program(lexems);
 			
 			run_program(prog, input_data, results);
@@ -113,6 +106,8 @@ int main()
 void clean_all_global_arrays()
 {
 	token_counter(RESET);
+	lex_array.clear();
+	EoF = 0;
 	VARS.clear();
 	vars.clear();
 }

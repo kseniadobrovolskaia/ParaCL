@@ -19,6 +19,12 @@ std::unordered_map<std::string, int>VARS;
 std::vector<std::string> vars;
 
 
+enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, RESET };
+
+int token_counter(Move move);
+void throw_exception(std::string mess, int error_elem);
+
+
 //--------------------------------------------LEX_KIND--------------------------------------------------------
 
 
@@ -33,29 +39,6 @@ enum Lex_kind_t {
 	COMPOP,
 	SYMBOL,
 
-};
-
-
-//--------------------------------------------LEX_CLASS-------------------------------------------------------
-
-
-class Lex_t
-{
-	Lex_kind_t kind_;
-	int data_;
-	int num_str_;
-
-public:
-	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){};
-	Lex_t(const Lex_t &rhs) : kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_){};
-	virtual ~Lex_t() = default;
-	std::string name() const;
-	std::string short_name() const;
-	Lex_kind_t get_kind() const { return kind_; };
-	int get_str() const {return num_str_; };
-	int get_data() const { return data_; };
-	virtual Lex_t* get_var() const { return nullptr; };
-	virtual int calculate(std::istream & istr) { return data_; };
 };
 
 
@@ -76,8 +59,68 @@ enum Symbols_t { SEMICOL, SCAN, ELSE };
 
 
 
-//-----------------------------------------PUSH_IN_LEX_ARRAY---------------------------------------------------
+//-----------------------------------------GLOBAL_LEX_ARRAY---------------------------------------------------
 
+
+class Lex_t;
+std::vector<Lex_t*> lex_array;
+
+
+//--------------------------------------------LEX_CLASS-------------------------------------------------------
+
+
+class Lex_t
+{
+	Lex_kind_t kind_;
+	int data_;
+	int num_str_;
+	int num_;
+
+public:
+	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){ num_ = lex_array.size() - 1; };
+	Lex_t(const Lex_t &rhs) : kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_), num_(rhs.num_){};
+	virtual ~Lex_t() = default;
+	std::string name() const;
+	std::string short_name() const;
+	Lex_kind_t get_kind() const { return kind_; };
+	int get_str() const { return num_str_; };
+	int get_data() const { return data_; };
+	int get_num() const { return num_; };
+	virtual Lex_t* get_var() const { return nullptr; };
+	virtual int calculate(std::istream & istr) { return data_; };
+};
+
+
+//-----------------------------------------TOKEN_COUNTER---------------------------------------------------
+
+
+int token_counter(Move move) 
+{
+	static int curr_lex = 0;
+
+	switch (move)
+	{
+	case Move::INCREMENT:
+		curr_lex++;
+	case Move::GET_CURRENT:
+		return curr_lex;
+	case Move::RESET:
+		curr_lex = 0;
+		return 0;
+	case Move::USE_CURRENT:
+		if (curr_lex >= static_cast<int>(lex_array.size()))
+		{
+			throw_exception("Syntax error in last line\n", token_counter(GET_CURRENT) - 1);
+		}
+		return curr_lex;
+	default:
+		throw std::logic_error("Something strange in function \"token_counter\"");
+		return 1;
+	}
+}
+
+
+//-----------------------------------------PUSH_IN_LEX_ARRAY---------------------------------------------------
 
 
 void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop, int num_str)
@@ -138,7 +181,6 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 	int num_var = 0, num_str = 1;
 	char elem, prev = '\0';
 	std::string word;
-	std::vector <Lex_t*> lex_array;
 
 	signal(SIGINT, handler);
 
@@ -188,7 +230,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			istr >> elem;
 			if (elem != '=')
 			{
-				throw std::logic_error("Syntax error");
+				throw_exception("Syntax error in operator !=\n", token_counter(GET_CURRENT));
 			}
 			push_compop(lex_array, NOT_EQUAL, num_str);
 			break;
@@ -227,6 +269,10 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 				{
 					prev = elem;
 					istr >> elem;
+					if (elem == '\n')
+					{
+						num_str++;
+					}
 				}
 			}
 			else
@@ -242,6 +288,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 				{
 					istr >> elem;
 				}
+				num_str++;
 			}
 			else
 			{
@@ -327,7 +374,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			}
 			else if (!isspace(elem))
 			{
-				throw std::logic_error("Syntax error");
+				throw_exception("No such symbol exists\n", token_counter(GET_CURRENT));
 			}
 		}
 		}
@@ -517,6 +564,63 @@ std::string Lex_t::short_name() const
 	return nullptr;
 }
 
+
+//------------------------------------------Throw_exception-------------------------------------------------------
+
+
+void throw_exception(std::string mess, int error_elem)
+{
+	std::string command = mess;
+	int program_size = lex_array.size();
+
+	//std::cout << "В исключениях \n";
+
+	int curr_elem = error_elem,
+	first_elem = error_elem, 
+	last_elem = error_elem;
+
+	//std::cout << "текущий элемент " << curr_elem << " из " << lex_array.size() << std::endl;
+
+	int str = lex_array[error_elem]->get_str();
+
+	command += std::to_string(str) + " | ";
+
+	//std::cout << "Номер элемента с ошибкой " << curr_elem << " и его строка "<< str<< std::endl;
+
+	while ((first_elem >= 0) && (lex_array[first_elem]->get_str() == str))
+	{
+		first_elem--;
+	}
+
+	first_elem++;
+
+	while ((last_elem < program_size) && (lex_array[last_elem]->get_str() == str))
+	{
+		last_elem++;
+	}
+
+	//std::cout << "Первый элемент в этой строке " << first_elem << " , последний - "<< last_elem<< std::endl;
+
+	for (; first_elem <= curr_elem; first_elem++)
+	{
+		command += lex_array[first_elem]->short_name() + " ";
+	}
+
+	std::string command2(static_cast<int>(command.size() - mess.size() - 4 - std::to_string(str).size()), ' ');
+	std::string command3(static_cast<int>(std::to_string(str).size()), ' ');
+	command3 += " | " + command2;
+
+	command3 +=  "^\n";
+
+	for (; first_elem < last_elem; first_elem++)
+	{
+		command += lex_array[first_elem]->short_name() + " ";
+	}
+
+	command += "\n" + command3;
+
+	throw std::logic_error(command);
+}
 
 
 #endif

@@ -1,9 +1,8 @@
-
 #include "Sintax_graph.hpp"
 #include "Run_program.hpp"
 
 void print_VARS();
-void print_lexems(std::vector<Lex_t*> &lexems);
+void print_lex_array(std::vector<Lex_t*> &lex_array);
 void print_prog_elems(std::vector<Statement*> prog);
 
 
@@ -11,8 +10,6 @@ int main(int argc, char const *argv[])
 {
 	try
 	{
-		std::vector<Lex_t*> lexems;
-
 		if (argc > 1)
 		{
 			std::ifstream data;
@@ -24,16 +21,14 @@ int main(int argc, char const *argv[])
 				exit(EXIT_FAILURE);
 			}
 
-			lexems = lex_string(data);
+			lex_array = lex_string(data);
 		}
 		else
 		{
-			lexems = lex_string(std::cin);
+			lex_array = lex_string(std::cin);
 		}
 
-		program_size = lexems.size();
-
-		std::vector<Statement*> prog = parse_program(lexems);
+		std::vector<Statement*> prog = parse_program(lex_array);
 		build_sintax_graph(prog);
 
 		run_program(prog, std::cin, std::cout);
@@ -55,9 +50,9 @@ int main(int argc, char const *argv[])
 //--------------------------------------------DEBUG--------------------------------------------------------
 
 
-void print_lexems(std::vector<Lex_t*> &lexems)
+void print_lex_array(std::vector<Lex_t*> &lex_array)
 {
-	for (auto elem = lexems.begin(); elem < lexems.end(); ++elem)
+	for (auto elem = lex_array.begin(); elem < lex_array.end(); ++elem)
 	{
 		std::cout << (*elem)->name();
 		std::cout << " ";

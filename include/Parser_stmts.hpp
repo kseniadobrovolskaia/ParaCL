@@ -21,7 +21,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 	Statement *stmt;
 
 	while (token_counter(GET_CURRENT) < size)
-	{		
+	{	
 		switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 		{
 			case Lex_kind_t::BRACE:
@@ -40,20 +40,20 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 					{
 						if (Stmt->get_data() != Statements_t::ASSIGN)
 						{
-							throw std::logic_error("Invalid input");
+							throw_exception("Invalid assign\n", Stmt->get_num());
 						}
 						stmt = new Assign(Stmt);
 						break;
 					}
 					default:
 					{
-						throw std::logic_error("Arithmetic expression is not a statement");
+						throw_exception("Arithmetic expression is not a statement\n", Stmt->get_num());
 					}
 				}
 				
 				if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
 				{
-					throw std::logic_error("Invalid input: bad semicols");
+					throw_exception("Invalid input: bad semicols\n", token_counter(GET_CURRENT) - 1);
 				}
 				token_counter(INCREMENT);
 				break;
@@ -82,7 +82,7 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 				}
 				else
 				{
-					throw std::logic_error("Invalid input: bad program building");
+					throw_exception("Invalid input: bad program building\n", token_counter(GET_CURRENT) - 1);
 				}
 			}
 		}
@@ -102,14 +102,14 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 
 	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
 	{
-		throw std::logic_error("Syntax error");
+		throw_exception("Syntax error in \"if\"\n", token_counter(GET_CURRENT));
 	}
 
 	Lex_t* L = parse_arithmetic(lex_array);
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::LSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope in \"if\"");
+		throw_exception("Invalid input: bad scope in \"if\"\n", token_counter(GET_CURRENT) - 1);
 	}
 
 	scop = lex_array[token_counter(USE_CURRENT)];
@@ -120,21 +120,21 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope in \"if\"");
+		throw_exception("Invalid input: bad scope in \"if\"\n", token_counter(GET_CURRENT) - 1);
 	}
 
 	token_counter(INCREMENT);
-
+	
 	Lex_t *R = new Scope(scope, *scop);
 	Lex_t *Else = nullptr;
 
-	if (token_counter(GET_CURRENT) < program_size && is_else(lex_array[token_counter(USE_CURRENT)]))
+	if ((token_counter(GET_CURRENT) < static_cast<int>(lex_array.size())) && is_else(lex_array[token_counter(USE_CURRENT)]))
 	{
 		token_counter(INCREMENT);
 
 		if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::LSCOPE)
 		{
-			throw std::logic_error("Invalid input: bad scope in \"else\"");
+			throw_exception("Invalid input: bad scope in \"else\"\n", token_counter(GET_CURRENT) - 1);
 		}
 
 		scop = lex_array[token_counter(USE_CURRENT)];
@@ -145,7 +145,7 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 
 		if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
 		{
-			throw std::logic_error("Invalid input: bad scope in \"else\"");
+			throw_exception("Invalid input: bad scope in \"else\"\n", token_counter(GET_CURRENT) - 1);
 		}
 
 		token_counter(INCREMENT);
@@ -164,14 +164,14 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 
 	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
 	{
-		throw std::logic_error("Syntax error");
+		throw_exception("Syntax error in \"while\"\n", token_counter(GET_CURRENT));
 	}
 
 	Lex_t* L = parse_arithmetic(lex_array);
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::LSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope in \"while\"");
+		throw_exception("Invalid input: bad scope in \"while\"\n", token_counter(GET_CURRENT) - 1);
 	}
 
 	scop = lex_array[token_counter(USE_CURRENT)];
@@ -182,7 +182,7 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 
 	if(is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
 	{
-		throw std::logic_error("Invalid input: bad scope in \"while\"");
+		throw_exception("Invalid input: bad scope in \"while\"\n", token_counter(GET_CURRENT) - 1);
 	}
 
 	token_counter(INCREMENT);
@@ -201,7 +201,7 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 
 	if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
 	{
-		throw std::logic_error("Invalid input: bad semicols in \"print\"");
+		throw_exception("Invalid input: bad semicols in \"print\"\n", token_counter(GET_CURRENT) - 1);
 	}
 
 	token_counter(INCREMENT);

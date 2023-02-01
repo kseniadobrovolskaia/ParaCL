@@ -6,13 +6,6 @@
 #include <unordered_map>
 
 
-int program_size;
-
-
-enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, USE_NEXT, RESET };
-
-int token_counter(Move move);
-
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_negative(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_unary(std::vector<Lex_t *> &lex_array);
@@ -33,37 +26,6 @@ int is_scope(Lex_t *node);
 int is_scan(Lex_t *node);
 int is_else(Lex_t *node);
 int is_unop(Lex_t *node);
-
-
-//-----------------------------------------TOKEN_COUNTER---------------------------------------------------
-
-
-int token_counter(Move move) 
-{
-	static int curr_lex = 0;
-
-	if (move == INCREMENT)
-	{
-		curr_lex++;
-	}
-	else if (move == GET_CURRENT)
-	{
-		return curr_lex;
-	}
-	else if (move == RESET)
-	{
-		curr_lex = 0;
-	}
-	else
-	{
-		if ((curr_lex + move - USE_CURRENT) >= program_size)
-		{
-			throw std::logic_error("Syntax error");
-		}
-	}
-	
-	return curr_lex;
-}
 
 
 //---------------------------------------------PARSERS-----------------------------------------------------
@@ -248,14 +210,14 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 
 		if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
 		{
-			throw std::logic_error("Invalid input: check brases in arithmetic expression");
+			throw_exception("Invalid input: check brases in arithmetic expression\n", token_counter(GET_CURRENT));
 		}
 
 		token_counter(INCREMENT);
 
 		return T;
 	}
-
+	
 	switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 	{
 		case Lex_kind_t::VALUE:
@@ -270,8 +232,7 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		}
 		default:
 		{
-			throw std::logic_error("Something strange instead of a value/variable");
-			break;
+			throw_exception("Something strange instead of a value/variable\n", token_counter(GET_CURRENT));
 		}
 	}
 	
