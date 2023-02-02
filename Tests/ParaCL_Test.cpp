@@ -92,7 +92,13 @@ int main()
 	  }
 	  catch(std::exception & ex)
 	  {
-	  	results << "Error";
+	  	std::string err_mess = ex.what();
+
+	  	int start = err_mess.find("Error in row number");
+
+	  	std::string error = err_mess.substr(start);
+
+	  	results << error;
 	  	results.close();
 	  	input_data.clear();
 	  }
