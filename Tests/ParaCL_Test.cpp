@@ -102,7 +102,6 @@ int main()
 }
 
 
-
 void clean_all_global_arrays()
 {
 	token_counter(RESET);

@@ -1,7 +1,7 @@
 #include "Sintax_graph.hpp"
 #include "Run_program.hpp"
 
-void print_VARS();
+
 void print_lex_array(std::vector<Lex_t*> &lex_array);
 void print_prog_elems(std::vector<Statement*> prog);
 
@@ -71,14 +71,4 @@ void print_prog_elems(std::vector<Statement*> prog)
 	}
 }
 
-
-void print_VARS()
-{
-	std::cout << "Значения глобальных переменных: " << std::endl;
-
-	for (auto const &pair : VARS)
-	{
-		std::cout << pair.first << " = " << pair.second << std::endl;
-	}
-}
 

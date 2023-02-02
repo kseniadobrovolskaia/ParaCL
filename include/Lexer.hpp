@@ -15,13 +15,14 @@
 
 int EoF = 0;
 
-std::unordered_map<std::string, int>VARS;
-std::vector<std::string> vars;
+std::unordered_map<std::string, int>VARS;		//initialized variables and their values
+std::vector<std::string> vars;					//variables appeared in lexical analysis
 
 
 enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, RESET };
 
-int token_counter(Move move);
+int token_counter(Move move);					//to move in lex_array during parsing
+
 void throw_exception(std::string mess, int error_elem);
 
 
@@ -72,9 +73,9 @@ std::vector<Lex_t*> lex_array;
 class Lex_t
 {
 	Lex_kind_t kind_;
-	int data_;
-	int num_str_;
-	int num_;
+	int data_;              //for example, Scope_t::LSCOPE
+	int num_str_;			//line number with this token
+	int num_;				//index this token in lex_array
 
 public:
 	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){ num_ = lex_array.size() - 1; };
@@ -170,6 +171,8 @@ void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol, int num_str)
 
 
 //---------------------------------------------LEX_STRING---------------------------------------------------
+
+
 void handler(int signo)
 {
 	EoF = 1;
@@ -562,64 +565,6 @@ std::string Lex_t::short_name() const
 		}
 	}
 	return nullptr;
-}
-
-
-//------------------------------------------Throw_exception-------------------------------------------------------
-
-
-void throw_exception(std::string mess, int error_elem)
-{
-	std::string command = mess;
-	int program_size = lex_array.size();
-
-	//std::cout << "В исключениях \n";
-
-	int curr_elem = error_elem,
-	first_elem = error_elem, 
-	last_elem = error_elem;
-
-	//std::cout << "текущий элемент " << curr_elem << " из " << lex_array.size() << std::endl;
-
-	int str = lex_array[error_elem]->get_str();
-
-	command += std::to_string(str) + " | ";
-
-	//std::cout << "Номер элемента с ошибкой " << curr_elem << " и его строка "<< str<< std::endl;
-
-	while ((first_elem >= 0) && (lex_array[first_elem]->get_str() == str))
-	{
-		first_elem--;
-	}
-
-	first_elem++;
-
-	while ((last_elem < program_size) && (lex_array[last_elem]->get_str() == str))
-	{
-		last_elem++;
-	}
-
-	//std::cout << "Первый элемент в этой строке " << first_elem << " , последний - "<< last_elem<< std::endl;
-
-	for (; first_elem <= curr_elem; first_elem++)
-	{
-		command += lex_array[first_elem]->short_name() + " ";
-	}
-
-	std::string command2(static_cast<int>(command.size() - mess.size() - 4 - std::to_string(str).size()), ' ');
-	std::string command3(static_cast<int>(std::to_string(str).size()), ' ');
-	command3 += " | " + command2;
-
-	command3 +=  "^\n";
-
-	for (; first_elem < last_elem; first_elem++)
-	{
-		command += lex_array[first_elem]->short_name() + " ";
-	}
-
-	command += "\n" + command3;
-
-	throw std::logic_error(command);
 }
 
 

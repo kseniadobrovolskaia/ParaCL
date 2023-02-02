@@ -16,10 +16,12 @@ class Statement{
 public:
 	Statement(Statements_t kind) : kind_(kind) {};
 	virtual ~Statement() = default;
+
 	Statements_t get_kind() const { return kind_; };
+	virtual Lex_t *get_lhs() const = 0;
+
 	virtual std::string name() const = 0;
 	virtual void run_stmt(std::istream & istr, std::ostream & ostr) = 0;
-	virtual Lex_t *get_lhs() const = 0;
 };
 
 
@@ -34,10 +36,12 @@ public:
 	Assign(Lex_t *lhs) :
 	Statement(Statements_t::ASSIGN), lhs_(lhs) {};
 	virtual ~Assign() = default;
-	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Assign_type get_type() const { return static_cast<Assign_node*>(lhs_)->get_type(); };
+
+	virtual std::string name() const override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -53,11 +57,13 @@ public:
 	If(Lex_t *lhs, Lex_t *rhs, Lex_t * Else) : 
 	Statement(Statements_t::IF), lhs_(lhs), rhs_(rhs), else_(Else){};
 	virtual ~If() = default;
-	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	Lex_t *get_else() const { return else_; };
+
+	virtual std::string name() const override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -72,10 +78,12 @@ public:
 	While(Lex_t *lhs, Lex_t *rhs) :
 	Statement(Statements_t::WHILE), lhs_(lhs), rhs_(rhs){};
 	virtual ~While() = default;
-	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+	
 	virtual Lex_t *get_lhs() const override { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
+
+	virtual std::string name() const override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -90,9 +98,11 @@ public:
 	Print(Lex_t *lhs) :
 	Statement(Statements_t::PRINT), lhs_(lhs) {};
 	virtual ~Print() = default;
+	
+	virtual Lex_t *get_lhs() const override { return lhs_; };
+
 	virtual std::string name() const override;
 	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
-	virtual Lex_t *get_lhs() const override { return lhs_; };
 };
 
 
@@ -107,9 +117,11 @@ public:
 	Inc_Dec(Lex_t *lhs) :
 	Statement(static_cast<Statements_t>(lhs->get_data())), lhs_(lhs) {};
 	virtual ~Inc_Dec() = default;
+	
+	virtual Lex_t *get_lhs() const override { return lhs_; };
+
 	virtual std::string name() const override;
 	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
-	virtual Lex_t *get_lhs() const override { return lhs_; };
 };
 
 

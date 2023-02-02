@@ -2,7 +2,7 @@
 #define LEX_METHODS_H
 
 
-#include "Lexer.hpp"
+#include "Throw_exception.hpp"
 
 
 //--------------------------------------------LEXEME_CLASSES------------------------------------------------
