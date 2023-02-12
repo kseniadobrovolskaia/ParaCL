@@ -7,11 +7,17 @@
 
 //--------------------------------------------LEXEME_CLASSES------------------------------------------------
 
+enum Value_type { INPUT, NUMBER };
+
 
 class Value : public Lex_t {
 
+	Value_type type_;
+
 public:
-	Value(const Lex_t &val) : Lex_t(val){};
+	Value(const Lex_t &val, Value_type type) : Lex_t(val), type_(type){};
+	Value_type get_type() const { return type_; }
+	virtual int calculate(std::istream & istr) override;
 };
 
 
@@ -28,25 +34,38 @@ public:
 
 //----------------------------------------------------------------------------------------------------------
 
-enum Assign_type { INPUT, ARITHMETIC };
+
+class Negation : public Lex_t {
+
+	Lex_t *rhs_;
+	
+public:
+ 	Negation(Lex_t *rhs, const Lex_t &neg) : Lex_t(neg), rhs_(rhs){};
+ 	Lex_t *get_rhs() const { return rhs_; };
+ 	virtual int calculate(std::istream & istr) override;
+ 	virtual Lex_t *get_var() const override { return rhs_; };
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
 
 class Assign_node : public Lex_t {
 
   	Lex_t *lhs_, *rhs_;
-  	Assign_type type_;
 
 public:
 	Assign_node() = default;
-  	Assign_node(Lex_t *lhs, Lex_t *rhs, Assign_type type, const Lex_t &ass) : Lex_t(ass), lhs_(lhs), rhs_(rhs), type_(type) {};
+  	Assign_node(Lex_t *lhs, Lex_t *rhs, const Lex_t &ass) : Lex_t(ass), lhs_(lhs), rhs_(rhs){};
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual Lex_t *get_var() const override { return lhs_; };
-  	Assign_type get_type() const { return type_; };
   	virtual int calculate(std::istream & istr) override;
 };
 
 
 //----------------------------------------------------------------------------------------------------------
+
 
 class Statement;
 
@@ -110,6 +129,22 @@ public:
 //---------------------------------------------CALCULATE----------------------------------------------------
 
 
+int Value::calculate(std::istream & istr)
+{
+	if (type_ != Value_type::INPUT)
+	{	
+		return this->get_data();
+	}
+
+	int number;
+
+	istr >> std::ws;
+	istr >> number;
+
+	return number;
+}
+
+
 int Variable::calculate(std::istream & istr)
 {
 	std::string var_name = vars[this->get_data()];
@@ -120,6 +155,14 @@ int Variable::calculate(std::istream & istr)
 	}
 
 	return VARS[var_name];
+}
+
+
+int Negation::calculate(std::istream & istr)
+{
+	int right = rhs_->calculate(istr);
+
+	return !right;
 }
 
 
@@ -147,13 +190,13 @@ int Assign_node::calculate(std::istream & istr)
 	
 	lhs_->calculate(istr);
 
-	if (type_ == Assign_type::INPUT)
-	{	
-		istr >> std::ws;
-		istr >> VARS[var_name];
+	// if (type_ == Assign_type::INPUT)
+	// {	
+	// 	istr >> std::ws;
+	// 	istr >> VARS[var_name];
 		
-		return VARS[var_name];
-	}
+	// 	return VARS[var_name];
+	// }
 
 	VARS[var_name] = rhs_->calculate(istr);
 

@@ -38,8 +38,7 @@ public:
 	virtual ~Assign() = default;
 
 	virtual Lex_t *get_lhs() const override { return lhs_; };
-  	Assign_type get_type() const { return static_cast<Assign_node*>(lhs_)->get_type(); };
-
+	
 	virtual std::string name() const override;
 	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
 };

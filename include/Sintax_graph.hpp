@@ -142,7 +142,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
 
 	prev_elem = curr_elem;
-	if (is_unop(curr_node) >= 0)
+	if ((is_unop(curr_node) >= 0) || is_negation(curr_node))
 	{
 		(*num_node)++;
 		create_statement_nodes(curr_node->get_var(), file_tree, num_node);

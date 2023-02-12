@@ -39,6 +39,7 @@ enum Lex_kind_t {
 	BINOP,
 	COMPOP,
 	SYMBOL,
+	BAD_SYMBOL,
 
 };
 
@@ -56,7 +57,7 @@ enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
 enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC };
 
-enum Symbols_t { SEMICOL, SCAN, ELSE };
+enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION };
 
 
 
@@ -169,6 +170,11 @@ void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol, int num_str)
 	lex_array.push_back(new Lex_t(Lex_kind_t::SYMBOL, symbol, num_str));
 }
 
+void push_bad_symbol(std::vector<Lex_t*> &lex_array, int symbol, int num_str)
+{
+	lex_array.push_back(new Lex_t(Lex_kind_t::BAD_SYMBOL, symbol, num_str));
+}
+
 
 //---------------------------------------------LEX_STRING---------------------------------------------------
 
@@ -207,6 +213,10 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 		case '=':
 			switch(prev)
 			{
+			case '!':
+				lex_array.pop_back();
+				push_compop(lex_array, NOT_EQUAL, num_str);
+				break;				
 			case '=':
 				lex_array.pop_back();
 				push_compop(lex_array, EQUAL, num_str);
@@ -230,12 +240,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			push_compop(lex_array, GREATER, num_str);
 			break;
 		case '!':
-			istr >> elem;
-			if (elem != '=')
-			{
-				throw_exception("Syntax error in operator !=\n", token_counter(GET_CURRENT));
-			}
-			push_compop(lex_array, NOT_EQUAL, num_str);
+			push_symbol(lex_array, NEGATION, num_str);
 			break;
 		case '+':
 		{
@@ -377,7 +382,15 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			}
 			else if (!isspace(elem))
 			{
-				throw_exception("No such symbol exists\n", token_counter(GET_CURRENT));
+				istr.putback(elem);
+
+				push_bad_symbol(lex_array, static_cast<int>(elem), num_str);
+
+				std::string mess, line;
+
+				mess += "No such symbol exists\n";
+		
+				throw_exception(mess, lex_array.size() - 1);
 			}
 		}
 		}
@@ -438,9 +451,19 @@ std::string Lex_t::name() const
 		case Symbols_t::SEMICOL:
 			type = ";";
 			break;
+		case Symbols_t::NEGATION:
+			type = "!";
+			break;
 		}
 		return static_cast<std::string>("SYMBOL:") + type;
-	}	
+	}
+	case Lex_kind_t::BAD_SYMBOL:
+	{
+		std::string ret;
+		ret.push_back(data_);
+		return ret;
+		return static_cast<std::string>("STMT:") + ret;
+	}
 	case Lex_kind_t::BINOP:
 	{
 		std::string type;
@@ -533,6 +556,14 @@ std::string Lex_t::short_name() const
 			return ";";
 		case Symbols_t::SCAN:
 			return "?";
+		case Symbols_t::NEGATION:
+			return "!";
+		}
+	case Lex_kind_t::BAD_SYMBOL:
+		{
+			std::string ret;
+			ret.push_back(data_);
+			return ret;
 		}
 	case Lex_kind_t::BINOP:
 		switch (data_)

@@ -24,6 +24,14 @@ std::vector<Statement*> parse_program(std::vector<Lex_t *> &lex_array)
 	{	
 		switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 		{
+			case Lex_kind_t::SYMBOL:
+			{
+				if (is_semicol(lex_array[token_counter(USE_CURRENT)]))
+				{
+					token_counter(INCREMENT);
+					continue;
+				}
+			}
 			case Lex_kind_t::BRACE:
 			case Lex_kind_t::VAR:
 			{
