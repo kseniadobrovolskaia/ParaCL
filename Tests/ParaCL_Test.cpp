@@ -10,9 +10,9 @@ int main()
 	{
 		for (int num_test = 1; num_test < 6; num_test++)
 		{
-			std::string name_data = std::to_string(num_test) + "_test_data.txt";
-			std::string name_results = std::to_string(num_test) + "_test_results.txt";
-			std::string name_input = std::to_string(num_test) + "_test_input.txt";
+			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
+			std::string name_results = "tests/results/" + std::to_string(num_test) + "_test_results.txt";
+			std::string name_input = "tests/input/" + std::to_string(num_test) + "_test_input.txt";
 
 			std::ifstream data;
 
@@ -43,9 +43,9 @@ int main()
 
 			std::vector<Lex_t*> lexems = lex_string(data);
 			
-			std::vector<Statement*> prog = parse_program(lexems);
+			Scope *prog = parse_program(lexems);
 			
-			run_program(prog, input, results);
+			run_program(prog->get_lhs(), input, results);
 			clean_all_global_arrays();
 		}
 	}
@@ -58,8 +58,8 @@ int main()
 	
 	for (int num_test = 1; num_test < 6; num_test++)
 	{	
-		std::string name_input = std::to_string(num_test) + "_input_test.txt";
-		std::string name_results = std::to_string(num_test) + "_input_results.txt";
+		std::string name_input = "input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
+		std::string name_results = "input_tests/results/" + std::to_string(num_test) + "_input_results.txt";
 
 		std::ifstream input_data;
 
@@ -86,9 +86,9 @@ int main()
 			
 	  	std::vector<Lex_t*> lexems = lex_string(input_data);
 	 
-			std::vector<Statement*> prog = parse_program(lexems);
+			Scope *prog = parse_program(lexems);
 			
-			run_program(prog, input_data, results);
+			run_program(prog->get_lhs(), input_data, results);
 	  }
 	  catch(std::exception & ex)
 	  {
@@ -113,6 +113,7 @@ void clean_all_global_arrays()
 	token_counter(RESET);
 	lex_array.clear();
 	EoF = 0;
+	MAIN = 1;
 	VARS.clear();
 	vars.clear();
 }
