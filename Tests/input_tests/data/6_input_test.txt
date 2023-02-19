@@ -1,0 +1,9 @@
+//Input Test 6
+
+
+a
+b
+c
+d
+e =0;
+

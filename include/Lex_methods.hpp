@@ -190,14 +190,6 @@ int Assign_node::calculate(std::istream & istr)
 	
 	lhs_->calculate(istr);
 
-	// if (type_ == Assign_type::INPUT)
-	// {	
-	// 	istr >> std::ws;
-	// 	istr >> VARS[var_name];
-		
-	// 	return VARS[var_name];
-	// }
-
 	VARS[var_name] = rhs_->calculate(istr);
 
 	return VARS[var_name];

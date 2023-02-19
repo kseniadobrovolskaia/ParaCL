@@ -56,7 +56,7 @@ int main()
 	}
 
 	
-	for (int num_test = 1; num_test < 6; num_test++)
+	for (int num_test = 1; num_test < 13; num_test++)
 	{	
 		std::string name_input = "input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
 		std::string name_results = "input_tests/results/" + std::to_string(num_test) + "_input_results.txt";

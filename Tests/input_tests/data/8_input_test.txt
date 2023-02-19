@@ -1,0 +1,13 @@
+//Input Test 8
+
+
+n = 5;
+
+while (n--)
+	print n;
+	
+else
+{
+	print 0;
+}
+

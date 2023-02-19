@@ -55,7 +55,7 @@ enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
-enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC };
+enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC };
 
 enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION };
 
@@ -79,7 +79,7 @@ class Lex_t
 	int num_;				//index this token in lex_array
 
 public:
-	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){ num_ = lex_array.size() - 1; };
+	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){ num_ = lex_array.size(); };
 	Lex_t(const Lex_t &rhs) : kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_), num_(rhs.num_){};
 	virtual ~Lex_t() = default;
 	std::string name() const;

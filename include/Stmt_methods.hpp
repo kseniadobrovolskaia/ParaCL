@@ -124,6 +124,25 @@ public:
 };
 
 
+//----------------------------------------------------------------------------------------------------------
+
+
+class Arithmetic final : public Statement {
+
+	Lex_t *lhs_;
+
+public:
+	Arithmetic(Lex_t *lhs) :
+	Statement(Statements_t::ARITHMETIC), lhs_(lhs) {};
+	virtual ~Arithmetic() = default;
+	
+	virtual Lex_t *get_lhs() const override { return lhs_; };
+
+	virtual std::string name() const override;
+	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+};
+
+
 //--------------------------------------------RUN_STATEMENTS------------------------------------------------
 
 
@@ -179,13 +198,23 @@ void Inc_Dec::run_stmt(std::istream & istr, std::ostream & ostr)
 	lhs_->calculate(istr);
 }
 
+void Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
+{
+	lhs_->calculate(istr);
+}
+
 
 //-------------------------------------------------NAMES----------------------------------------------------
 
 
 std::string Assign::name() const
 {
-	return "=";
+	return lhs_->short_name();
+}
+
+std::string Arithmetic::name() const
+{
+	return lhs_->short_name();
 }
 
 std::string If::name() const
@@ -205,11 +234,7 @@ std::string Print::name() const
 
 std::string Inc_Dec::name() const
 {
-	if (this->get_kind() == Statements_t::INC)
-	{
-		return "++";
-	}
-	return "--";
+	return lhs_->short_name();
 }
 
 

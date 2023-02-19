@@ -47,6 +47,13 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 	{	
 		switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 		{
+			case Lex_kind_t::BINOP:
+			{
+				if (is_plus_minus(lex_array[token_counter(USE_CURRENT)]) != BinOp_t::SUB)
+				{
+					throw_exception("You can not start statement with this operator\n", token_counter(GET_CURRENT));
+				}
+			}
 			case Lex_kind_t::SYMBOL:
 			{
 				if (is_semicol(lex_array[token_counter(USE_CURRENT)]))
@@ -55,9 +62,15 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 					stmt = nullptr;
 					break;
 				}
+				
+				if (lex_array[token_counter(USE_CURRENT)]->get_data() == Symbols_t::ELSE)
+				{
+					throw_exception("You can not use \"else\" without \"if\"\n", token_counter(GET_CURRENT));
+				}
 			}
 			case Lex_kind_t::BRACE:
 			case Lex_kind_t::VAR:
+			case Lex_kind_t::VALUE:
 			{
 				Lex_t *Stmt = parse_arithmetic(lex_array);
 
@@ -79,13 +92,14 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 					}
 					default:
 					{
-						throw_exception("Arithmetic expression is not a statement\n", Stmt->get_num());
+						stmt = new Arithmetic(Stmt);
+						break;
 					}
 				}
 				
 				if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
 				{
-					throw_exception("Invalid input: bad semicols\n", token_counter(GET_CURRENT));
+					throw_exception("Invalid input: bad semicols\n", token_counter(GET_CURRENT) - 1);
 				}
 				token_counter(INCREMENT);
 				break;
@@ -141,7 +155,7 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 
 	if (With_braces)
 	{
-		throw_exception("Invalid input: bad braces \n", token_counter(GET_CURRENT) - 1);
+		throw_exception("Invalid input: bad braces \n", token_counter(GET_CURRENT));
 	}
 
 	if (token_counter(GET_CURRENT) >= size)

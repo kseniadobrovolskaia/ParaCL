@@ -34,7 +34,7 @@ int main(int argc, char const *argv[])
 		run_program(prog->get_lhs(), std::cin, std::cout);
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
-				//cd "shotwell sintax_tree.png");
+				// "shotwell sintax_tree.png");
 	
 	}
 	catch(std::exception & ex)

@@ -1,0 +1,10 @@
+//Input Test 7
+
+
+a = 2;
+
+if (a > 1)
+	print a;
+else
+	print 0--;
+

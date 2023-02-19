@@ -10,9 +10,16 @@
 
 void throw_exception(std::string mess, int error_elem)
 {
+	int is_last_elem = 0;
 	std::string command = mess;
 
 	int program_size = lex_array.size();
+
+	if (error_elem >= program_size)
+	{
+		error_elem = program_size - 1;
+		is_last_elem = 1;
+	}
 
 	int curr_elem = error_elem,
 	first_elem = error_elem, 
@@ -30,7 +37,7 @@ void throw_exception(std::string mess, int error_elem)
 	first_elem++;
 
 	std::string command4(static_cast<int>(std::to_string(str).size()), ' ');
-	command4 += " | Error in row number " + std::to_string(str) + " and column number " + std::to_string(curr_elem - first_elem + 2) + "\n";
+	command4 += " | Error in row number " + std::to_string(str) + " and column number " + std::to_string(curr_elem - first_elem + (is_last_elem ? 2 : 1)) + "\n";
 
 	while ((last_elem < program_size) && (lex_array[last_elem]->get_str() == str))
 	{

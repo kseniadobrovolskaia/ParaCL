@@ -57,6 +57,15 @@ Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			Lex_t *var = L;
+			while (!dynamic_cast<Variable*>(var))
+			{
+				if (var == nullptr)
+				{
+					throw_exception("You can not use assign without variable\n", token_counter(GET_CURRENT));
+				}
+				var = var->get_var();	
+			}
 			as = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
 			R = parse_bool(lex_array);	
@@ -206,6 +215,15 @@ Lex_t *parse_unary(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
+			Lex_t *var = L;
+			while (!dynamic_cast<Variable*>(var))
+			{
+				if (var == nullptr)
+				{
+					throw_exception("You can not use unary operator without variable\n", token_counter(GET_CURRENT));
+				}
+				var = var->get_var();	
+			}
 			unop = lex_array[token_counter(USE_CURRENT)];
 			token_counter(INCREMENT);
 			L = new UnOp(L, *unop);
