@@ -74,28 +74,7 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 			{
 				Lex_t *Stmt = parse_arithmetic(lex_array);
 
-				switch (Stmt->get_kind())
-				{
-					case Lex_kind_t::UNOP:
-					{
-						stmt = new Inc_Dec(Stmt);
-						break;
-					}
-					case Lex_kind_t::STMT:
-					{
-						if (Stmt->get_data() != Statements_t::ASSIGN)
-						{
-							throw_exception("Invalid assign\n", Stmt->get_num());
-						}
-						stmt = new Assign(Stmt);
-						break;
-					}
-					default:
-					{
-						stmt = new Arithmetic(Stmt);
-						break;
-					}
-				}
+				stmt = new Arithmetic(Stmt);
 				
 				if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
 				{

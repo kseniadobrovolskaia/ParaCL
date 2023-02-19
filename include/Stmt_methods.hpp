@@ -28,25 +28,6 @@ public:
 //---------------------------------------STATEMENT_CLASSES-------------------------------------------------
 
 
-class Assign final : public Statement {
-
-	Lex_t *lhs_;
-
-public:
-	Assign(Lex_t *lhs) :
-	Statement(Statements_t::ASSIGN), lhs_(lhs) {};
-	virtual ~Assign() = default;
-
-	virtual Lex_t *get_lhs() const override { return lhs_; };
-	
-	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
-};
-
-
-//----------------------------------------------------------------------------------------------------------
-
-
 class If final : public Statement {
 
 	Lex_t *lhs_, *rhs_;
@@ -108,25 +89,6 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
-class Inc_Dec final : public Statement {
-
-	Lex_t *lhs_;
-
-public:
-	Inc_Dec(Lex_t *lhs) :
-	Statement(static_cast<Statements_t>(lhs->get_data())), lhs_(lhs) {};
-	virtual ~Inc_Dec() = default;
-	
-	virtual Lex_t *get_lhs() const override { return lhs_; };
-
-	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
-};
-
-
-//----------------------------------------------------------------------------------------------------------
-
-
 class Arithmetic final : public Statement {
 
 	Lex_t *lhs_;
@@ -147,12 +109,6 @@ public:
 
 
 void run_program(std::vector<Statement*> prog, std::istream & istr, std::ostream & ostr);
-
-
-void Assign::run_stmt(std::istream & istr, std::ostream & ostr)
-{
-	lhs_->calculate(istr);
-}
 
 
 void If::run_stmt(std::istream & istr, std::ostream & ostr)
@@ -193,11 +149,6 @@ void Print::run_stmt(std::istream & istr, std::ostream & ostr)
 }
 
 
-void Inc_Dec::run_stmt(std::istream & istr, std::ostream & ostr)
-{
-	lhs_->calculate(istr);
-}
-
 void Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
 {
 	lhs_->calculate(istr);
@@ -206,16 +157,6 @@ void Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
 
 //-------------------------------------------------NAMES----------------------------------------------------
 
-
-std::string Assign::name() const
-{
-	return lhs_->short_name();
-}
-
-std::string Arithmetic::name() const
-{
-	return lhs_->short_name();
-}
 
 std::string If::name() const
 {
@@ -232,7 +173,7 @@ std::string Print::name() const
 	return "print";
 }
 
-std::string Inc_Dec::name() const
+std::string Arithmetic::name() const
 {
 	return lhs_->short_name();
 }

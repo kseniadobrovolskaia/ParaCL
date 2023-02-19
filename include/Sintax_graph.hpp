@@ -11,8 +11,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
 
 int is_if_long_form(Statement *stmt);
 int is_if_while(Statement *stmt);
-int is_assign(Statement *stmt);
-int is_unop(Statement *stmt);
+int is_arithmetic(Statement *stmt);
 
 
 
@@ -62,7 +61,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 		
 		num_node++;
 
-		if (is_unop(prog[prog_elem]) || is_assign(prog[prog_elem]))
+		if (is_arithmetic(prog[prog_elem]))
 		{
 			create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
 			file_tree << "\n           node_" << stmt << "  -> node_" << stmt + 1 << ";\n";
@@ -182,19 +181,13 @@ int is_if_while(Statement *stmt)
 }
 
 
-int is_assign(Statement *stmt)
+int is_arithmetic(Statement *stmt)
 {
-	return stmt->get_kind() == Statements_t::ASSIGN;
-}
-
-
-int is_unop(Statement *stmt)
-{
-	if ((stmt->get_kind() == Statements_t::INC) ||
-	(stmt->get_kind() == Statements_t::DEC))
+	if ((stmt->get_kind()) == Statements_t::ARITHMETIC)
 	{
 		return 1;
 	}
+	
 	return 0;
 }
 
