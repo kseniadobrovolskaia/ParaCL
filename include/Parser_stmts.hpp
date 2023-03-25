@@ -8,7 +8,6 @@
 int MAIN = 1;
 
 
-Scope *parse_program(std::vector<Lex_t *> &lex_array);
 Statement *parse_while(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_if(std::vector<Lex_t *> &lex_array);
@@ -17,7 +16,7 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array);
 //--------------------------------------------PARSERS---------------------------------------------------
 
 
-Scope *parse_program(std::vector<Lex_t *> &lex_array)
+Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 {
 	std::vector<Statement*> prog_elems;
 	int size = lex_array.size();
@@ -25,17 +24,20 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 	Lex_t *scop;
 	int With_braces = 0;
 	int ONE_STMT = 0;
+	int main = 0;
 
-	if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
+
+	if (MAIN)
+	{
+		MAIN = 0;
+		main = 0;
+		scop = new Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
+	}
+	else if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
 	{
 		With_braces = 1;
 		scop = lex_array[token_counter(USE_CURRENT)];
 		token_counter(INCREMENT);
-	}
-	else if (MAIN)
-	{
-		MAIN = 0;
-		scop = new Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
 	}
 	else
 	{
@@ -47,13 +49,6 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 	{	
 		switch (lex_array[token_counter(USE_CURRENT)]->get_kind())
 		{
-			case Lex_kind_t::BINOP:
-			{
-				if (is_plus_minus(lex_array[token_counter(USE_CURRENT)]) != BinOp_t::SUB)
-				{
-					throw_exception("You can not start statement with this operator\n", token_counter(GET_CURRENT));
-				}
-			}
 			case Lex_kind_t::SYMBOL:
 			{
 				if (is_semicol(lex_array[token_counter(USE_CURRENT)]))
@@ -67,21 +62,6 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 				{
 					throw_exception("You can not use \"else\" without \"if\"\n", token_counter(GET_CURRENT));
 				}
-			}
-			case Lex_kind_t::BRACE:
-			case Lex_kind_t::VAR:
-			case Lex_kind_t::VALUE:
-			{
-				Lex_t *Stmt = parse_arithmetic(lex_array);
-
-				stmt = new Arithmetic(Stmt);
-				
-				if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
-				{
-					throw_exception("Invalid input: bad semicols\n", token_counter(GET_CURRENT) - 1);
-				}
-				token_counter(INCREMENT);
-				break;
 			}
 			case Lex_kind_t::STMT:
 			{
@@ -99,6 +79,36 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 				}
 				break;
 			}
+			case Lex_kind_t::BINOP:
+			{
+				if (is_plus_minus(lex_array[token_counter(USE_CURRENT)]) != BinOp_t::SUB)
+				{
+					throw_exception("You can not start statement with this operator\n", token_counter(GET_CURRENT));
+				}
+			}
+			case Lex_kind_t::SCOPE:
+			case Lex_kind_t::BRACE:
+			case Lex_kind_t::VAR:
+			case Lex_kind_t::VALUE:
+			{
+				if (is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
+				{
+					Lex_t *Stmt = parse_arithmetic(lex_array);
+
+					stmt = new Arithmetic(Stmt);
+					
+					if (is_semicol(lex_array[token_counter(USE_CURRENT)]))
+					{
+						token_counter(INCREMENT);
+					}
+					else if (Stmt->get_kind() != Lex_kind_t::SCOPE)
+					{
+						throw_exception("Invalid input: bad semicols!\n", token_counter(GET_CURRENT) - 1);
+					}
+					
+					break;
+				}
+			}
 			default:
 			{
 				if (With_braces)
@@ -113,9 +123,15 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 
 					return new Scope(prog_elems, *scop);
 				}
-				
+				else if (main)
+				{
+					if (token_counter(GET_CURRENT) < size)
+					{
+						throw_exception("Extra character\n", token_counter(GET_CURRENT));
+					}
+				}
+
 				throw_exception("Invalid input: bad program building\n", token_counter(GET_CURRENT));
-				
 			}
 		}
 
@@ -129,17 +145,11 @@ Scope *parse_program(std::vector<Lex_t *> &lex_array)
 			ONE_STMT = 0;
 			return new Scope(prog_elems, *scop);
 		}
-		
 	}
 
 	if (With_braces)
 	{
-		throw_exception("Invalid input: bad braces \n", token_counter(GET_CURRENT));
-	}
-
-	if (token_counter(GET_CURRENT) >= size)
-	{
-		MAIN = 1;
+		throw_exception("Invalid input: bad braces (?)\n", token_counter(GET_CURRENT));
 	}
 
 	return new Scope(prog_elems, *scop);
@@ -156,13 +166,13 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 	}
 
 	Lex_t* L = parse_arithmetic(lex_array);
-	Lex_t *R = parse_program(lex_array);
+	Lex_t *R = parse_scope(lex_array);
 	Lex_t *Else = nullptr;
 
 	if ((token_counter(GET_CURRENT) < static_cast<int>(lex_array.size())) && is_else(lex_array[token_counter(USE_CURRENT)]))
 	{
 		token_counter(INCREMENT);
-		Else = parse_program(lex_array);
+		Else = parse_scope(lex_array);
 	}
 
 	return new If(L, R, Else);
@@ -179,7 +189,7 @@ Statement *parse_while(std::vector<Lex_t *> &lex_array)
 	}
 
 	Lex_t* L = parse_arithmetic(lex_array);
-	Lex_t *R = parse_program(lex_array);
+	Lex_t *R = parse_scope(lex_array);
 
 	return new While(L, R);
 }

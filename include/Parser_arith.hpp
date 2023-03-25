@@ -10,6 +10,7 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_negation(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_negative(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_unary(std::vector<Lex_t *> &lex_array);
+Lex_t *parse_scope(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_asgn(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_bool(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_E(std::vector<Lex_t *> &lex_array);
@@ -35,7 +36,16 @@ int is_unop(Lex_t *node);
 
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 {
-	Lex_t *root = parse_asgn(lex_array);
+	Lex_t *root;
+
+	if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
+	{
+		root = parse_scope(lex_array);
+	}
+	else
+	{
+		root = parse_asgn(lex_array);
+	}
 
 	return root;
 }

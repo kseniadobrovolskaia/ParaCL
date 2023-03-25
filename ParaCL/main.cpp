@@ -28,10 +28,10 @@ int main(int argc, char const *argv[])
 			lex_array = lex_string(std::cin);
 		}
 
-		Scope *prog = parse_program(lex_array);
-		build_sintax_graph(prog->get_lhs());
+		Lex_t *prog = parse_scope(lex_array);
+		//build_sintax_graph(static_cast<Scope*>(prog)->get_lhs());
 
-		run_program(prog->get_lhs(), std::cin, std::cout);
+		run_program(prog, std::cin, std::cout);
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
 				// "shotwell sintax_tree.png");

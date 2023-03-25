@@ -6,8 +6,8 @@
 
 
 
-//---------------------------------------STATEMENT_CLASS---------------------------------------------------
-
+//------------------------------------ABSTRACT_STATEMENT_CLASS---------------------------------------------------
+#if 0
 
 class Statement{
 
@@ -21,9 +21,9 @@ public:
 	virtual Lex_t *get_lhs() const = 0;
 
 	virtual std::string name() const = 0;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) = 0;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) = 0;
 };
-
+#endif
 
 //---------------------------------------STATEMENT_CLASSES-------------------------------------------------
 
@@ -43,7 +43,7 @@ public:
   	Lex_t *get_else() const { return else_; };
 
 	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -63,7 +63,7 @@ public:
   	Lex_t *get_rhs() const { return rhs_; };
 
 	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -82,7 +82,7 @@ public:
 	virtual Lex_t *get_lhs() const override { return lhs_; };
 
 	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -101,57 +101,64 @@ public:
 	virtual Lex_t *get_lhs() const override { return lhs_; };
 
 	virtual std::string name() const override;
-	virtual void run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
 };
 
 
 //--------------------------------------------RUN_STATEMENTS------------------------------------------------
 
 
-void run_program(std::vector<Statement*> prog, std::istream & istr, std::ostream & ostr);
-
-
-void If::run_stmt(std::istream & istr, std::ostream & ostr)
+int If::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	int condition = lhs_->calculate(istr);
+	int res;
+	int condition = lhs_->calculate(istr, ostr);
 
 	if (condition)
 	{
-		run_program(static_cast<Scope*>(rhs_)->get_lhs(), istr, ostr);
+		res = rhs_->calculate(istr, ostr);
 	}
 	else
 	{
 		if (else_)
 		{
-			run_program(static_cast<Scope*>(else_)->get_lhs(), istr, ostr);
+			res = else_->calculate(istr, ostr);
 		}
 	}
+
+	return res;
 }
 
 
-void While::run_stmt(std::istream & istr, std::ostream & ostr)
+int While::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	int condition = lhs_->calculate(istr);
+	int res;
+	int condition = lhs_->calculate(istr, ostr);
 
 	while (condition)
 	{
-		run_program(static_cast<Scope*>(rhs_)->get_lhs(), istr, ostr);
-		condition = lhs_->calculate(istr);
+		res = rhs_->calculate(istr, ostr);
+		condition = lhs_->calculate(istr, ostr);
 	}
+
+	return res;
 }
 
 
-void Print::run_stmt(std::istream & istr, std::ostream & ostr)
+int Print::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	int val = lhs_->calculate(istr);
+	int val = lhs_->calculate(istr, ostr);
 	
 	ostr << val << std::endl;
+
+	return val;
 }
 
 
-void Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
+int Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
 {
-	lhs_->calculate(istr);
+	int res = lhs_->calculate(istr, ostr);
+
+	return res;
 }
 
 

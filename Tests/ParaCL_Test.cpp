@@ -10,6 +10,7 @@ int main()
 	{
 		for (int num_test = 1; num_test < 6; num_test++)
 		{
+			std::cout << "Start test number " << num_test << std::endl;
 			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
 			std::string name_results = "tests/results/" + std::to_string(num_test) + "_test_results.txt";
 			std::string name_input = "tests/input/" + std::to_string(num_test) + "_test_input.txt";
@@ -43,9 +44,9 @@ int main()
 
 			std::vector<Lex_t*> lexems = lex_string(data);
 			
-			Scope *prog = parse_program(lexems);
+			Lex_t *prog = parse_scope(lexems);
 			
-			run_program(prog->get_lhs(), input, results);
+			run_program(prog, input, results);
 			clean_all_global_arrays();
 		}
 	}
@@ -58,6 +59,8 @@ int main()
 	
 	for (int num_test = 1; num_test < 13; num_test++)
 	{	
+		std::cout << "Start input test number " << num_test << std::endl;
+
 		std::string name_input = "input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
 		std::string name_results = "input_tests/results/" + std::to_string(num_test) + "_input_results.txt";
 
@@ -86,9 +89,9 @@ int main()
 			
 	  	std::vector<Lex_t*> lexems = lex_string(input_data);
 	 
-			Scope *prog = parse_program(lexems);
+			Lex_t *prog = parse_scope(lexems);
 			
-			run_program(prog->get_lhs(), input_data, results);
+			run_program(prog, input_data, results);
 	  }
 	  catch(std::exception & ex)
 	  {

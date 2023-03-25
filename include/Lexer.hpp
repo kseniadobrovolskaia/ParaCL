@@ -89,7 +89,7 @@ public:
 	int get_data() const { return data_; };
 	int get_num() const { return num_; };
 	virtual Lex_t* get_var() const { return nullptr; };
-	virtual int calculate(std::istream & istr) { return data_; };
+	virtual int calculate(std::istream & istr, std::ostream & ostr) { return data_; };
 };
 
 
