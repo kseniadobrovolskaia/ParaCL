@@ -38,9 +38,11 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 {
 	Lex_t *root;
 
-	if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
+	if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::RSCOPE)
 	{
-		root = parse_scope(lex_array);
+		int num_lexem = token_counter(GET_CURRENT);
+		Lex_t *scop = parse_scope(lex_array);
+		root = new Scope(static_cast<Scope*>(scop)->get_lhs(), *lex_array[num_lexem]);		
 	}
 	else
 	{
@@ -48,6 +50,7 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 	}
 
 	return root;
+
 }
 
 
@@ -267,11 +270,13 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		case Lex_kind_t::VALUE:
 		{
 			T = new Value(*lex_array[token_counter(USE_CURRENT)], Value_type::NUMBER);
+			token_counter(INCREMENT);
 			break;
 		}
 		case Lex_kind_t::VAR:
 		{
 			T = new Variable(*lex_array[token_counter(USE_CURRENT)]);
+			token_counter(INCREMENT);
 			break;
 		}
 		case Lex_kind_t::SYMBOL:
@@ -279,16 +284,27 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 			if (is_scan(lex_array[token_counter(USE_CURRENT)]))
 			{
 				T = new Value(*lex_array[token_counter(USE_CURRENT)], Value_type::INPUT);
+				token_counter(INCREMENT);
+				break;
+			}
+		}
+		case Lex_kind_t::SCOPE:
+		{
+			if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
+			{
+				int num_lexem = token_counter(GET_CURRENT);
+				Lex_t *scop = parse_scope(lex_array);
+
+				T = new Scope(static_cast<Scope*>(scop)->get_lhs(), *lex_array[num_lexem]);
 				break;
 			}
 		}
 		default:
 		{
-			throw_exception("Something strange instead of a value/variable\n", token_counter(GET_CURRENT));
+			throw_exception("Something strange instead of a value/variable/scope\n", token_counter(GET_CURRENT));
 		}
 	}
 	
-	token_counter(INCREMENT);
 	return T;
 }
 

@@ -147,7 +147,7 @@ int While::run_stmt(std::istream & istr, std::ostream & ostr)
 int Print::run_stmt(std::istream & istr, std::ostream & ostr)
 {
 	int val = lhs_->calculate(istr, ostr);
-	
+
 	ostr << val << std::endl;
 
 	return val;

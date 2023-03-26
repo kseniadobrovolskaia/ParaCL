@@ -316,16 +316,15 @@ int CompOp::calculate(std::istream & istr, std::ostream & ostr)
 int Scope::calculate(std::istream & istr, std::ostream & ostr)
 {
 	int res;
-	int size_prog = stmts_.size();
+	int size_program = stmts_.size();
 	
-	for (int prog_elem = 0; prog_elem < size_prog; prog_elem++)
+	for (int prog_elem = 0; prog_elem < size_program; prog_elem++)
 	{
-		res = stmts_[prog_elem]->run_stmt(istr, ostr);
+		res = (stmts_[prog_elem])->run_stmt(istr, ostr);
 	}
 
 	return res;
 }
-
 
 
 #endif
