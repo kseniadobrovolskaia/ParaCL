@@ -1,0 +1,9 @@
+//Test 8
+
+
+a={};
+{};
+print {};
+print a;
+print {} + 1;
+

@@ -136,8 +136,8 @@ int While::run_stmt(std::istream & istr, std::ostream & ostr)
 
 	while (condition)
 	{
-		res = rhs_->calculate(istr, ostr);
-		condition = lhs_->calculate(istr, ostr);
+		rhs_->calculate(istr, ostr);
+		res = (condition = lhs_->calculate(istr, ostr));
 	}
 
 	return res;

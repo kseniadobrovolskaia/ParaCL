@@ -190,7 +190,7 @@ int Variable::calculate(std::istream & istr, std::ostream & ostr)
 		throw_exception("Uninitialized variable\n", this->get_num());
 	}
 
-	return VARS[var_name];
+	return VARS[var_name];//curr_scope.get_value(var_name);
 }
 
 
@@ -315,7 +315,7 @@ int CompOp::calculate(std::istream & istr, std::ostream & ostr)
 
 int Scope::calculate(std::istream & istr, std::ostream & ostr)
 {
-	int res;
+	int res = 0;
 	int size_program = stmts_.size();
 	
 	for (int prog_elem = 0; prog_elem < size_program; prog_elem++)

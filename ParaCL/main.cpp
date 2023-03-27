@@ -1,6 +1,9 @@
 #include "Sintax_graph.hpp"
-#include "Run_program.hpp"
+#include "Scope_table.hpp"
 
+
+//std::unordered_map<std::string, int>VARS;		//initialized variables and their values
+Scope_table *CURR_SCOPE;
 
 void print_lex_array(std::vector<Lex_t*> &lex_array);
 void print_prog_elems(std::vector<Statement*> prog);
@@ -10,6 +13,8 @@ int main(int argc, char const *argv[])
 {
 	try
 	{
+		CURR_SCOPE = new Scope_table();
+
 		if (argc > 1)
 		{
 			std::ifstream data;

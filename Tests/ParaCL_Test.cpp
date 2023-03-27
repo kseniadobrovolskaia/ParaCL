@@ -8,7 +8,7 @@ int main()
 {
 	try
 	{
-		for (int num_test = 1; num_test < 6; num_test++)
+		for (int num_test = 1; num_test < 11; num_test++)
 		{
 			std::cout << "Start test number " << num_test << std::endl;
 			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
@@ -57,7 +57,7 @@ int main()
 	}
 
 	
-	for (int num_test = 1; num_test < 13; num_test++)
+	for (int num_test = 1; num_test < 21; num_test++)
 	{	
 		std::cout << "Start input test number " << num_test << std::endl;
 

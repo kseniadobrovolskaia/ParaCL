@@ -79,6 +79,46 @@ TEST(Test_ParaCL, Test5)
   EXPECT_TRUE(IsEqual(name_results, name_answer));
 }
 
+TEST(Test_ParaCL, Test6)
+{
+  std::string name_results = "../tests/results/6_test_results.txt";
+  std::string name_answer = "../tests/answers/6_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test7)
+{
+  std::string name_results = "../tests/results/7_test_results.txt";
+  std::string name_answer = "../tests/answers/7_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test8)
+{
+  std::string name_results = "../tests/results/8_test_results.txt";
+  std::string name_answer = "../tests/answers/8_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test9)
+{
+  std::string name_results = "../tests/results/9_test_results.txt";
+  std::string name_answer = "../tests/answers/9_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test10)
+{
+  std::string name_results = "../tests/results/10_test_results.txt";
+  std::string name_answer = "../tests/answers/10_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
 
 //------------------------------INPUT_TESTS------------------------------
 
@@ -178,3 +218,68 @@ TEST(Test_Input, Test12)
   
   EXPECT_TRUE(IsEqual(name_results, name_answer));
 }
+
+TEST(Test_Input, Test13)
+{
+  std::string name_results = "../input_tests/results/13_input_results.txt";
+  std::string name_answer = "../input_tests/answers/13_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test14)
+{
+  std::string name_results = "../input_tests/results/14_input_results.txt";
+  std::string name_answer = "../input_tests/answers/14_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test15)
+{
+  std::string name_results = "../input_tests/results/15_input_results.txt";
+  std::string name_answer = "../input_tests/answers/15_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test16)
+{
+  std::string name_results = "../input_tests/results/16_input_results.txt";
+  std::string name_answer = "../input_tests/answers/16_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test17)
+{
+  std::string name_results = "../input_tests/results/17_input_results.txt";
+  std::string name_answer = "../input_tests/answers/17_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test18)
+{
+  std::string name_results = "../input_tests/results/18_input_results.txt";
+  std::string name_answer = "../input_tests/answers/18_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test19)
+{
+  std::string name_results = "../input_tests/results/19_input_results.txt";
+  std::string name_answer = "../input_tests/answers/19_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_Input, Test20)
+{
+  std::string name_results = "../input_tests/results/20_input_results.txt";
+  std::string name_answer = "../input_tests/answers/20_input_answer.txt";
+  
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
