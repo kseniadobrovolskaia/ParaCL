@@ -15,7 +15,6 @@
 
 int EoF = 0;
 
-std::unordered_map<std::string, int>VARS;		//initialized variables and their values
 std::vector<std::string> vars;					//variables appeared in lexical analysis
 
 

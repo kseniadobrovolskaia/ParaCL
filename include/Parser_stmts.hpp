@@ -21,6 +21,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 	std::vector<Statement*> prog_elems;
 	int size = lex_array.size();
 	Statement *stmt;
+	Scope_table *scp_tbl = CURR_SCOPE, *old_tbl = CURR_SCOPE;
 	Lex_t *scop;
 	int main = 0;
 	int ONE_STMT = 0;
@@ -36,11 +37,15 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 	{
 		scop = lex_array[token_counter(USE_CURRENT)];
 		token_counter(INCREMENT);
+		scp_tbl = new Scope_table(CURR_SCOPE);
+		CURR_SCOPE = scp_tbl;
 	}
 	else
 	{
 		scop = new Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
 		ONE_STMT = 1;
+		scp_tbl = new Scope_table(CURR_SCOPE);
+		CURR_SCOPE = scp_tbl;
 	}
 
 	while (token_counter(GET_CURRENT) < size)
@@ -112,13 +117,17 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 				}
 				else
 				{
+
 					if (main)
 					{
 						throw_exception("Invalid input: bad program building\n", token_counter(GET_CURRENT));
 					}
 
 					token_counter(INCREMENT);
-					return new Scope(prog_elems, *scop);
+
+					CURR_SCOPE = old_tbl;
+
+					return new Scope(scp_tbl, prog_elems, *scop);
 				}
 			}
 			default:
@@ -135,7 +144,10 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 		if (ONE_STMT)
 		{
 			ONE_STMT = 0;
-			return new Scope(prog_elems, *scop);
+
+			CURR_SCOPE = old_tbl;
+
+			return new Scope(scp_tbl, prog_elems, *scop);
 		}
 	}
 
@@ -144,7 +156,9 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 		throw_exception("I dont understand everything\n", token_counter(GET_CURRENT));
 	}
 
-	return new Scope(prog_elems, *scop);
+	CURR_SCOPE = old_tbl;
+
+	return new Scope(scp_tbl, prog_elems, *scop);
 }
 
 

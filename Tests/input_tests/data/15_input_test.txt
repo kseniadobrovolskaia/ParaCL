@@ -1,1 +1,13 @@
-a s
+//Input Test 15
+
+
+a = 4;
+if (a > 0)
+{
+	a--;
+	b = a;
+}
+
+print b;
+
+

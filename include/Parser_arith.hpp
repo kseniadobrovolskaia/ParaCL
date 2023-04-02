@@ -31,6 +31,7 @@ int is_else(Lex_t *node);
 int is_unop(Lex_t *node);
 
 
+
 //---------------------------------------------PARSERS-----------------------------------------------------
 
 
@@ -40,9 +41,7 @@ Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array)
 
 	if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::RSCOPE)
 	{
-		int num_lexem = token_counter(GET_CURRENT);
-		Lex_t *scop = parse_scope(lex_array);
-		root = new Scope(static_cast<Scope*>(scop)->get_lhs(), *lex_array[num_lexem]);		
+		root = parse_scope(lex_array);
 	}
 	else
 	{
@@ -292,10 +291,7 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		{
 			if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
 			{
-				int num_lexem = token_counter(GET_CURRENT);
-				Lex_t *scop = parse_scope(lex_array);
-
-				T = new Scope(static_cast<Scope*>(scop)->get_lhs(), *lex_array[num_lexem]);
+				T = parse_scope(lex_array);
 				break;
 			}
 		}

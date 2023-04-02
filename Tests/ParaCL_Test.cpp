@@ -10,6 +10,8 @@ int main()
 	{
 		for (int num_test = 1; num_test < 11; num_test++)
 		{
+			CURR_SCOPE = new Scope_table();
+
 			std::cout << "Start test number " << num_test << std::endl;
 			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
 			std::string name_results = "tests/results/" + std::to_string(num_test) + "_test_results.txt";
@@ -59,6 +61,8 @@ int main()
 	
 	for (int num_test = 1; num_test < 21; num_test++)
 	{	
+		CURR_SCOPE = new Scope_table();
+
 		std::cout << "Start input test number " << num_test << std::endl;
 
 		std::string name_input = "input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
@@ -68,43 +72,44 @@ int main()
 
 		input_data.open(name_input);
 		if (!(input_data.is_open()))
-	  {
-	    std::cerr << "File \"" << name_input << "\" did not open" << std::endl;
-	    exit(EXIT_FAILURE);
-	  }
+		{
+			std::cerr << "File \"" << name_input << "\" did not open" << std::endl;
+		    exit(EXIT_FAILURE);
+		}
 
-	  std::ofstream results;
+	 	std::ofstream results;
 		results.open(name_results);
+
 		if (!(results.is_open()))
 		{
 		  std::cerr << "File \"" << name_results << "\" did not open" << std::endl;
 		  exit(EXIT_FAILURE);
 		}
 
-	  try
-	  {
-	  	clean_all_global_arrays();
-	  	
-	  	input_data >> std::noskipws;
+		try
+		{
+			input_data >> std::noskipws;
 			
-	  	std::vector<Lex_t*> lexems = lex_string(input_data);
-	 
+			std::vector<Lex_t*> lexems = lex_string(input_data);
+
 			Lex_t *prog = parse_scope(lexems);
 			
 			run_program(prog, input_data, results);
-	  }
-	  catch(std::exception & ex)
-	  {
-	  	std::string err_mess = ex.what();
+		}
+		catch(std::exception & ex)
+		{
+			std::string err_mess = ex.what();
 
-	  	int start = err_mess.find("Error in row number");
+			int start = err_mess.find("Error in row number");
 
-	  	std::string error = err_mess.substr(start);
+			std::string error = err_mess.substr(start);
 
-	  	results << error;
-	  	results.close();
-	  	input_data.clear();
-	  }
+			results << error;
+			results.close();
+			input_data.clear();
+		}
+
+		clean_all_global_arrays();
 	}
 
 	return 0;
@@ -117,6 +122,6 @@ void clean_all_global_arrays()
 	lex_array.clear();
 	EoF = 0;
 	MAIN = 1;
-	VARS.clear();
+	delete CURR_SCOPE;
 	vars.clear();
 }

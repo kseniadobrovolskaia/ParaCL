@@ -2,7 +2,10 @@
 #define LEX_METHODS_H
 
 
-#include "Throw_exception.hpp"
+#include "Scope_table.hpp"
+
+
+Scope_table *CURR_SCOPE;
 
 
 //--------------------------------------------LEXEME_CLASSES------------------------------------------------
@@ -17,7 +20,7 @@ class Value : public Lex_t {
 public:
 	Value(const Lex_t &val, Value_type type) : Lex_t(val), type_(type){};
 	Value_type get_type() const { return type_; }
-	virtual int calculate(std::istream & istr, std::ostream & ostr) override;
+	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -28,7 +31,7 @@ class Variable : public Lex_t {
 	
 public:
  	Variable(const Lex_t &var) : Lex_t(var){};
- 	virtual int calculate(std::istream & istr, std::ostream & ostr) override;
+ 	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -42,7 +45,7 @@ class Negation : public Lex_t {
 public:
  	Negation(Lex_t *rhs, const Lex_t &neg) : Lex_t(neg), rhs_(rhs){};
  	Lex_t *get_rhs() const { return rhs_; };
- 	virtual int calculate(std::istream & istr, std::ostream & ostr) override;
+ 	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
  	virtual Lex_t *get_var() const override { return rhs_; };
 };
 
@@ -60,7 +63,7 @@ public:
   	Lex_t *get_lhs() const { return lhs_; };
   	Lex_t *get_rhs() const { return rhs_; };
   	virtual Lex_t *get_var() const override { return lhs_; };
-  	virtual int calculate(std::istream & istr, std::ostream & ostr) override;
+  	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -80,7 +83,7 @@ public:
 	virtual Lex_t *get_lhs() const = 0;
 
 	virtual std::string name() const = 0;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) = 0;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) = 0;
 };
 
 
@@ -89,12 +92,13 @@ public:
 
 class Scope : public Lex_t {
 
+	Scope_table *scp_table_;
 	std::vector<Statement*> stmts_;
 
 public:
-	Scope(std::vector <Statement*> lhs, const Lex_t &scope) : Lex_t(scope), stmts_(lhs){};
+	Scope(Scope_table *scp_table, std::vector <Statement*> lhs, const Lex_t &scope) : Lex_t(scope), scp_table_(scp_table), stmts_(lhs){};
 	std::vector<Statement*> get_lhs() const { return stmts_; };
-	virtual int calculate(std::istream & istr, std::ostream & ostr) override;
+	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -185,12 +189,7 @@ int Variable::calculate(std::istream & istr, std::ostream & ostr)
 {
 	std::string var_name = vars[this->get_data()];
 
-	if (!VARS.contains(var_name))
-	{
-		throw_exception("Uninitialized variable\n", this->get_num());
-	}
-
-	return VARS[var_name];//curr_scope.get_value(var_name);
+	return CURR_SCOPE->get_var(var_name, this->get_num());
 }
 
 
@@ -207,13 +206,12 @@ int Assign_node::calculate(std::istream & istr, std::ostream & ostr)
 	Lex_t *var = lhs_;
 	std::string var_name;
 
+	int right_part = rhs_->calculate(istr, ostr);
+
 	if (dynamic_cast<Variable*>(var))
 	{
 		var_name = vars[var->get_data()];
-		if (!VARS.contains(var_name))
-		{
-			VARS[var_name] = 0;
-		}
+		CURR_SCOPE->init_var(var_name);
 	}
 	else
 	{
@@ -223,12 +221,12 @@ int Assign_node::calculate(std::istream & istr, std::ostream & ostr)
 		}
 		var_name = vars[var->get_data()];
 	}
-	
+
 	lhs_->calculate(istr, ostr);
 
-	VARS[var_name] = rhs_->calculate(istr, ostr);
+	CURR_SCOPE->get_var(var_name, var->get_num()) = right_part;
 
-	return VARS[var_name];
+	return CURR_SCOPE->get_var(var_name, var->get_num());
 }
 
 
@@ -275,11 +273,11 @@ int UnOp::calculate(std::istream & istr, std::ostream & ostr)
 	switch (this->get_data())
 	{
 		case Statements_t::INC:
-			VARS[var_name] += 1;
-			return VARS[var_name];
+			CURR_SCOPE->get_var(var_name, this->get_num()) += 1;
+			return CURR_SCOPE->get_var(var_name, this->get_num());
 		case Statements_t::DEC:
-			VARS[var_name] -= 1;
-			return VARS[var_name];
+			CURR_SCOPE->get_var(var_name, this->get_num()) -= 1;
+			return CURR_SCOPE->get_var(var_name, this->get_num());
 	}
 
 	throw_exception("Error: it is not clear what is in function \"UnOp::calculate\"\n", this->get_num());
@@ -317,11 +315,16 @@ int Scope::calculate(std::istream & istr, std::ostream & ostr)
 {
 	int res = 0;
 	int size_program = stmts_.size();
+
+	Scope_table *old_scope = CURR_SCOPE;
+	CURR_SCOPE = scp_table_;
 	
 	for (int prog_elem = 0; prog_elem < size_program; prog_elem++)
 	{
 		res = (stmts_[prog_elem])->run_stmt(istr, ostr);
 	}
+
+	CURR_SCOPE = old_scope;
 
 	return res;
 }
