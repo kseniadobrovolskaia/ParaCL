@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 
+Lex_t *parse_function_call(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_arithmetic(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_negation(std::vector<Lex_t *> &lex_array);
 Lex_t *parse_negative(std::vector<Lex_t *> &lex_array);
@@ -25,6 +26,7 @@ int is_compop(Lex_t *node);
 int is_assign(Lex_t *node);
 int is_brace(Lex_t *node);
 int is_binop(Lex_t *node);
+int is_comma(Lex_t *node);
 int is_scope(Lex_t *node);
 int is_scan(Lex_t *node);
 int is_else(Lex_t *node);
@@ -276,6 +278,11 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		{
 			T = new Variable(*lex_array[token_counter(USE_CURRENT)]);
 			token_counter(INCREMENT);
+
+			if (is_brace(lex_array[token_counter(USE_CURRENT)]) == Brace_t::LBRACE)
+			{
+				T = parse_function_call(lex_array);
+			}//may be need increment
 			break;
 		}
 		case Lex_kind_t::SYMBOL:
@@ -301,6 +308,53 @@ Lex_t *parse_T(std::vector<Lex_t *> &lex_array)
 		}
 	}
 	
+	return T;
+}
+
+
+//-----------------------------------------PARSE_FUNCTION_CALL---------------------------------------------
+
+
+Lex_t *parse_function_call(std::vector<Lex_t *> &lex_array)
+{
+	Lex_t *T;
+	Lex_t &func = *(lex_array[token_counter(USE_CURRENT) - 1]);
+	std::string name = func.short_name();
+	std::vector <Lex_t*> args;
+
+	Statement *body = CURR_SCOPE->get_func_decl(name, token_counter(GET_CURRENT) - 1);
+	
+	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
+	{
+		throw_exception("I dont now how I jump in this function(parse_function_call)\n", token_counter(GET_CURRENT));
+	}
+	token_counter(INCREMENT);
+
+	Lex_t *arg;
+	int first_arg = 1;
+
+	while (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
+	{
+		if (first_arg)
+		{
+			first_arg = 0;
+		}
+		else
+		{
+			if (!is_comma(lex_array[token_counter(USE_CURRENT)]))
+			{
+				throw_exception("Need comma between function args\n", token_counter(GET_CURRENT));
+			}
+			token_counter(INCREMENT);
+		}
+		arg = parse_arithmetic(lex_array);
+		args.push_back(arg);
+	}
+
+	token_counter(INCREMENT);
+
+	T = new Function(body, args, func);
+
 	return T;
 }
 
@@ -444,6 +498,20 @@ int is_semicol(Lex_t *node)
 		return 0;
 	}
 	if (node->get_data() != Symbols_t::SEMICOL)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+
+int is_comma(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::SYMBOL)
+	{
+		return 0;
+	}
+	if (node->get_data() != Symbols_t::COMMA)
 	{
 		return 0;
 	}

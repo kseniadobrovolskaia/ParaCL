@@ -16,7 +16,7 @@
 int EoF = 0;
 
 std::vector<std::string> vars;					//variables appeared in lexical analysis
-
+std::vector<std::string> funcs;
 
 enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, RESET };
 
@@ -31,6 +31,7 @@ void throw_exception(std::string mess, int error_elem);
 enum Lex_kind_t {
 	BRACE,
 	VAR,
+	FUNCTION,
 	STMT,
 	VALUE,
 	SCOPE,
@@ -54,9 +55,9 @@ enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
-enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC };
+enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC, FUNC };
 
-enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION };
+enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, RETURN, COLON, COMMA };
 
 
 
@@ -154,6 +155,11 @@ void push_var(std::vector<Lex_t*> &lex_array, int num_var, int num_str)
 	lex_array.push_back(new Lex_t(Lex_kind_t::VAR, num_var, num_str));
 }
 
+void push_function(std::vector<Lex_t*> &lex_array, int num_func, int num_str)
+{
+	lex_array.push_back(new Lex_t(Lex_kind_t::FUNCTION, num_func, num_str));
+}
+
 void push_value(std::vector<Lex_t*> &lex_array, int value, int num_str)
 {
 	lex_array.push_back(new Lex_t(Lex_kind_t::VALUE, value, num_str));
@@ -186,7 +192,7 @@ void handler(int signo)
 
 std::vector<Lex_t*> lex_string(std::istream & istr)
 {
-	int num_var = 0, num_str = 1;
+	int num_var = 0, num_funcs = 0, num_str = 1;
 	char elem, prev = '\0';
 	std::string word;
 
@@ -208,6 +214,12 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 			break;
 		case ';':
 			push_symbol(lex_array, SEMICOL, num_str);
+			break;
+		case ':':
+			push_symbol(lex_array, COLON, num_str);
+			break;
+		case ',':
+			push_symbol(lex_array, COMMA, num_str);
 			break;
 		case '=':
 			switch(prev)
@@ -353,6 +365,10 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 				{
 					push_symbol(lex_array, ELSE, num_str);
 				}
+				else if (word == "return")
+				{
+					push_symbol(lex_array, RETURN, num_str);
+				}
 				else if (word == "while")
 				{
 					push_stmt(lex_array, WHILE, num_str);
@@ -360,6 +376,44 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 				else if (word == "print")
 				{
 					push_stmt(lex_array, PRINT, num_str);
+				}
+				else if (word == "func")
+				{
+					if (lex_array.size() < 2)
+					{
+						push_stmt(lex_array, FUNC, num_str);
+						throw_exception("Bad function declaration\n", lex_array.size() - 1);
+					}
+					if (lex_array.back()->get_kind() != Lex_kind_t::STMT 
+					 || lex_array.back()->get_data() != Statements_t::ASSIGN)
+					{
+						push_stmt(lex_array, FUNC, num_str);
+						throw_exception("Bad function declaration\n", lex_array.size() - 1);
+					}
+					Lex_t *ass = lex_array.back();
+					lex_array.pop_back();
+
+					if (lex_array.back()->get_kind() != Lex_kind_t::VAR)
+					{
+						push_stmt(lex_array, ASSIGN, ass->get_str());
+						push_stmt(lex_array, FUNC, num_str);
+						throw_exception("Bad function declaration\n", lex_array.size() - 1);
+					}
+					
+					Lex_t *func = lex_array.back();
+					lex_array.pop_back();
+
+					if (func->get_data() == (num_var - 1))
+					{
+						funcs.push_back(vars[num_var - 1]);
+						num_funcs++;
+						num_var--;
+						vars.pop_back();
+					}
+
+					push_function(lex_array, num_funcs - 1, func->get_str());
+					push_stmt(lex_array, ASSIGN, ass->get_str());
+					push_stmt(lex_array, FUNC, num_str);
 				}
 				else
 				{
@@ -430,6 +484,9 @@ std::string Lex_t::name() const
 		case Statements_t::WHILE:
 			type = "while";
 			break;
+		case Statements_t::FUNC:
+			type = "func";
+			break;
 		case Statements_t::PRINT:
 			type = "print";
 			break;
@@ -444,11 +501,20 @@ std::string Lex_t::name() const
 		case Symbols_t::ELSE:
 			type = "else";
 			break;
+		case Symbols_t::RETURN:
+			type = "return";
+			break;
 		case Symbols_t::SCAN:
 			type = "?";
 			break;
 		case Symbols_t::SEMICOL:
 			type = ";";
+			break;
+		case Symbols_t::COLON:
+			type = ":";
+			break;
+		case Symbols_t::COMMA:
+			type = ",";
 			break;
 		case Symbols_t::NEGATION:
 			type = "!";
@@ -512,6 +578,8 @@ std::string Lex_t::name() const
 	}
 	case Lex_kind_t::VAR:
 		return static_cast<std::string>("VAR:") + vars[data_];
+	case Lex_kind_t::FUNCTION:
+		return static_cast<std::string>("FUNCTION:") + funcs[data_];
 	}
 	return nullptr;
 }
@@ -526,6 +594,8 @@ std::string Lex_t::short_name() const
 	{
 	case Lex_kind_t::VAR:
 		return vars[data_];
+	case Lex_kind_t::FUNCTION:
+		return funcs[data_];
 	case Lex_kind_t::BRACE:
 		return ((data_ == Brace_t::LBRACE) ? "(" : ")");
 	case Lex_kind_t::UNOP:
@@ -541,6 +611,8 @@ std::string Lex_t::short_name() const
 			return "=";
 		case Statements_t::PRINT:
 			return "print";
+		case Statements_t::FUNC:
+			return "func";
 		case Statements_t::IF:
 			return "if";
 		case Statements_t::WHILE:
@@ -551,8 +623,14 @@ std::string Lex_t::short_name() const
 		{
 		case Symbols_t::ELSE:
 			return "else";
+		case Symbols_t::RETURN:
+			return "return";
 		case Symbols_t::SEMICOL:
 			return ";";
+		case Symbols_t::COLON:
+			return ":";
+		case Symbols_t::COMMA:
+			return ",";
 		case Symbols_t::SCAN:
 			return "?";
 		case Symbols_t::NEGATION:

@@ -8,6 +8,8 @@
 int MAIN = 1;
 
 
+
+Statement *parse_declaration(std::vector<Lex_t *> &lex_array);
 Statement *parse_while(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_if(std::vector<Lex_t *> &lex_array);
@@ -66,6 +68,11 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 					stmt = parse_print(lex_array);
 					break;
 				}
+				break;
+			}
+			case Lex_kind_t::FUNCTION:
+			{
+				stmt = parse_declaration(lex_array);
 				break;
 			}
 			case Lex_kind_t::BINOP:
@@ -215,6 +222,60 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 	token_counter(INCREMENT);
 
 	return new Print(L);
+}
+
+
+Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
+{
+	Lex_t *func = lex_array[token_counter(USE_CURRENT)];
+
+	token_counter(INCREMENT);
+	token_counter(INCREMENT);
+	token_counter(INCREMENT);
+
+	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
+	{
+		throw_exception("Syntax error in function declaration\n", token_counter(GET_CURRENT));
+	}
+	token_counter(INCREMENT);
+
+	Lex_t *arg;
+	int first_arg = 1;
+	std::vector<Lex_t*> vars;
+
+	while (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
+	{
+		if (first_arg)
+		{
+			first_arg = 0;
+		}
+		else
+		{
+			if (!is_comma(lex_array[token_counter(USE_CURRENT)]))
+			{
+				throw_exception("Need comma between function args\n", token_counter(GET_CURRENT));
+			}
+			token_counter(INCREMENT);
+		}
+		arg = lex_array[token_counter(USE_CURRENT)];
+
+		if (arg->get_kind() != Lex_kind_t::VAR)
+		{
+			throw_exception("Args in function declaration must be variables\n", token_counter(GET_CURRENT));
+		}
+		token_counter(INCREMENT);
+		
+		vars.push_back(arg);
+	}
+	token_counter(INCREMENT);
+
+	Lex_t *scope = parse_scope(lex_array);
+
+	Statement *stmt = new Declaration(func, vars, scope);
+
+	CURR_SCOPE->init_func(func->short_name(), stmt);
+
+	return stmt;
 }
 
 

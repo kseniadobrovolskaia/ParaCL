@@ -70,7 +70,6 @@ public:
 //--------------------------------------------ABSTRACT_STATEMENT_CLASS-----------------------
 
 
-//class Statement;
 class Statement{
 
 	Statements_t kind_;
@@ -87,6 +86,29 @@ public:
 };
 
 
+//-----------------------------------------------DECLARATION---------------------------------
+
+
+class Declaration final : public Statement {
+
+	Lex_t *func_;
+	Lex_t *scope_;
+	std::vector<Lex_t*> vars_;
+
+public:
+	Declaration(Lex_t *func, std::vector<Lex_t*> vars, Lex_t *scope) :
+	Statement(Statements_t::FUNC), func_(func), scope_(scope), vars_(vars) {};
+	virtual ~Declaration() = default;
+	
+	virtual Lex_t *get_lhs() const override { return func_; };
+	Lex_t *get_scope() const { return scope_; };
+	std::vector<Lex_t*> get_args() const { return vars_; };
+
+	virtual std::string name() const override;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+};
+
+
 //----------------------------------------------------------------------------------------------------------
 
 
@@ -98,7 +120,9 @@ class Scope : public Lex_t {
 public:
 	Scope(Scope_table *scp_table, std::vector <Statement*> lhs, const Lex_t &scope) : Lex_t(scope), scp_table_(scp_table), stmts_(lhs){};
 	std::vector<Statement*> get_lhs() const { return stmts_; };
+	Scope_table *get_scp_table() const { return scp_table_; };
 	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
+	void clean_var_table() { scp_table_->clean_var_table(); };
 };
 
 
@@ -107,15 +131,16 @@ public:
 
 class Function : public Lex_t {
 
-	Lex_t *scope_;
-	std::vector<Variable*> args_;
+	Statement *decl_; // i think this is no nessesary
+	std::vector<Lex_t*> args_;
 
 public:
-	Function(const Lex_t &var, std::vector <Variable*> args, Lex_t *scope) : Lex_t(var), scope_(scope), args_(args){};
-	Lex_t *get_rhs() const { return scope_; };
-	std::vector<Variable*> get_args() const { return args_; };
+	Function(Statement *decl, std::vector <Lex_t*> args, const Lex_t &func) : Lex_t(func), decl_(decl), args_(args){};
+	Statement *get_rhs() const { return decl_; };
+	std::vector<Lex_t*> get_args() const { return args_; };
 	void print_args() const { for (int i = 0; i < static_cast<int>(args_.size()); i++)
-								{std::cout << args_[i]->short_name() << " ";} std::cout << std::endl;}
+								{ std::cout << args_[i] << " ";} std::cout << std::endl;}
+	virtual int calculate(std::istream & istr, std::ostream & ostr) override;
 };
 
 
@@ -325,6 +350,47 @@ int Scope::calculate(std::istream & istr, std::ostream & ostr)
 	}
 
 	CURR_SCOPE = old_scope;
+
+	return res;
+}
+
+
+int Function::calculate(std::istream & istr, std::ostream & ostr)
+{
+	int res = 0;
+
+	std::vector<Lex_t*> args = static_cast<Declaration*>(decl_)->get_args();
+	int count_args = args.size();
+
+	if (static_cast<int>(args_.size()) != count_args)
+	{
+		throw_exception("Incorrect number of function arguments\n", this->get_num());
+	}
+
+	Lex_t *scope = static_cast<Declaration*>(decl_)->get_scope();
+	Scope_table *func_scope = static_cast<Scope*>(scope)->get_scp_table();
+	Scope_table *old_scope = CURR_SCOPE;
+
+	for (int num_arg = 0; num_arg < count_args; num_arg++)
+	{
+		std::string name = args[num_arg]->short_name();
+
+		if (CURR_SCOPE->is_var_exist(name))
+		{
+			throw_exception("You cannot use the name of an already existing variable as the name of a function argument\n", this->get_num());
+		}
+
+		int val = args_[num_arg]->calculate(istr, ostr);
+
+		CURR_SCOPE = func_scope;
+
+		CURR_SCOPE->init_var(name);
+		CURR_SCOPE->get_var(name, args_[num_arg]->get_str()) = val;
+
+		CURR_SCOPE = old_scope;
+	}
+
+	res = scope->calculate(istr, ostr);
 
 	return res;
 }

@@ -8,10 +8,10 @@ int main()
 {
 	try
 	{
+		CURR_SCOPE = new Scope_table();
+
 		for (int num_test = 1; num_test < 11; num_test++)
 		{
-			CURR_SCOPE = new Scope_table();
-
 			std::cout << "Start test number " << num_test << std::endl;
 			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
 			std::string name_results = "tests/results/" + std::to_string(num_test) + "_test_results.txt";
@@ -61,8 +61,6 @@ int main()
 	
 	for (int num_test = 1; num_test < 21; num_test++)
 	{	
-		CURR_SCOPE = new Scope_table();
-
 		std::cout << "Start input test number " << num_test << std::endl;
 
 		std::string name_input = "input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
@@ -122,6 +120,6 @@ void clean_all_global_arrays()
 	lex_array.clear();
 	EoF = 0;
 	MAIN = 1;
-	delete CURR_SCOPE;
+	CURR_SCOPE->clean_var_table();
 	vars.clear();
 }
