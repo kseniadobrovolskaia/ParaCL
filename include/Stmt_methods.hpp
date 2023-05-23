@@ -89,6 +89,25 @@ public:
 //----------------------------------------------------------------------------------------------------------
 
 
+class Return final : public Statement {
+
+	Lex_t *lhs_;
+
+public:
+	Return(Lex_t *lhs) :
+	Statement(Statements_t::RETURN), lhs_(lhs) {};
+	virtual ~Return() = default;
+	
+	virtual Lex_t *get_lhs() const override { return lhs_; };
+
+	virtual std::string name() const override;
+	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+};
+
+
+//----------------------------------------------------------------------------------------------------------
+
+
 class Arithmetic final : public Statement {
 
 	Lex_t *lhs_;
@@ -136,6 +155,10 @@ int While::run_stmt(std::istream & istr, std::ostream & ostr)
 	while (condition)
 	{
 		rhs_->calculate(istr, ostr);
+
+		if (RETURN_COMMAND)
+			break;
+
 		condition = lhs_->calculate(istr, ostr);
 	}
 
@@ -148,6 +171,21 @@ int Print::run_stmt(std::istream & istr, std::ostream & ostr)
 	int val = lhs_->calculate(istr, ostr);
 
 	ostr << val << std::endl;
+
+	return val;
+}
+
+
+int Return::run_stmt(std::istream & istr, std::ostream & ostr)
+{
+	if (!IN_FUNCTION)
+	{
+		throw_exception("You can return only from functions\n", lhs_->get_num() - 1);
+	}
+
+	RETURN_COMMAND = 1;
+
+	int val = lhs_->calculate(istr, ostr);
 
 	return val;
 }
@@ -185,6 +223,11 @@ std::string While::name() const
 std::string Print::name() const
 {
 	return "print";
+}
+
+std::string Return::name() const
+{
+	return "return";
 }
 
 std::string Arithmetic::name() const

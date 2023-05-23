@@ -6,6 +6,8 @@
 
 
 Scope_table *CURR_SCOPE;
+int RETURN_COMMAND = 0;
+int IN_FUNCTION = 0;
 
 
 //--------------------------------------------LEXEME_CLASSES------------------------------------------------
@@ -350,6 +352,9 @@ int Scope::calculate(std::istream & istr, std::ostream & ostr)
 	for (int prog_elem = 0; prog_elem < size_program; prog_elem++)
 	{
 		res = (stmts_[prog_elem])->run_stmt(istr, ostr);
+
+		if (RETURN_COMMAND)
+			break;
 	}
 
 	CURR_SCOPE = old_table;
@@ -360,6 +365,7 @@ int Scope::calculate(std::istream & istr, std::ostream & ostr)
 
 int Function::calculate(std::istream & istr, std::ostream & ostr)
 {
+	IN_FUNCTION++;
 	int res = 0;
 	Scope_table *func_table_ = new Scope_table();
 
@@ -393,11 +399,17 @@ int Function::calculate(std::istream & istr, std::ostream & ostr)
 	for (int prog_elem = 0; prog_elem < static_cast<int>(stmts_.size()); prog_elem++)
 	{
 		res = (stmts_[prog_elem])->run_stmt(istr, ostr);
+
+		if (RETURN_COMMAND)
+		{
+			RETURN_COMMAND = 0;
+			break;
+		}
 	}
 
 	CURR_SCOPE = old_curr_scope;
 
-
+	IN_FUNCTION--;
 	return res;
 }
 

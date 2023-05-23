@@ -1,7 +1,7 @@
-//Input Test 18
+//Input Test 20
 
 
-buz = func(x, y) {
+buz = func(x, y) : {
 	if (x != 5)
 		x;
 	else

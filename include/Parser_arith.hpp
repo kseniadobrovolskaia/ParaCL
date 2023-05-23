@@ -24,6 +24,7 @@ int is_semicol(Lex_t *node);
 int is_mul_div(Lex_t *node);
 int is_compop(Lex_t *node);
 int is_assign(Lex_t *node);
+int is_return(Lex_t *node);
 int is_brace(Lex_t *node);
 int is_binop(Lex_t *node);
 int is_comma(Lex_t *node);
@@ -499,6 +500,20 @@ int is_semicol(Lex_t *node)
 		return 0;
 	}
 	if (node->get_data() != Symbols_t::SEMICOL)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+
+int is_return(Lex_t *node)
+{
+	if (node->get_kind() != Lex_kind_t::STMT)
+	{
+		return 0;
+	}
+	if (node->get_data() != Statements_t::RETURN)
 	{
 		return 0;
 	}

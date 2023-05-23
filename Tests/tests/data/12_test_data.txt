@@ -4,9 +4,9 @@
 negate = func(x)
 {
 	if (x < 0)
-		x;
+		return x;
 
-	-x;
+	return -x;
 }
 
 y = ?;

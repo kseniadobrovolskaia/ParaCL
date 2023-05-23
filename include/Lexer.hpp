@@ -55,9 +55,9 @@ enum Scope_t { LSCOPE, RSCOPE };
 
 enum CompOp_t { LESS, GREATER, LESorEQ, GRorEQ, EQUAL, NOT_EQUAL };
 
-enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC, FUNC };
+enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC, FUNC, RETURN };
 
-enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, RETURN, COLON, COMMA };
+enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, COLON, COMMA };
 
 
 
@@ -367,7 +367,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 				}
 				else if (word == "return")
 				{
-					push_symbol(lex_array, RETURN, num_str);
+					push_stmt(lex_array, RETURN, num_str);
 				}
 				else if (word == "while")
 				{
@@ -487,6 +487,9 @@ std::string Lex_t::name() const
 		case Statements_t::FUNC:
 			type = "func";
 			break;
+		case Statements_t::RETURN:
+			type = "return";
+			break;
 		case Statements_t::PRINT:
 			type = "print";
 			break;
@@ -500,9 +503,6 @@ std::string Lex_t::name() const
 		{
 		case Symbols_t::ELSE:
 			type = "else";
-			break;
-		case Symbols_t::RETURN:
-			type = "return";
 			break;
 		case Symbols_t::SCAN:
 			type = "?";
@@ -613,6 +613,8 @@ std::string Lex_t::short_name() const
 			return "print";
 		case Statements_t::FUNC:
 			return "func";
+		case Statements_t::RETURN:
+			return "return";
 		case Statements_t::IF:
 			return "if";
 		case Statements_t::WHILE:
@@ -623,8 +625,6 @@ std::string Lex_t::short_name() const
 		{
 		case Symbols_t::ELSE:
 			return "else";
-		case Symbols_t::RETURN:
-			return "return";
 		case Symbols_t::SEMICOL:
 			return ";";
 		case Symbols_t::COLON:

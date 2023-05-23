@@ -9,13 +9,14 @@ foo = func(x, y, z) : function
 	{
 		while (x-- != y)
 			z = z + y;
-		print function(0, 0, 12);
-		z;
 	}
 	else
 	{
-		12;
+		return 12;
 	}
+	
+	print function(0, 0, 12);
+	z;
 };
 
 y = ?;

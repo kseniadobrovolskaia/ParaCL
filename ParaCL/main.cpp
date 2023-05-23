@@ -29,12 +29,9 @@ int main(int argc, char const *argv[])
 		{
 			lex_array = lex_string(std::cin);
 		}
-		//print_lex_array(lex_array);
-
+		
 		Lex_t *prog = parse_scope(lex_array);
-
-		//build_sintax_graph(static_cast<Scope*>(prog)->get_lhs());
-		//print_prog_elems(static_cast<Scope*>(prog)->get_lhs());
+		
 		run_program(prog, std::cin, std::cout);
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"

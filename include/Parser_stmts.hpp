@@ -9,6 +9,7 @@ int MAIN = 1;
 
 
 Statement *parse_declaration(std::vector<Lex_t *> &lex_array);
+Statement *parse_return(std::vector<Lex_t *> &lex_array);
 Statement *parse_while(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
 Statement *parse_if(std::vector<Lex_t *> &lex_array);
@@ -61,6 +62,9 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 					break;
 				case Statements_t::PRINT:
 					stmt = parse_print(lex_array);
+					break;
+				case Statements_t::RETURN:
+					stmt = parse_return(lex_array);
 					break;
 				}
 				break;
@@ -210,6 +214,23 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 	token_counter(INCREMENT);
 
 	return new Print(L);
+}
+
+
+Statement *parse_return(std::vector<Lex_t *> &lex_array)
+{
+	token_counter(INCREMENT);
+
+	Lex_t *L = parse_arithmetic(lex_array);
+
+	if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
+	{
+		throw_exception("Invalid input: bad semicols in \"return\"\n", token_counter(GET_CURRENT));
+	}
+
+	token_counter(INCREMENT);
+
+	return new Return(L);
 }
 
 

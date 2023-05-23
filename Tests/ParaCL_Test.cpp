@@ -117,14 +117,17 @@ int main()
 void clean_all_global_arrays()
 {
 	token_counter(RESET);
-	lex_array.clear();
+	
 	EoF = 0;
 	MAIN = 1;
+	RETURN_COMMAND = 0;
+	IN_FUNCTION = 0;
+
 	CURR_SCOPE->clean_var_table();
 	CURR_SCOPE->clean_func_table();
 
+	lex_array.clear();
 	FUNCTIONS.clear();
-
 	vars.clear();
 	funcs.clear();
 }
