@@ -119,6 +119,46 @@ TEST(Test_ParaCL, Test10)
   EXPECT_TRUE(IsEqual(name_results, name_answer));
 }
 
+TEST(Test_ParaCL, Test11)
+{
+  std::string name_results = "../tests/results/11_test_results.txt";
+  std::string name_answer = "../tests/answers/11_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test12)
+{
+  std::string name_results = "../tests/results/12_test_results.txt";
+  std::string name_answer = "../tests/answers/12_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test13)
+{
+  std::string name_results = "../tests/results/13_test_results.txt";
+  std::string name_answer = "../tests/answers/13_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test14)
+{
+  std::string name_results = "../tests/results/14_test_results.txt";
+  std::string name_answer = "../tests/answers/14_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
+TEST(Test_ParaCL, Test15)
+{
+  std::string name_results = "../tests/results/15_test_results.txt";
+  std::string name_answer = "../tests/answers/15_test_answer.txt";
+
+  EXPECT_TRUE(IsEqual(name_results, name_answer));
+}
+
 
 //------------------------------INPUT_TESTS------------------------------
 

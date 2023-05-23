@@ -1,1 +1,12 @@
-a s
+//Input Test 17
+
+
+
+buz = func(x) {
+  if (x != 5)
+    retrn x;
+  y = 10;
+  x + y;
+}
+
+

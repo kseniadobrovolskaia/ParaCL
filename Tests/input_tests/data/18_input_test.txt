@@ -1,1 +1,18 @@
-a s
+//Input Test 18
+
+
+buz = func(x, y) {
+	if (x != 5)
+		x;
+	else
+    	{
+    		y = 10;
+		x + y;
+ 	}
+}
+
+buz(5);
+
+
+
+

@@ -105,29 +105,6 @@ public:
 };
 
 
-//----------------------------------------------------------------------------------------------------------
-
-#if 0
-class Declaration final : public Statement {
-
-	Lex_t *func_;
-	Lex_t *scope_;
-	std::vector<Lex_t*> vars_;
-
-public:
-	Declaration(Lex_t *func, std::vector<Lex_t*> vars, Lex_t *scope) :
-	Statement(Statements_t::FUNC), func_(func), scope_(scope), vars_(vars) {};
-	virtual ~Declaration() = default;
-	
-	virtual Lex_t *get_lhs() const override { return func_; };
-	Lex_t *get_scope() const { return scope_; };
-	std::vector<Lex_t*> get_args() const { return vars_; };
-
-	virtual std::string name() const override;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
-};
-
-#endif
 //--------------------------------------------RUN_STATEMENTS------------------------------------------------
 
 
@@ -159,7 +136,6 @@ int While::run_stmt(std::istream & istr, std::ostream & ostr)
 	while (condition)
 	{
 		rhs_->calculate(istr, ostr);
-		dynamic_cast<Scope*>(rhs_)->clean_var_table();
 		condition = lhs_->calculate(istr, ostr);
 	}
 
@@ -218,7 +194,7 @@ std::string Arithmetic::name() const
 
 std::string Declaration::name() const
 {
-	return "func " + func_->short_name();
+	return func_->short_name();
 }
 
 

@@ -1,0 +1,32 @@
+//Test 14
+
+
+x = ?;
+
+foo = func(x, y, z) : function
+{
+	if (x > y)
+	{
+		while (x-- != y)
+			z = z + y;
+		print function(0, 0, 12);
+		z;
+	}
+	else
+	{
+		12;
+	}
+};
+
+y = ?;
+
+if (foo(x, 3, 7) != { print function(x + 0, 10 - y, y); })
+{
+	while(1)
+	;
+}
+
+
+	
+	
+

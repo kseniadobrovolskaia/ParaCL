@@ -1,0 +1,13 @@
+//Test 12
+
+
+negate = func(x)
+{
+	if (x < 0)
+		x;
+
+	-x;
+}
+
+y = ?;
+print negate(y); // -10

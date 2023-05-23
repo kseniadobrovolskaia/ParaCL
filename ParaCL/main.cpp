@@ -29,6 +29,7 @@ int main(int argc, char const *argv[])
 		{
 			lex_array = lex_string(std::cin);
 		}
+		//print_lex_array(lex_array);
 
 		Lex_t *prog = parse_scope(lex_array);
 

@@ -1,9 +1,10 @@
-//Input Test 16
+//Test 11
 
 
 a = 1;
-foo = fun(x) { x * 42; }
+foo = func(x) { x * 42; }
 b = foo(a);
 print b; // на экране 42
+
 
 

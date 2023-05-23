@@ -1,0 +1,23 @@
+//Test 15
+
+
+foo1 = func(x) : f1
+{
+	x+3;
+};
+
+foo2 = func(x) : f2
+{
+	y = x - 2;
+	f1(y); 
+};
+
+foo3 = func(x) : f3
+{
+	y = f1(?) - f2(f1(x + 3));
+	x - f1(f2(f1(f2(y))));
+};
+
+print (foo1(?+4)-f2(?+?)*foo3(?*7/3)); 
+
+

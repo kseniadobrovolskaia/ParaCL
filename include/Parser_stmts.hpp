@@ -8,7 +8,6 @@
 int MAIN = 1;
 
 
-
 Statement *parse_declaration(std::vector<Lex_t *> &lex_array);
 Statement *parse_while(std::vector<Lex_t *> &lex_array);
 Statement *parse_print(std::vector<Lex_t *> &lex_array);
@@ -23,7 +22,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 	std::vector<Statement*> prog_elems;
 	int size = lex_array.size();
 	Statement *stmt;
-	Scope_table *scp_tbl = CURR_SCOPE, *old_tbl = CURR_SCOPE;
+	
 	Lex_t *scop;
 	int main = 0;
 	int ONE_STMT = 0;
@@ -39,15 +38,11 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 	{
 		scop = lex_array[token_counter(USE_CURRENT)];
 		token_counter(INCREMENT);
-		scp_tbl = new Scope_table(CURR_SCOPE);
-		CURR_SCOPE = scp_tbl;
 	}
 	else
 	{
 		scop = new Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
 		ONE_STMT = 1;
-		scp_tbl = new Scope_table(CURR_SCOPE);
-		CURR_SCOPE = scp_tbl;
 	}
 
 	while (token_counter(GET_CURRENT) < size)
@@ -132,9 +127,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 
 					token_counter(INCREMENT);
 
-					CURR_SCOPE = old_tbl;
-
-					return new Scope(scp_tbl, prog_elems, *scop);
+					return new Scope(prog_elems, *scop);
 				}
 			}
 			default:
@@ -151,10 +144,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 		if (ONE_STMT)
 		{
 			ONE_STMT = 0;
-
-			CURR_SCOPE = old_tbl;
-
-			return new Scope(scp_tbl, prog_elems, *scop);
+			return new Scope(prog_elems, *scop);
 		}
 	}
 
@@ -163,9 +153,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 		throw_exception("I dont understand everything\n", token_counter(GET_CURRENT));
 	}
 
-	CURR_SCOPE = old_tbl;
-
-	return new Scope(scp_tbl, prog_elems, *scop);
+	return new Scope(prog_elems, *scop);
 }
 
 
@@ -227,6 +215,7 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 
 Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
 {
+	Statement *stmt;
 	Lex_t *func = lex_array[token_counter(USE_CURRENT)];
 
 	token_counter(INCREMENT);
@@ -241,7 +230,7 @@ Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
 
 	Lex_t *arg;
 	int first_arg = 1;
-	std::vector<Lex_t*> vars;
+	std::vector<Lex_t*> vars_in_func;
 
 	while (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
 	{
@@ -265,13 +254,32 @@ Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
 		}
 		token_counter(INCREMENT);
 		
-		vars.push_back(arg);
+		vars_in_func.push_back(arg);
 	}
 	token_counter(INCREMENT);
 
+	stmt = new Declaration(func, vars_in_func);
+
+	if (is_colon(lex_array[token_counter(USE_CURRENT)]))
+	{
+		token_counter(INCREMENT);
+
+		if (lex_array[token_counter(USE_CURRENT)]->get_kind() == Lex_kind_t::VAR)
+		{
+			std::string function_name = lex_array[token_counter(USE_CURRENT)]->short_name();
+			FUNCTIONS[function_name] = stmt;
+		}
+		else
+		{
+			throw_exception("This should be the global function name\n", token_counter(GET_CURRENT));
+		}
+
+		token_counter(INCREMENT);
+	}
+
 	Lex_t *scope = parse_scope(lex_array);
 
-	Statement *stmt = new Declaration(func, vars, scope);
+	static_cast<Declaration*>(stmt)->add_scope(scope);
 
 	CURR_SCOPE->init_func(func->short_name(), stmt);
 

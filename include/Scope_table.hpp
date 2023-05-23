@@ -9,6 +9,8 @@
 
 class Statement;
 
+std::unordered_map<std::string, Statement*> FUNCTIONS;
+
 class Scope_table
 {
 	Scope_table *higher_scope_;
@@ -32,8 +34,20 @@ public:
 	void clean_func_table();
 
 	Scope_table *get_high_scope() const { return higher_scope_; };
+	void print_scope() const;
 };
 
+
+void Scope_table::print_scope() const
+{
+	std::cout << "Variables: \n";
+	for (auto it = vars_.begin(); it != vars_.end(); ++it)
+        std::cout << it->first << " = " << it->second << "\n";
+    
+    std::cout << "Functions: \n";
+	for (auto it = funcs_.begin(); it != funcs_.end(); ++it)
+        std::cout << it->first << " = " << it->second << "\n";
+}
 
 void Scope_table::init_var(const std::string &name)
 {
@@ -78,7 +92,7 @@ int Scope_table::is_func_exist(const std::string &name)
 		return higher_scope_->is_func_exist(name);
 	}
 
-	return 0;
+	return FUNCTIONS.contains(name);
 }
 
 
@@ -110,6 +124,11 @@ Statement *Scope_table::get_func_decl(const std::string &name, int num_lexem)
 		}
 		else
 		{
+			if (FUNCTIONS.contains(name))
+			{
+				return FUNCTIONS[name];
+			}
+			
 			throw_exception("This function was not declared\n", num_lexem);
 		}
 	}

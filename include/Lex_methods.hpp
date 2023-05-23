@@ -96,13 +96,17 @@ class Declaration final : public Statement {
 	std::vector<Lex_t*> vars_;
 
 public:
-	Declaration(Lex_t *func, std::vector<Lex_t*> vars, Lex_t *scope) :
+	Declaration(Lex_t *func, std::vector<Lex_t*> &vars) : 
+	Statement(Statements_t::FUNC), func_(func), vars_(vars) {};
+
+	Declaration(Lex_t *func, std::vector<Lex_t*> &vars, Lex_t *scope) :
 	Statement(Statements_t::FUNC), func_(func), scope_(scope), vars_(vars) {};
 	virtual ~Declaration() = default;
 	
 	virtual Lex_t *get_lhs() const override { return func_; };
 	Lex_t *get_scope() const { return scope_; };
 	std::vector<Lex_t*> get_args() const { return vars_; };
+	void add_scope(Lex_t *scope) { scope_ = scope; };
 
 	virtual std::string name() const override;
 	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
@@ -114,15 +118,12 @@ public:
 
 class Scope : public Lex_t {
 
-	Scope_table *scp_table_;
 	std::vector<Statement*> stmts_;
 
 public:
-	Scope(Scope_table *scp_table, std::vector <Statement*> lhs, const Lex_t &scope) : Lex_t(scope), scp_table_(scp_table), stmts_(lhs){};
+	Scope(std::vector <Statement*> lhs, const Lex_t &scope) : Lex_t(scope), stmts_(lhs){};
 	std::vector<Statement*> get_lhs() const { return stmts_; };
-	Scope_table *get_scp_table() const { return scp_table_; };
 	virtual int calculate(std::istream &istr, std::ostream &ostr) override;
-	void clean_var_table() { scp_table_->clean_var_table(); };
 };
 
 
@@ -341,15 +342,17 @@ int Scope::calculate(std::istream & istr, std::ostream & ostr)
 	int res = 0;
 	int size_program = stmts_.size();
 
-	Scope_table *old_scope = CURR_SCOPE;
-	CURR_SCOPE = scp_table_;
-	
+	Scope_table *scp_table = new Scope_table(CURR_SCOPE);
+	Scope_table *old_table = CURR_SCOPE;
+
+	CURR_SCOPE = scp_table;
+
 	for (int prog_elem = 0; prog_elem < size_program; prog_elem++)
 	{
 		res = (stmts_[prog_elem])->run_stmt(istr, ostr);
 	}
 
-	CURR_SCOPE = old_scope;
+	CURR_SCOPE = old_table;
 
 	return res;
 }
@@ -358,6 +361,8 @@ int Scope::calculate(std::istream & istr, std::ostream & ostr)
 int Function::calculate(std::istream & istr, std::ostream & ostr)
 {
 	int res = 0;
+	Scope_table *func_table_ = new Scope_table();
+
 
 	std::vector<Lex_t*> args = static_cast<Declaration*>(decl_)->get_args();
 	int count_args = args.size();
@@ -367,30 +372,31 @@ int Function::calculate(std::istream & istr, std::ostream & ostr)
 		throw_exception("Incorrect number of function arguments\n", this->get_num());
 	}
 
-	Lex_t *scope = static_cast<Declaration*>(decl_)->get_scope();
-	Scope_table *func_scope = static_cast<Scope*>(scope)->get_scp_table();
-	Scope_table *old_scope = CURR_SCOPE;
-
 	for (int num_arg = 0; num_arg < count_args; num_arg++)
 	{
 		std::string name = args[num_arg]->short_name();
 
-		if (CURR_SCOPE->is_var_exist(name))
-		{
-			throw_exception("You cannot use the name of an already existing variable as the name of a function argument\n", this->get_num());
-		}
+		func_table_->init_var(name);
 
 		int val = args_[num_arg]->calculate(istr, ostr);
-
-		CURR_SCOPE = func_scope;
-
-		CURR_SCOPE->init_var(name);
-		CURR_SCOPE->get_var(name, args_[num_arg]->get_str()) = val;
-
-		CURR_SCOPE = old_scope;
+		func_table_->get_var(name, args_[num_arg]->get_str()) = val;
 	}
 
-	res = scope->calculate(istr, ostr);
+	Scope *scope = static_cast<Scope*>(static_cast<Declaration*>(decl_)->get_scope());
+
+
+	Scope_table *old_curr_scope = CURR_SCOPE;
+	CURR_SCOPE = func_table_;
+
+	std::vector<Statement*> stmts_ = scope->get_lhs();
+
+	for (int prog_elem = 0; prog_elem < static_cast<int>(stmts_.size()); prog_elem++)
+	{
+		res = (stmts_[prog_elem])->run_stmt(istr, ostr);
+	}
+
+	CURR_SCOPE = old_curr_scope;
+
 
 	return res;
 }

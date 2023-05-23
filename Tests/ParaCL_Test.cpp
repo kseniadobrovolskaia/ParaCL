@@ -10,7 +10,7 @@ int main()
 	{
 		CURR_SCOPE = new Scope_table();
 
-		for (int num_test = 1; num_test < 11; num_test++)
+		for (int num_test = 1; num_test < 16; num_test++)
 		{
 			std::cout << "Start test number " << num_test << std::endl;
 			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
@@ -121,5 +121,10 @@ void clean_all_global_arrays()
 	EoF = 0;
 	MAIN = 1;
 	CURR_SCOPE->clean_var_table();
+	CURR_SCOPE->clean_func_table();
+
+	FUNCTIONS.clear();
+
 	vars.clear();
+	funcs.clear();
 }
