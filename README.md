@@ -121,13 +121,14 @@
   print y;
   ^C
 
-Uninitialized variable in current scope
-4 | print y ; 
-  |        ^
-  | Error in row number 4 and column number 2
+  Uninitialized variable in current scope
+  4 | print y ; 
+    |        ^
+    | Error in row number 4 and column number 2
 
 
   ```
+
 
 * **Scopes** возвращают результат последнего expression внутри
   ```
