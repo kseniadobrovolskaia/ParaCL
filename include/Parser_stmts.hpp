@@ -5,26 +5,26 @@
 #include "Stmt_methods.hpp"
 
 
-int MAIN = 1;
+bool MAIN = 1;
 
 
-Statement *parse_declaration(std::vector<Lex_t *> &lex_array);
-Statement *parse_return(std::vector<Lex_t *> &lex_array);
-Statement *parse_while(std::vector<Lex_t *> &lex_array);
-Statement *parse_print(std::vector<Lex_t *> &lex_array);
-Statement *parse_if(std::vector<Lex_t *> &lex_array);
+Statement *parse_declaration(std::vector<std::shared_ptr<Lex_t>> &lex_array);
+Statement *parse_return(std::vector<std::shared_ptr<Lex_t>> &lex_array);
+Statement *parse_while(std::vector<std::shared_ptr<Lex_t>> &lex_array);
+Statement *parse_print(std::vector<std::shared_ptr<Lex_t>> &lex_array);
+Statement *parse_if(std::vector<std::shared_ptr<Lex_t>> &lex_array);
 
 
 //--------------------------------------------PARSERS---------------------------------------------------
 
 
-Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
+std::shared_ptr<Lex_t> parse_scope(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	std::vector<Statement*> prog_elems;
 	int size = lex_array.size();
 	Statement *stmt;
 	
-	Lex_t *scop;
+	std::shared_ptr<Lex_t> scop;
 	int main = 0;
 	int ONE_STMT = 0;
 
@@ -33,16 +33,16 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 	{
 		MAIN = 0;
 		main = 1;
-		scop = new Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
+		scop = std::make_shared<Lex_t>(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
 	}
-	else if (is_scope(lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
+	else if (is_scope(*lex_array[token_counter(USE_CURRENT)]) == Scope_t::LSCOPE)
 	{
 		scop = lex_array[token_counter(USE_CURRENT)];
 		token_counter(INCREMENT);
 	}
 	else
 	{
-		scop = new Lex_t(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
+		scop = std::make_shared<Lex_t>(Lex_kind_t::SCOPE, Scope_t::LSCOPE, lex_array[token_counter(USE_CURRENT)]->get_num());
 		ONE_STMT = 1;
 	}
 
@@ -76,14 +76,14 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 			}
 			case Lex_kind_t::BINOP:
 			{
-				if (is_plus_minus(lex_array[token_counter(USE_CURRENT)]) != BinOp_t::SUB)
+				if (is_plus_minus(*lex_array[token_counter(USE_CURRENT)]) != BinOp_t::SUB)
 				{
 					throw_exception("You can not start statement with this operator\n", token_counter(GET_CURRENT));
 				}
 			}
 			case Lex_kind_t::SYMBOL:
 			{
-				if (is_semicol(lex_array[token_counter(USE_CURRENT)]))
+				if (is_semicol(*lex_array[token_counter(USE_CURRENT)]))
 				{
 					token_counter(INCREMENT);
 					stmt = nullptr;
@@ -100,17 +100,17 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 			case Lex_kind_t::VAR:
 			case Lex_kind_t::VALUE:
 			{
-				if (is_scope(lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
+				if (is_scope(*lex_array[token_counter(USE_CURRENT)]) != Scope_t::RSCOPE)
 				{
-					Lex_t *Stmt = parse_arithmetic(lex_array);
+					std::shared_ptr<Lex_t> Stmt = parse_arithmetic(lex_array);
 
 					stmt = new Arithmetic(Stmt);
 					
-					if (is_scope(lex_array[token_counter(GET_CURRENT) - 1]) == Scope_t::RSCOPE)
+					if (is_scope(*lex_array[token_counter(GET_CURRENT) - 1]) == Scope_t::RSCOPE)
 					{
 						break;
 					}
-					else if (is_semicol(lex_array[token_counter(USE_CURRENT)]))
+					else if (is_semicol(*lex_array[token_counter(USE_CURRENT)]))
 					{
 						token_counter(INCREMENT);
 					}
@@ -131,7 +131,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 
 					token_counter(INCREMENT);
 
-					return new Scope(prog_elems, *scop);
+					return std::make_shared<Scope>(prog_elems, *scop);
 				}
 			}
 			default:
@@ -148,7 +148,7 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 		if (ONE_STMT)
 		{
 			ONE_STMT = 0;
-			return new Scope(prog_elems, *scop);
+			return std::make_shared<Scope>(prog_elems, *scop);
 		}
 	}
 
@@ -156,25 +156,25 @@ Lex_t *parse_scope(std::vector<Lex_t *> &lex_array)
 	{
 		throw_exception("I dont understand everything\n", token_counter(GET_CURRENT));
 	}
-
-	return new Scope(prog_elems, *scop);
+	
+	return std::make_shared<Scope>(prog_elems, *scop);
 }
 
 
-Statement *parse_if(std::vector<Lex_t *> &lex_array)
+Statement *parse_if(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	token_counter(INCREMENT);
 
-	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
+	if (is_brace(*lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
 	{
 		throw_exception("Syntax error in \"if\"\n", token_counter(GET_CURRENT));
 	}
 
-	Lex_t *L = parse_arithmetic(lex_array);
-	Lex_t *R = parse_scope(lex_array);
-	Lex_t *Else = nullptr;
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
+	std::shared_ptr<Lex_t> R = parse_scope(lex_array);
+	std::shared_ptr<Lex_t> Else = nullptr;
 
-	if ((token_counter(GET_CURRENT) < static_cast<int>(lex_array.size())) && is_else(lex_array[token_counter(USE_CURRENT)]))
+	if ((token_counter(GET_CURRENT) < static_cast<int>(lex_array.size())) && is_else(*lex_array[token_counter(USE_CURRENT)]))
 	{
 		token_counter(INCREMENT);
 		Else = parse_scope(lex_array);
@@ -184,29 +184,29 @@ Statement *parse_if(std::vector<Lex_t *> &lex_array)
 }
 
 
-Statement *parse_while(std::vector<Lex_t *> &lex_array)
+Statement *parse_while(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	token_counter(INCREMENT);
 
-	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
+	if (is_brace(*lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
 	{
 		throw_exception("Syntax error in \"while\"\n", token_counter(GET_CURRENT));
 	}
 
-	Lex_t *L = parse_arithmetic(lex_array);
-	Lex_t *R = parse_scope(lex_array);
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
+	std::shared_ptr<Lex_t> R = parse_scope(lex_array);
 
 	return new While(L, R);
 }
 
 
-Statement *parse_print(std::vector<Lex_t *> &lex_array)
+Statement *parse_print(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	token_counter(INCREMENT);
 
-	Lex_t *L = parse_arithmetic(lex_array);
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
 
-	if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
+	if(!is_semicol(*lex_array[token_counter(USE_CURRENT)]))
 	{
 		throw_exception("Invalid input: bad semicols in \"print\"\n", token_counter(GET_CURRENT));
 	}
@@ -217,13 +217,13 @@ Statement *parse_print(std::vector<Lex_t *> &lex_array)
 }
 
 
-Statement *parse_return(std::vector<Lex_t *> &lex_array)
+Statement *parse_return(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	token_counter(INCREMENT);
 
-	Lex_t *L = parse_arithmetic(lex_array);
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
 
-	if(!is_semicol(lex_array[token_counter(USE_CURRENT)]))
+	if(!is_semicol(*lex_array[token_counter(USE_CURRENT)]))
 	{
 		throw_exception("Invalid input: bad semicols in \"return\"\n", token_counter(GET_CURRENT));
 	}
@@ -234,26 +234,26 @@ Statement *parse_return(std::vector<Lex_t *> &lex_array)
 }
 
 
-Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
+Statement *parse_declaration(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	Statement *stmt;
-	Lex_t *func = lex_array[token_counter(USE_CURRENT)];
+	std::shared_ptr<Lex_t> func = lex_array[token_counter(USE_CURRENT)];
 
 	token_counter(INCREMENT);
 	token_counter(INCREMENT);
 	token_counter(INCREMENT);
 
-	if (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
+	if (is_brace(*lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
 	{
 		throw_exception("Syntax error in function declaration\n", token_counter(GET_CURRENT));
 	}
 	token_counter(INCREMENT);
 
-	Lex_t *arg;
+	std::shared_ptr<Lex_t> arg;
 	int first_arg = 1;
-	std::vector<Lex_t*> vars_in_func;
+	std::vector<std::shared_ptr<Lex_t>> vars_in_func;
 
-	while (is_brace(lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
+	while (is_brace(*lex_array[token_counter(USE_CURRENT)]) != Brace_t::RBRACE)
 	{
 		if (first_arg)
 		{
@@ -261,7 +261,7 @@ Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
 		}
 		else
 		{
-			if (!is_comma(lex_array[token_counter(USE_CURRENT)]))
+			if (!is_comma(*lex_array[token_counter(USE_CURRENT)]))
 			{
 				throw_exception("Need comma between function args\n", token_counter(GET_CURRENT));
 			}
@@ -281,7 +281,7 @@ Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
 
 	stmt = new Declaration(func, vars_in_func);
 
-	if (is_colon(lex_array[token_counter(USE_CURRENT)]))
+	if (is_colon(*lex_array[token_counter(USE_CURRENT)]))
 	{
 		token_counter(INCREMENT);
 
@@ -298,7 +298,7 @@ Statement *parse_declaration(std::vector<Lex_t *> &lex_array)
 		token_counter(INCREMENT);
 	}
 
-	Lex_t *scope = parse_scope(lex_array);
+	std::shared_ptr<Lex_t> scope = parse_scope(lex_array);
 
 	static_cast<Declaration*>(stmt)->add_scope(scope);
 

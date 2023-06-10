@@ -2,7 +2,7 @@
 #include "Run_program.hpp"
 
 
-void print_lex_array(std::vector<Lex_t*> &lex_array);
+void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array);
 void print_prog_elems(std::vector<Statement*> prog);
 
 
@@ -29,9 +29,9 @@ int main(int argc, char const *argv[])
 		{
 			lex_array = lex_string(std::cin);
 		}
-		
-		Lex_t *prog = parse_scope(lex_array);
-		
+
+		std::shared_ptr<Lex_t> prog = parse_scope(lex_array);
+
 		run_program(prog, std::cin, std::cout);
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
@@ -51,7 +51,7 @@ int main(int argc, char const *argv[])
 //--------------------------------------------DEBUG--------------------------------------------------------
 
 
-void print_lex_array(std::vector<Lex_t*> &lex_array)
+void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
 	for (auto elem = lex_array.begin(); elem < lex_array.end(); ++elem)
 	{
@@ -62,7 +62,6 @@ void print_lex_array(std::vector<Lex_t*> &lex_array)
 }
 
 
-
 void print_prog_elems(std::vector<Statement*> prog)
 {
 	std::cout << "Утверждения программы :" << std::endl;
@@ -71,5 +70,3 @@ void print_prog_elems(std::vector<Statement*> prog)
 		std::cout << elem->name() << std::endl;
 	}
 }
-
-

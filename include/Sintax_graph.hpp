@@ -5,14 +5,12 @@
 
 
 void build_sintax_graph(std::vector<Statement*> prog);
-
-void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node);
+void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num_node);
 void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
 
-int is_if_long_form(Statement *stmt);
-int is_if_while(Statement *stmt);
-int is_arithmetic(Statement *stmt);
-
+bool is_if_long_form(Statement *stmt);
+bool is_if_while(Statement *stmt);
+bool is_arithmetic(Statement *stmt);
 
 
 //-----------------------------------------------------BUILD_SINTAX_GRAPH------------------------------------------------------------------------------------------
@@ -84,7 +82,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 			{
 				file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 				num_node++;
-				create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_rhs())->get_lhs(), file_tree);
+				create_scope_nodes(static_cast<Scope*>(const_cast<Lex_t*>(&(static_cast<If*>(prog[prog_elem])->get_rhs())))->get_lhs(), file_tree);
 				file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				if (is_if_long_form(prog[prog_elem]))
 				{
@@ -95,7 +93,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 			
 					file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 					num_node++;
-					create_scope_nodes(static_cast<Scope*>(static_cast<If*>(prog[prog_elem])->get_else())->get_lhs(), file_tree);
+					create_scope_nodes(static_cast<Scope*>(&(static_cast<If*>(prog[prog_elem])->get_else()))->get_lhs(), file_tree);
 					file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				}
 			}
@@ -104,7 +102,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 }
 
 
-void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num_node)
+void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num_node)
 {
 	static int prev_elem = 0;
 	int curr_elem = *num_node;
@@ -117,7 +115,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 
 	std::string colour;
 
-	switch (curr_node->get_kind())
+	switch (curr_node.get_kind())
 	{
 	case Lex_kind_t::VAR:
 		colour = "lightcyan2";
@@ -138,13 +136,13 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 		throw std::logic_error("Brace or scope are not a nodes");
 	}
 
-	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node->short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
+	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node.short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
 
 	prev_elem = curr_elem;
 	if ((is_unop(curr_node) >= 0) || is_negation(curr_node))
 	{
 		(*num_node)++;
-		create_statement_nodes(curr_node->get_var(), file_tree, num_node);
+		create_statement_nodes(dynamic_cast<Ref_t*>(&curr_node)->get_variable(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
 	}
@@ -154,10 +152,10 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 
   	if (is_binop(curr_node) || is_assign(curr_node))
 	{
-		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_lhs(), file_tree, num_node);
+		create_statement_nodes(static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_lhs(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
-		create_statement_nodes(static_cast<BinOp *>(curr_node)->get_rhs(), file_tree, num_node);
+		create_statement_nodes(static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_rhs(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
 	}
@@ -167,7 +165,7 @@ void create_statement_nodes(Lex_t *curr_node, std::ofstream &file_tree, int *num
 //---------------------------------------------------------ISERS------------------------------------------------------------------------------------------
 
 
-int is_if_while(Statement *stmt)
+bool is_if_while(Statement *stmt)
 {
 	if (stmt->get_kind() == Statements_t::IF)
 	{
@@ -181,7 +179,7 @@ int is_if_while(Statement *stmt)
 }
 
 
-int is_arithmetic(Statement *stmt)
+bool is_arithmetic(Statement *stmt)
 {
 	if ((stmt->get_kind()) == Statements_t::ARITHMETIC)
 	{
@@ -192,13 +190,13 @@ int is_arithmetic(Statement *stmt)
 }
 
 
-int is_if_long_form(Statement *stmt)
+bool is_if_long_form(Statement *stmt)
 {
 	if (stmt->get_kind() != Statements_t::IF)
 	{
 		return 0;
 	}
-	if (static_cast<If*>(stmt)->get_else())
+	if (&(static_cast<If*>(stmt)->get_else()))
 	{
 		return 1;
 	}

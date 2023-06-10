@@ -12,8 +12,9 @@
 #include <string>
 #include <vector>
 #include <signal.h>
+#include <memory>
 
-int EoF = 0;
+bool EoF = 0;
 
 std::vector<std::string> vars;					//variables appeared in lexical analysis
 std::vector<std::string> funcs;
@@ -40,7 +41,6 @@ enum Lex_kind_t {
 	COMPOP,
 	SYMBOL,
 	BAD_SYMBOL,
-
 };
 
 
@@ -65,7 +65,7 @@ enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, COLON, COMMA };
 
 
 class Lex_t;
-std::vector<Lex_t*> lex_array;
+std::vector<std::shared_ptr<Lex_t>> lex_array;
 
 
 //--------------------------------------------LEX_CLASS-------------------------------------------------------
@@ -79,6 +79,7 @@ class Lex_t
 	int num_;				//index this token in lex_array
 
 public:
+	Lex_t() = default;
 	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){ num_ = lex_array.size(); };
 	Lex_t(const Lex_t &rhs) : kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_), num_(rhs.num_){};
 	virtual ~Lex_t() = default;
@@ -88,7 +89,6 @@ public:
 	int get_str() const { return num_str_; };
 	int get_data() const { return data_; };
 	int get_num() const { return num_; };
-	virtual Lex_t* get_var() const { return nullptr; };
 	virtual int calculate(std::istream & istr, std::ostream & ostr) { return data_; };
 };
 
@@ -125,59 +125,59 @@ int token_counter(Move move)
 //-----------------------------------------PUSH_IN_LEX_ARRAY---------------------------------------------------
 
 
-void push_binop(std::vector<Lex_t*> &lex_array, BinOp_t binop, int num_str)
+void push_binop(std::vector<std::shared_ptr<Lex_t>> &lex_array, BinOp_t binop, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::BINOP, binop, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::BINOP, binop, num_str));
 }
 
-void push_unop(std::vector<Lex_t*> &lex_array, Statements_t unop, int num_str)
+void push_unop(std::vector<std::shared_ptr<Lex_t>> &lex_array, Statements_t unop, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::UNOP, unop, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::UNOP, unop, num_str));
 }
 
-void push_brace(std::vector<Lex_t*> &lex_array, Brace_t brace, int num_str)
+void push_brace(std::vector<std::shared_ptr<Lex_t>> &lex_array, Brace_t brace, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::BRACE, brace, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::BRACE, brace, num_str));
 }
 
-void push_scope(std::vector<Lex_t*> &lex_array, Scope_t scope, int num_str)
+void push_scope(std::vector<std::shared_ptr<Lex_t>> &lex_array, Scope_t scope, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::SCOPE, scope, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::SCOPE, scope, num_str));
 }
 
-void push_stmt(std::vector<Lex_t*> &lex_array, Statements_t kw, int num_str)
+void push_stmt(std::vector<std::shared_ptr<Lex_t>> &lex_array, Statements_t kw, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::STMT, kw, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::STMT, kw, num_str));
 }
 
-void push_var(std::vector<Lex_t*> &lex_array, int num_var, int num_str)
+void push_var(std::vector<std::shared_ptr<Lex_t>> &lex_array, int num_var, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::VAR, num_var, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::VAR, num_var, num_str));
 }
 
-void push_function(std::vector<Lex_t*> &lex_array, int num_func, int num_str)
+void push_function(std::vector<std::shared_ptr<Lex_t>> &lex_array, int num_func, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::FUNCTION, num_func, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::FUNCTION, num_func, num_str));
 }
 
-void push_value(std::vector<Lex_t*> &lex_array, int value, int num_str)
+void push_value(std::vector<std::shared_ptr<Lex_t>> &lex_array, int value, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::VALUE, value, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::VALUE, value, num_str));
 }
 
-void push_compop(std::vector<Lex_t*> &lex_array, CompOp_t compop, int num_str)
+void push_compop(std::vector<std::shared_ptr<Lex_t>> &lex_array, CompOp_t compop, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::COMPOP, compop, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::COMPOP, compop, num_str));
 }
 
-void push_symbol(std::vector<Lex_t*> &lex_array, Symbols_t symbol, int num_str)
+void push_symbol(std::vector<std::shared_ptr<Lex_t>> &lex_array, Symbols_t symbol, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::SYMBOL, symbol, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::SYMBOL, symbol, num_str));
 }
 
-void push_bad_symbol(std::vector<Lex_t*> &lex_array, int symbol, int num_str)
+void push_bad_symbol(std::vector<std::shared_ptr<Lex_t>> &lex_array, int symbol, int num_str)
 {
-	lex_array.push_back(new Lex_t(Lex_kind_t::BAD_SYMBOL, symbol, num_str));
+	lex_array.push_back(std::make_shared<Lex_t>(Lex_kind_t::BAD_SYMBOL, symbol, num_str));
 }
 
 
@@ -190,7 +190,7 @@ void handler(int signo)
 }
 
 
-std::vector<Lex_t*> lex_string(std::istream & istr)
+std::vector<std::shared_ptr<Lex_t>> lex_string(std::istream & istr)
 {
 	int num_var = 0, num_funcs = 0, num_str = 1;
 	char elem, prev = '\0';
@@ -390,7 +390,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 						push_stmt(lex_array, FUNC, num_str);
 						throw_exception("Bad function declaration\n", lex_array.size() - 1);
 					}
-					Lex_t *ass = lex_array.back();
+					std::shared_ptr<Lex_t> ass = lex_array.back();
 					lex_array.pop_back();
 
 					if (lex_array.back()->get_kind() != Lex_kind_t::VAR)
@@ -400,7 +400,7 @@ std::vector<Lex_t*> lex_string(std::istream & istr)
 						throw_exception("Bad function declaration\n", lex_array.size() - 1);
 					}
 					
-					Lex_t *func = lex_array.back();
+					std::shared_ptr<Lex_t> func = lex_array.back();
 					lex_array.pop_back();
 
 					if (func->get_data() == (num_var - 1))

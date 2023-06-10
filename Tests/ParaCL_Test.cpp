@@ -44,9 +44,9 @@ int main()
 			  exit(EXIT_FAILURE);
 			}
 
-			std::vector<Lex_t*> lexems = lex_string(data);
+			std::vector<std::shared_ptr<Lex_t>> lexems = lex_string(data);
 			
-			Lex_t *prog = parse_scope(lexems);
+			std::shared_ptr<Lex_t> prog = parse_scope(lexems);
 			
 			run_program(prog, input, results);
 			clean_all_global_arrays();
@@ -88,9 +88,9 @@ int main()
 		{
 			input_data >> std::noskipws;
 			
-			std::vector<Lex_t*> lexems = lex_string(input_data);
+			std::vector<std::shared_ptr<Lex_t>> lexems = lex_string(input_data);
 
-			Lex_t *prog = parse_scope(lexems);
+			std::shared_ptr<Lex_t> prog = parse_scope(lexems);
 			
 			run_program(prog, input_data, results);
 		}

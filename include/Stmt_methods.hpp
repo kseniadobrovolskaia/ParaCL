@@ -21,7 +21,7 @@ public:
 	virtual Lex_t *get_lhs() const = 0;
 
 	virtual std::string name() const = 0;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) = 0;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) = 0;
 };
 #endif
 
@@ -30,20 +30,19 @@ public:
 
 class If final : public Statement {
 
-	Lex_t *lhs_, *rhs_;
-	Lex_t *else_ = nullptr;
+	std::shared_ptr<Lex_t> lhs_, rhs_, else_ = nullptr;
 
 public:
-	If(Lex_t *lhs, Lex_t *rhs, Lex_t * Else) : 
+	If(std::shared_ptr<Lex_t> lhs, std::shared_ptr<Lex_t> rhs, std::shared_ptr<Lex_t> Else) : 
 	Statement(Statements_t::IF), lhs_(lhs), rhs_(rhs), else_(Else){};
 	virtual ~If() = default;
 
-	virtual Lex_t *get_lhs() const override { return lhs_; };
-  	Lex_t *get_rhs() const { return rhs_; };
-  	Lex_t *get_else() const { return else_; };
+	virtual Lex_t &get_lhs() const override { return *lhs_; };
+  	Lex_t &get_rhs() const { return *rhs_; };
+  	Lex_t &get_else() const { return *else_; /*very bad*/ };
 
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -52,18 +51,18 @@ public:
 
 class While final : public Statement {
 
-	Lex_t *lhs_, *rhs_;
+	std::shared_ptr<Lex_t> lhs_, rhs_;
 
 public:
-	While(Lex_t *lhs, Lex_t *rhs) :
+	While(std::shared_ptr<Lex_t> lhs, std::shared_ptr<Lex_t> rhs) :
 	Statement(Statements_t::WHILE), lhs_(lhs), rhs_(rhs){};
 	virtual ~While() = default;
 	
-	virtual Lex_t *get_lhs() const override { return lhs_; };
-  	Lex_t *get_rhs() const { return rhs_; };
+	virtual Lex_t &get_lhs() const override { return *lhs_; };
+  	Lex_t &get_rhs() const { return *rhs_; };
 
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -72,17 +71,17 @@ public:
 
 class Print final : public Statement {
 
-	Lex_t *lhs_;
+	std::shared_ptr<Lex_t> lhs_;
 
 public:
-	Print(Lex_t *lhs) :
+	Print(std::shared_ptr<Lex_t> lhs) :
 	Statement(Statements_t::PRINT), lhs_(lhs) {};
 	virtual ~Print() = default;
 	
-	virtual Lex_t *get_lhs() const override { return lhs_; };
+	virtual Lex_t &get_lhs() const override { return *lhs_; };
 
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -91,17 +90,17 @@ public:
 
 class Return final : public Statement {
 
-	Lex_t *lhs_;
+	std::shared_ptr<Lex_t> lhs_;
 
 public:
-	Return(Lex_t *lhs) :
+	Return(std::shared_ptr<Lex_t> lhs) :
 	Statement(Statements_t::RETURN), lhs_(lhs) {};
 	virtual ~Return() = default;
 	
-	virtual Lex_t *get_lhs() const override { return lhs_; };
+	virtual Lex_t &get_lhs() const override { return *lhs_; };
 
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) override;
 };
 
 
@@ -110,24 +109,24 @@ public:
 
 class Arithmetic final : public Statement {
 
-	Lex_t *lhs_;
+	std::shared_ptr<Lex_t> lhs_;
 
 public:
-	Arithmetic(Lex_t *lhs) :
+	Arithmetic(std::shared_ptr<Lex_t> lhs) :
 	Statement(Statements_t::ARITHMETIC), lhs_(lhs) {};
 	virtual ~Arithmetic() = default;
 	
-	virtual Lex_t *get_lhs() const override { return lhs_; };
+	virtual Lex_t &get_lhs() const override { return *lhs_; };
 
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream & istr, std::ostream & ostr) override;
+	virtual int run_stmt(std::istream &istr, std::ostream &ostr) override;
 };
 
 
 //--------------------------------------------RUN_STATEMENTS------------------------------------------------
 
 
-int If::run_stmt(std::istream & istr, std::ostream & ostr)
+int If::run_stmt(std::istream &istr, std::ostream &ostr)
 {
 	int res;
 	int condition = lhs_->calculate(istr, ostr);
@@ -148,7 +147,7 @@ int If::run_stmt(std::istream & istr, std::ostream & ostr)
 }
 
 
-int While::run_stmt(std::istream & istr, std::ostream & ostr)
+int While::run_stmt(std::istream &istr, std::ostream &ostr)
 {
 	int condition = lhs_->calculate(istr, ostr);
 
@@ -166,7 +165,7 @@ int While::run_stmt(std::istream & istr, std::ostream & ostr)
 }
 
 
-int Print::run_stmt(std::istream & istr, std::ostream & ostr)
+int Print::run_stmt(std::istream &istr, std::ostream &ostr)
 {
 	int val = lhs_->calculate(istr, ostr);
 
@@ -176,7 +175,7 @@ int Print::run_stmt(std::istream & istr, std::ostream & ostr)
 }
 
 
-int Return::run_stmt(std::istream & istr, std::ostream & ostr)
+int Return::run_stmt(std::istream &istr, std::ostream &ostr)
 {
 	if (!IN_FUNCTION)
 	{
@@ -191,7 +190,7 @@ int Return::run_stmt(std::istream & istr, std::ostream & ostr)
 }
 
 
-int Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
+int Arithmetic::run_stmt(std::istream &istr, std::ostream &ostr)
 {
 	int res = lhs_->calculate(istr, ostr);
 
@@ -199,7 +198,7 @@ int Arithmetic::run_stmt(std::istream & istr, std::ostream & ostr)
 }
 
 
-int Declaration::run_stmt(std::istream & istr, std::ostream & ostr)
+int Declaration::run_stmt(std::istream &istr, std::ostream &ostr)
 {
 	CURR_SCOPE->init_func(func_->short_name(), this);
 
