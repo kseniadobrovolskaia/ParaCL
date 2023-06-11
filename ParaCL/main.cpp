@@ -1,16 +1,15 @@
-#include "Sintax_graph.hpp"
-#include "Run_program.hpp"
-
+#include "Parser_stmts.hpp"
 
 void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array);
-void print_prog_elems(std::vector<Statement*> prog);
+void print_prog_elems(std::vector<std::shared_ptr<Statement>> prog);
+void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog);
 
 
 int main(int argc, char const *argv[])
 {
 	try
 	{
-		CURR_SCOPE = new Scope_table();
+		CURR_SCOPE = std::make_shared<Scope_table>();
 
 		if (argc > 1)
 		{
@@ -62,7 +61,7 @@ void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 }
 
 
-void print_prog_elems(std::vector<Statement*> prog)
+void print_prog_elems(std::vector<std::shared_ptr<Statement>> prog)
 {
 	std::cout << "Утверждения программы :" << std::endl;
 	for (auto elem : prog)

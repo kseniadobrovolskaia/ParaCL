@@ -1,22 +1,19 @@
-#ifndef SINTAX_GRAPH_H
-#define SINTAX_GRAPH_H
-
 #include "Parser_stmts.hpp"
 
 
-void build_sintax_graph(std::vector<Statement*> prog);
+void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog);
 void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num_node);
-void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &tree);
+void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstream &tree);
 
-bool is_if_long_form(Statement *stmt);
-bool is_if_while(Statement *stmt);
-bool is_arithmetic(Statement *stmt);
+bool is_if_long_form(std::shared_ptr<Statement> stmt);
+bool is_if_while(std::shared_ptr<Statement> stmt);
+bool is_arithmetic(std::shared_ptr<Statement> stmt);
 
 
 //-----------------------------------------------------BUILD_SINTAX_GRAPH------------------------------------------------------------------------------------------
 
 
-void build_sintax_graph(std::vector<Statement*> prog)
+void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog)
 {
 	std::ofstream file_tree;
 
@@ -39,7 +36,7 @@ void build_sintax_graph(std::vector<Statement*> prog)
 //-------------------------------------------------------NODE_CREATORS------------------------------------------------------------------------------------------
 
 
-void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
+void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstream &file_tree)
 {
 	static int num_node = 1;
 	int prev_num_node, prev_stmt = num_node - 1, stmt, stmt_type, size_prog = prog.size();
@@ -82,7 +79,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 			{
 				file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 				num_node++;
-				create_scope_nodes(static_cast<Scope*>(const_cast<Lex_t*>(&(static_cast<If*>(prog[prog_elem])->get_rhs())))->get_lhs(), file_tree);
+				create_scope_nodes(static_cast<Scope*>(const_cast<Lex_t*>(&(static_cast<If*>(prog[prog_elem].get())->get_rhs())))->get_lhs(), file_tree);
 				file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				if (is_if_long_form(prog[prog_elem]))
 				{
@@ -93,7 +90,7 @@ void create_scope_nodes(std::vector<Statement*> prog, std::ofstream &file_tree)
 			
 					file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 					num_node++;
-					create_scope_nodes(static_cast<Scope*>(&(static_cast<If*>(prog[prog_elem])->get_else()))->get_lhs(), file_tree);
+					create_scope_nodes(static_cast<Scope*>(&(static_cast<If*>(prog[prog_elem].get())->get_else()))->get_lhs(), file_tree);
 					file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				}
 			}
@@ -165,42 +162,21 @@ void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num
 //---------------------------------------------------------ISERS------------------------------------------------------------------------------------------
 
 
-bool is_if_while(Statement *stmt)
+bool is_if_while(std::shared_ptr<Statement> stmt)
 {
-	if (stmt->get_kind() == Statements_t::IF)
-	{
-		return 1;
-	}
-	if (stmt->get_kind() == Statements_t::WHILE)
-	{
-		return 1;
-	}
-	return 0;
+	return (stmt->get_kind() == Statements_t::IF)
+		&& (stmt->get_kind() == Statements_t::WHILE);
 }
 
 
-bool is_arithmetic(Statement *stmt)
+bool is_arithmetic(std::shared_ptr<Statement> stmt)
 {
-	if ((stmt->get_kind()) == Statements_t::ARITHMETIC)
-	{
-		return 1;
-	}
-	
-	return 0;
+	return (stmt->get_kind()) == Statements_t::ARITHMETIC;
 }
 
 
-bool is_if_long_form(Statement *stmt)
+bool is_if_long_form(std::shared_ptr<Statement> stmt)
 {
-	if (stmt->get_kind() != Statements_t::IF)
-	{
-		return 0;
-	}
-	if (&(static_cast<If*>(stmt)->get_else()))
-	{
-		return 1;
-	}
-	return 0;
+	return (stmt->get_kind() == Statements_t::IF)
+		&& (&(static_cast<If*>(stmt.get())->get_else()));
 }
-
-#endif

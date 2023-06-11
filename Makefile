@@ -1,9 +1,11 @@
 
 Inc_Dir = .././include
+DEFDIR = .././definitions
 СXX?= g++
 CXXFLAGS?= -Wall -std=c++2a -g -I $(Inc_Dir)
 
-export CXX CXXFLAGS
+
+export CXX CXXFLAGS DEFDIR
 
 
 .PHONY: clean

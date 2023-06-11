@@ -1,7 +1,3 @@
-#ifndef PARSER_ARISH_H
-#define PARSER_ARISH_H
-
-
 #include "Lex_methods.hpp"
 #include <unordered_map>
 
@@ -61,7 +57,7 @@ std::shared_ptr<Lex_t> parse_asgn(std::vector<std::shared_ptr<Lex_t>> &lex_array
 	std::shared_ptr<Lex_t> R, as, L = parse_bool(lex_array);
 	int is_as;
 	
-	while (1)
+	while (true)
 	{
 		is_as = is_assign(*lex_array[token_counter(USE_CURRENT)]);
 		if (!is_as)
@@ -96,7 +92,7 @@ std::shared_ptr<Lex_t> parse_bool(std::vector<std::shared_ptr<Lex_t>> &lex_array
 	std::shared_ptr<Lex_t> R, comp, L = parse_E(lex_array);
 	int is_comp;
 	
-	while (1)
+	while (true)
 	{
 		is_comp = is_compop(*lex_array[token_counter(USE_CURRENT)]);
 		if (is_comp < 0)
@@ -119,7 +115,7 @@ std::shared_ptr<Lex_t> parse_E(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 	std::shared_ptr<Lex_t> R, expr, L = parse_M(lex_array);
 	int is_p_m;
 	
-	while (1)
+	while (true)
 	{
 		is_p_m = is_plus_minus(*lex_array[token_counter(USE_CURRENT)]);
 		if (is_p_m < 0)
@@ -142,7 +138,7 @@ std::shared_ptr<Lex_t> parse_M(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 	std::shared_ptr<Lex_t> R, mult, L = parse_negation(lex_array);
 	int is_m_d;
 
-	while (1)
+	while (true)
 	{
 		is_m_d = is_mul_div(*lex_array[token_counter(USE_CURRENT)]);
 		if (is_m_d < 0)
@@ -165,7 +161,7 @@ std::shared_ptr<Lex_t> parse_negation(std::vector<std::shared_ptr<Lex_t>> &lex_a
 	std::shared_ptr<Lex_t> L, R, neg;
 	int is_neg;
 
-	while (1)
+	while (true)
 	{
 		is_neg = is_negation(*lex_array[token_counter(USE_CURRENT)]);
 
@@ -214,7 +210,7 @@ std::shared_ptr<Lex_t> parse_unary(std::vector<std::shared_ptr<Lex_t>> &lex_arra
 	std::shared_ptr<Lex_t> unop, L = parse_T(lex_array);
 	int is_unary;
 
-	while (1)
+	while (true)
 	{
 		is_unary = is_unop(*lex_array[token_counter(USE_CURRENT)]);
 		if (is_unary < 0)
@@ -278,7 +274,7 @@ std::shared_ptr<Lex_t> parse_T(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 			if (is_brace(*lex_array[token_counter(USE_CURRENT)]) == Brace_t::LBRACE)
 			{
 				T = parse_function_call(lex_array);
-			}//may be need increment
+			}
 			break;
 		}
 		case Lex_kind_t::SYMBOL:
@@ -318,7 +314,7 @@ std::shared_ptr<Lex_t> parse_function_call(std::vector<std::shared_ptr<Lex_t>> &
 	std::string name = func.short_name();
 	std::vector <std::shared_ptr<Lex_t>> args;
 
-	Statement *body = CURR_SCOPE->get_func_decl(name, token_counter(GET_CURRENT) - 1);
+	std::shared_ptr<Statement> body = CURR_SCOPE->get_func_decl(name, token_counter(GET_CURRENT) - 1);
 	
 	if (is_brace(*lex_array[token_counter(USE_CURRENT)]) != Brace_t::LBRACE)
 	{
@@ -482,5 +478,3 @@ bool is_else(Lex_t &node)
 		&& (node.get_data() == Symbols_t::ELSE);
 }
 
-
-#endif

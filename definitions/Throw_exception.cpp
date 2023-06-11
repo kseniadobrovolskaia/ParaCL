@@ -1,7 +1,3 @@
-#ifndef THROW_EXCEPTION_H
-#define THROW_EXCEPTION_H
-
-
 #include "Lexer.hpp"
 
 
@@ -64,6 +60,3 @@ void throw_exception(std::string mess, int error_elem)
 	
 	throw std::logic_error(command);
 }
-
-
-#endif

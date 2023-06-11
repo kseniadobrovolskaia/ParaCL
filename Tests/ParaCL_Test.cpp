@@ -1,5 +1,4 @@
-#include "Run_program.hpp"
-
+#include "Parser_stmts.hpp"
 
 void clean_all_global_arrays();
 
@@ -8,7 +7,7 @@ int main()
 {
 	try
 	{
-		CURR_SCOPE = new Scope_table();
+		CURR_SCOPE = std::make_shared<Scope_table>();
 
 		for (int num_test = 1; num_test < 16; num_test++)
 		{
