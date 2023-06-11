@@ -16,11 +16,12 @@ public:
 	virtual ~Statement() = default;
 
 	Statements_t get_kind() const { return kind_; };
-	virtual Lex_t *get_lhs() const = 0;
+	virtual Lex_t &get_lhs() const = 0;
 
 	virtual std::string name() const = 0;
 	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const = 0;
 };
+
 #endif
 
 //---------------------------------------STATEMENT_CLASSES-------------------------------------------------

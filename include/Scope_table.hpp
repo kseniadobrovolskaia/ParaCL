@@ -29,12 +29,11 @@ public:
 
 	int &get_var(const std::string &name, int num_lexem);
 	std::shared_ptr<Statement> get_func_decl(const std::string &name, int num_lexem);
+	std::shared_ptr<Scope_table> get_high_scope() const { return higher_scope_; };
+	void print_scope() const;
 
 	void clean_var_table() noexcept;
 	void clean_func_table() noexcept;
-
-	std::shared_ptr<Scope_table> get_high_scope() const { return higher_scope_; };
-	void print_scope() const;
 };
 
 

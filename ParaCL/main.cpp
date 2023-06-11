@@ -52,20 +52,19 @@ int main(int argc, char const *argv[])
 
 void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array)
 {
-	for (auto elem = lex_array.begin(); elem < lex_array.end(); ++elem)
+	for (auto &&elem : lex_array)
 	{
-		std::cout << (*elem)->name();
-		std::cout << " ";
+		std::cout << elem->name() << " ";
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 }
 
 
 void print_prog_elems(std::vector<std::shared_ptr<Statement>> prog)
 {
 	std::cout << "Утверждения программы :" << std::endl;
-	for (auto elem : prog)
+	for (auto &&elem : prog)
 	{
-		std::cout << elem->name() << std::endl;
+		std::cout << elem->name() << "\n";
 	}
 }

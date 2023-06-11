@@ -96,7 +96,7 @@ public:
 //---------------------------------------------LEX_STRING---------------------------------------------------
 
 
-std::vector<std::shared_ptr<Lex_t>> lex_string(std::istream &istr);
+extern std::vector<std::shared_ptr<Lex_t>> lex_string(std::istream &istr);
 
 
 #endif

@@ -78,7 +78,7 @@ int Arithmetic::run_stmt(std::istream &istr, std::ostream &ostr) const
 
 int Declaration::run_stmt(std::istream &istr, std::ostream &ostr) const
 {
-	CURR_SCOPE->init_func(func_->short_name(), this_);
+	CURR_SCOPE->init_func(func_->short_name(), this_.lock());
 
 	return 0;
 }

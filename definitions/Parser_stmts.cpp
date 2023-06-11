@@ -275,7 +275,7 @@ std::shared_ptr<Statement> parse_declaration(std::vector<std::shared_ptr<Lex_t>>
 	token_counter(INCREMENT);
 
 	stmt = std::make_shared<Declaration>(func, vars_in_func);
-	static_cast<Declaration*>(stmt.get())->set_decl(stmt);
+	static_cast<Declaration*>(stmt.get())->set_decl(std::weak_ptr(stmt));
 
 	if (is_colon(*lex_array[token_counter(USE_CURRENT)]))
 	{

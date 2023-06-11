@@ -6,7 +6,7 @@
 
 void throw_exception(std::string mess, int error_elem)
 {
-	int is_last_elem = 0;
+	bool is_last_elem = 0;
 	std::string command = mess;
 
 	int program_size = lex_array.size();

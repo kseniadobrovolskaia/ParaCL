@@ -1,11 +1,11 @@
 
 Inc_Dir = .././include
-DEFDIR = .././definitions
+DEFDIR = $(PWD)/definitions
+DEFINS = $(shell find $(DEFDIR) -name '*.cpp')
 СXX?= g++
 CXXFLAGS?= -Wall -std=c++2a -g -I $(Inc_Dir)
 
-
-export CXX CXXFLAGS DEFDIR
+export CXX CXXFLAGS DEFINS
 
 
 .PHONY: clean

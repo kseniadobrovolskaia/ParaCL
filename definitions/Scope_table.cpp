@@ -5,12 +5,12 @@
 void Scope_table::print_scope() const
 {
 	std::cout << "Variables: \n";
-	for (auto it = vars_.begin(); it != vars_.end(); ++it)
-        std::cout << it->first << " = " << it->second << "\n";
+	for (auto &&elem : vars_)
+        std::cout << elem.first << " = " << elem.second << "\n";
     
     std::cout << "Functions: \n";
-	for (auto it = funcs_.begin(); it != funcs_.end(); ++it)
-        std::cout << it->first << " = " << it->second << "\n";
+	for (auto &&elem : funcs_)
+        std::cout << elem.first << " = " << elem.second << "\n";
 }
 
 

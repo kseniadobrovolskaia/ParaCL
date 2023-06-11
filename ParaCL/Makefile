@@ -1,6 +1,5 @@
 
 SOURCES=main.cpp
-DEFINS = $(shell find $(DEFDIR) -name '*.cpp')
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=ParaCL.exe
 

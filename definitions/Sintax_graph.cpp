@@ -21,8 +21,7 @@ void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog)
 
 	if (!(file_tree.is_open()))
 	{
-	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
-	  exit(EXIT_FAILURE);
+		throw std::logic_error("File \"sintax_tree.txt\" did not open");
 	}
 
 	file_tree << "digraph G{\n           node_0[label = \"Program\", style=\"filled\", shape=\"record\", fillcolor = \"purple\"];";
@@ -43,8 +42,7 @@ void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstr
 
 	if (!(file_tree.is_open()))
 	{
-	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
-	  exit(EXIT_FAILURE);
+		throw std::logic_error("File \"sintax_tree.txt\" did not open");
 	}
 
 	for (int prog_elem = 0; prog_elem < size_prog; prog_elem++)
@@ -106,8 +104,7 @@ void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num
 	
 	if (!(file_tree.is_open()))
 	{
-	  std::cerr << "File \"sintax_tree.txt\" did not open" << std::endl;
-	  exit(EXIT_FAILURE);
+		throw std::logic_error("File \"sintax_tree.txt\" did not open");
 	}
 
 	std::string colour;
