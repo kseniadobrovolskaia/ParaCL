@@ -6,14 +6,13 @@ void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array);
 void print_prog_elems(std::vector<std::shared_ptr<Statement>> prog);
 void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog);
 
-//`llvm-config --cxxflags --ldflags --system-libs --libs core`
 
 static void HandleArithmetic(std::shared_ptr<Statement> elem)
 {
 	Lex_t &node = elem->get_lhs();
 	auto *func = node.codegen();
     
-    std::cout << "Read top-level expression:\n";
+    std::cout << "Read Arithmetic:\n";
     func->print(llvm::errs());
     std::cout << "\n";
 }
@@ -48,10 +47,6 @@ int main(int argc, char const *argv[])
 		const std::vector<std::shared_ptr<Statement>> stmts = static_cast<Scope*>(prog.get())->get_lhs();
 
 		//--------------------------------------------------------------------
-		
-		TheContext = std::make_unique<llvm::LLVMContext>();
-		TheModule = std::make_unique<llvm::Module>("ParaCL", *TheContext);
-		Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 
 		for (auto &elem : stmts)
 		{

@@ -34,9 +34,9 @@ extern bool EoF;
 extern std::vector<std::string> vars;					//variables appeared in lexical analysis
 extern std::vector<std::string> funcs;
 
-extern std::unique_ptr<llvm::Module> TheModule;
-extern std::unique_ptr<llvm::IRBuilder<>> Builder;
-extern std::unique_ptr<llvm::LLVMContext> TheContext;
+extern std::shared_ptr<llvm::Module> TheModule;
+extern std::shared_ptr<llvm::IRBuilder<>> Builder;
+extern std::shared_ptr<llvm::LLVMContext> TheContext;
 extern std::map<std::string, llvm::Value*> NamedValues;
 
 enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, RESET };

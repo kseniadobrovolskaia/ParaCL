@@ -21,8 +21,7 @@ std::vector<std::shared_ptr<Lex_t>> lex_array;
 class Statement;
 std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
 
-std::unique_ptr<llvm::Module> TheModule;
-std::unique_ptr<llvm::IRBuilder<>> Builder;
-std::unique_ptr<llvm::LLVMContext> TheContext;
+std::shared_ptr<llvm::LLVMContext> TheContext = std::make_shared<llvm::LLVMContext>();
+std::shared_ptr<llvm::Module> TheModule = std::make_shared<llvm::Module>("ParaCL", *TheContext);
+std::shared_ptr<llvm::IRBuilder<>> Builder = std::make_shared<llvm::IRBuilder<>>(*TheContext);
 std::map<std::string, llvm::Value*> NamedValues;
-

@@ -224,7 +224,8 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 
 llvm::Value *Value::codegen()
 {
-	return llvm::ConstantFP::get(*TheContext, llvm::APFloat(static_cast<double>(this->get_data())));
+	const llvm::APInt value(32, this->get_data(), true);
+	return llvm::ConstantInt::get(*TheContext, value);
 }
 
 
@@ -247,10 +248,12 @@ llvm::Value *Negation::codegen()
 {
 	std::cout << "Codegen negation\n";
 	
-	llvm::Value *left = llvm::ConstantFP::get(*TheContext, llvm::APFloat(0.0));
+	const llvm::APInt zero(32, 0, true);
+	
+	llvm::Value *left = llvm::ConstantInt::get(*TheContext, zero);
   	llvm::Value *right = rhs_->codegen();
 	
-	return Builder->CreateFSub(left, right, "subtmp");;
+	return Builder->CreateSub(left, right, "subtmp");;
 }
 
 #if 0
@@ -329,8 +332,10 @@ llvm::Value *Function::codegen()
 
 llvm::Value *UnOp::codegen()
 {
+	const llvm::APInt one(32, 1, true);
+	
 	llvm::Value *left = lhs_->codegen();
-  	llvm::Value *right = llvm::ConstantFP::get(*TheContext, llvm::APFloat(1.0));
+	llvm::Value *right = llvm::ConstantInt::get(*TheContext, one);
 
   	if (!left || !right) 
   	{
@@ -340,9 +345,9 @@ llvm::Value *UnOp::codegen()
 	switch (this->get_data())
 	{
 		case Statements_t::INC:
-			return Builder->CreateFAdd(left, right, "addtmp");
+			return Builder->CreateAdd(left, right, "addtmp");
 		case Statements_t::DEC:
-			return Builder->CreateFSub(left, right, "subtmp");
+			return Builder->CreateSub(left, right, "subtmp");
 	}
 			
 	throw_exception("Error: it is not clear what is in function \"UnOp::Codegen\"\n", this->get_num());
@@ -364,17 +369,17 @@ llvm::Value *BinOp::codegen()
 	switch (this->get_data())
 	{
 		case BinOp_t::ADD:
-			return Builder->CreateFAdd(left, right, "addtmp");
+			return Builder->CreateAdd(left, right, "addtmp");
 		case BinOp_t::SUB:
-			return Builder->CreateFSub(left, right, "subtmp");
+			return Builder->CreateSub(left, right, "subtmp");
 		case BinOp_t::MULT:
-			return Builder->CreateFMul(left, right, "multtmp");
+			return Builder->CreateMul(left, right, "multtmp");
 		// case BinOp_t::DIV:
 		// 	if (right == 0)
 		// 	{
 		// 		throw_exception("Division by zero\n", this->get_num());
 		// 	}
-		// 	return left / right;
+		// 	return Builder->CreateDiv(left, right, "divtmp");
 	}
 
 	throw_exception("Error: it is not clear what is in function \"BinOp::Codegen\"\n", this->get_num());
@@ -392,12 +397,11 @@ llvm::Value *CompOp::codegen()
   		throw_exception("Non-existing operand\n", this->get_num());
   	};
 
-	left = Builder->CreateFCmpULT(left, right, "cmptmp");
-
 	switch (this->get_data())
 	{
 		case CompOp_t::LESS:
-			return Builder->CreateUIToFP(left, llvm::Type::getDoubleTy(*TheContext), "lesstmp");
+			return Builder->CreateICmpULT(left, right, "lesstmp");
+
 		// case CompOp_t::GREATER:
 		// 	return left > right;
 		// case CompOp_t::LESorEQ:

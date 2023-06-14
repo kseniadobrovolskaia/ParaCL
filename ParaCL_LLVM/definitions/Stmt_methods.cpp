@@ -90,13 +90,18 @@ int Declaration::run_stmt(std::istream &istr, std::ostream &ostr) const
 llvm::Function *Declaration::codegen()
 {
 	std::string decl_name = funcs[func_->get_data()];
-	std::vector<llvm::Type *> Doubles(vars_.size(), llvm::Type::getDoubleTy(*TheContext));
+	std::vector<llvm::Type *> Ints(vars_.size(), llvm::Type::getInt32Ty(*TheContext));
   	
   	llvm::FunctionType *FuncType =
-      llvm::FunctionType::get(llvm::Type::getDoubleTy(*TheContext), Doubles, false);
+      llvm::FunctionType::get(llvm::Type::getInt32Ty(*TheContext), Ints, false);
 
 
   	llvm::Function *Func = llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, decl_name, TheModule.get());
+
+  	if (!(Func->empty()))
+  	{
+  		throw_exception("Redefinition of function\n", func_->get_num() - 1);
+  	}
 
   	int size = vars_.size();
 
