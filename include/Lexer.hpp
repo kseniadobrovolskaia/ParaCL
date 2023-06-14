@@ -14,13 +14,13 @@
 #include <signal.h>
 #include <memory>
 
-extern bool EoF;
 
+extern bool EoF;
 extern std::vector<std::string> vars;					//variables appeared in lexical analysis
 extern std::vector<std::string> funcs;
 
-enum Move { INCREMENT, GET_CURRENT, USE_CURRENT, RESET };
-int token_counter(Move move);					//to move in lex_array during parsing
+class Lex_array_t;
+extern std::shared_ptr<Lex_array_t> lex_array;
 
 void throw_exception(std::string mess, int error_elem);
 
@@ -59,14 +59,6 @@ enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC, FUNC, RETURN
 enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, COLON, COMMA };
 
 
-
-//-----------------------------------------GLOBAL_LEX_ARRAY---------------------------------------------------
-
-
-class Lex_t;
-extern std::vector<std::shared_ptr<Lex_t>> lex_array;
-
-
 //--------------------------------------------LEX_CLASS-------------------------------------------------------
 
 
@@ -79,7 +71,7 @@ class Lex_t
 
 public:
 	Lex_t() = default;
-	Lex_t(Lex_kind_t kind, int data, int num) : kind_(kind), data_(data), num_str_(num){ num_ = lex_array.size(); };
+	Lex_t(Lex_kind_t kind, int data, int num_str, int num) : kind_(kind), data_(data), num_str_(num_str), num_(num) {};
 	Lex_t(const Lex_t &rhs) : kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_), num_(rhs.num_){};
 	virtual ~Lex_t() = default;
 
@@ -91,12 +83,6 @@ public:
 	int get_num() const { return num_; };
 	virtual int calculate(std::istream &istr, std::ostream &ostr) const { return data_; };
 };
-
-
-//---------------------------------------------LEX_STRING---------------------------------------------------
-
-
-extern std::vector<std::shared_ptr<Lex_t>> lex_string(std::istream &istr);
 
 
 #endif

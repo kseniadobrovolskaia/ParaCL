@@ -1,5 +1,6 @@
 #include "Parser_stmts.hpp"
 
+
 void clean_all_global_arrays();
 
 
@@ -43,9 +44,9 @@ int main()
 			  exit(EXIT_FAILURE);
 			}
 
-			std::vector<std::shared_ptr<Lex_t>> lexems = lex_string(data);
-			
-			std::shared_ptr<Lex_t> prog = parse_scope(lexems);
+			lex_array = std::make_shared<Lex_array_t>(data);
+
+			std::shared_ptr<Lex_t> prog = parse_scope();
 			
 			run_program(prog, input, results);
 			clean_all_global_arrays();
@@ -87,9 +88,9 @@ int main()
 		{
 			input_data >> std::noskipws;
 			
-			std::vector<std::shared_ptr<Lex_t>> lexems = lex_string(input_data);
+			lex_array = std::make_shared<Lex_array_t>(input_data);
 
-			std::shared_ptr<Lex_t> prog = parse_scope(lexems);
+			std::shared_ptr<Lex_t> prog = parse_scope();
 			
 			run_program(prog, input_data, results);
 		}
@@ -115,8 +116,6 @@ int main()
 
 void clean_all_global_arrays()
 {
-	token_counter(RESET);
-	
 	EoF = 0;
 	MAIN = 1;
 	RETURN_COMMAND = 0;
@@ -125,7 +124,7 @@ void clean_all_global_arrays()
 	CURR_SCOPE->clean_var_table();
 	CURR_SCOPE->clean_func_table();
 
-	lex_array.clear();
+	lex_array->clear();
 	FUNCTIONS.clear();
 	vars.clear();
 	funcs.clear();

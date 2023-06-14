@@ -2,10 +2,11 @@
 #define SCOPE_TABLE_H
 
 
-#include "Lexer.hpp"
+#include "Lex_array.hpp"
 
 
 //--------------------------------------------SCOPE_TABLE_CLASS-------------------------------------------------------
+
 
 class Statement;
 extern std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;

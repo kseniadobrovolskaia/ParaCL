@@ -22,14 +22,16 @@ int main(int argc, char const *argv[])
 				exit(EXIT_FAILURE);
 			}
 
-			lex_array = lex_string(data);
+			lex_array = std::make_shared<Lex_array_t>(data);
 		}
 		else
 		{
-			lex_array = lex_string(std::cin);
+			lex_array = std::make_shared<Lex_array_t>(std::cin);
 		}
 
-		std::shared_ptr<Lex_t> prog = parse_scope(lex_array);
+		//lex_array->print();
+
+		std::shared_ptr<Lex_t> prog = parse_scope();
 
 		run_program(prog, std::cin, std::cout);
 
@@ -48,16 +50,6 @@ int main(int argc, char const *argv[])
 
 
 //--------------------------------------------DEBUG--------------------------------------------------------
-
-
-void print_lex_array(std::vector<std::shared_ptr<Lex_t>> &lex_array)
-{
-	for (auto &&elem : lex_array)
-	{
-		std::cout << elem->name() << " ";
-	}
-	std::cout << "\n";
-}
 
 
 void print_prog_elems(std::vector<std::shared_ptr<Statement>> prog)

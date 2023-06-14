@@ -133,7 +133,10 @@ void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num
 	file_tree << "\n           node_" << *num_node << "[label = \"" << curr_node.short_name() << "\", style=\"filled\", shape=\"record\", fillcolor = \"" << colour << "\"];";
 
 	prev_elem = curr_elem;
-	if ((is_unop(curr_node) >= 0) || is_negation(curr_node))
+
+	lex_array->set_curr_lex(curr_node.get_num());
+
+	if ((lex_array->is_unop() >= 0) || lex_array->is_negation())
 	{
 		(*num_node)++;
 		create_statement_nodes(dynamic_cast<Ref_t*>(&curr_node)->get_variable(), file_tree, num_node);
@@ -144,7 +147,9 @@ void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num
   	(*num_node)++;
   	prev_elem = curr_elem;
 
-  	if (is_binop(curr_node) || is_assign(curr_node))
+  	lex_array->set_curr_lex(curr_node.get_num());
+
+  	if (lex_array->is_binop() || lex_array->is_assign())
 	{
 		create_statement_nodes(static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_lhs(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
