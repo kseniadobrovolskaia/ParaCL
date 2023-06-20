@@ -57,7 +57,7 @@ int Scope_table::is_func_exist(const std::string &name) const
 		return higher_scope_->is_func_exist(name);
 	}
 
-	return FUNCTIONS.contains(name);
+	return AST_creator::FUNCTIONS.contains(name);
 }
 
 
@@ -89,9 +89,9 @@ std::shared_ptr<Statement> Scope_table::get_func_decl(const std::string &name, i
 		}
 		else
 		{
-			if (FUNCTIONS.contains(name))
+			if (AST_creator::FUNCTIONS.contains(name))
 			{
-				return FUNCTIONS[name];
+				return AST_creator::FUNCTIONS[name];
 			}
 			
 			throw_exception("This function was not declared\n", num_lexem);

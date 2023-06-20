@@ -1,14 +1,14 @@
 #include "Parser_stmts.hpp"
 
 
-void clean_all_global_arrays();
+void clean_all_static_vars();
 
 
 int main()
 {
 	try
 	{
-		CURR_SCOPE = std::make_shared<Scope_table>();
+		AST_creator creator;
 
 		for (int num_test = 1; num_test < 16; num_test++)
 		{
@@ -44,12 +44,12 @@ int main()
 			  exit(EXIT_FAILURE);
 			}
 
-			lex_array = std::make_shared<Lex_array_t>(data);
+			creator.lexical_analysis(data);
 
-			std::shared_ptr<Lex_t> prog = parse_scope();
+			creator.parsing();
 			
-			run_program(prog, input, results);
-			clean_all_global_arrays();
+			creator.run_program(input, results);
+			clean_all_static_vars();
 		}
 	}
 	catch(std::exception & ex)
@@ -86,13 +86,15 @@ int main()
 
 		try
 		{
+			AST_creator creator;
+
 			input_data >> std::noskipws;
 			
-			lex_array = std::make_shared<Lex_array_t>(input_data);
+			creator.lexical_analysis(input_data);
 
-			std::shared_ptr<Lex_t> prog = parse_scope();
+			creator.parsing();
 			
-			run_program(prog, input_data, results);
+			creator.run_program(input_data, results);
 		}
 		catch(std::exception & ex)
 		{
@@ -107,25 +109,26 @@ int main()
 			input_data.clear();
 		}
 
-		clean_all_global_arrays();
+		clean_all_static_vars();
 	}
 
 	return 0;
 }
 
 
-void clean_all_global_arrays()
+void clean_all_static_vars()
 {
-	EoF = 0;
-	MAIN = 1;
-	RETURN_COMMAND = 0;
-	IN_FUNCTION = 0;
+	Lex_t::vars_table().clear();
+	Lex_t::funcs_table().clear();
 
-	CURR_SCOPE->clean_var_table();
-	CURR_SCOPE->clean_func_table();
+	Lex_array_t::EoF_ = 0;
+	
+	parse_scope(nullptr, 1); //This means MAIN = 1
 
-	lex_array->clear();
-	FUNCTIONS.clear();
-	vars.clear();
-	funcs.clear();
+	AST_creator::RETURN_COMMAND = 0;
+	AST_creator::IN_FUNCTION = 0;
+
+	AST_creator::CURR_SCOPE->clean_var_table();
+	AST_creator::CURR_SCOPE->clean_func_table();
+	AST_creator::FUNCTIONS.clear();
 }

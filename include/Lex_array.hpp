@@ -11,8 +11,13 @@ class Lex_array_t {
 	int num_str_ = 1;
 	std::vector<std::shared_ptr<Lex_t>> lex_array_;
 
+	std::vector<std::string> vars_;
+	std::vector<std::string> funcs_;
+
 
 public:
+	static bool EoF_;
+
 	Lex_array_t(std::istream &istr);
 
 	int get_num_curr_lex() const { return curr_lex_; }

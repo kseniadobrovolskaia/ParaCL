@@ -8,10 +8,6 @@
 //--------------------------------------------SCOPE_TABLE_CLASS-------------------------------------------------------
 
 
-class Statement;
-extern std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
-
-
 class Scope_table
 {
 	std::shared_ptr<Scope_table> higher_scope_;

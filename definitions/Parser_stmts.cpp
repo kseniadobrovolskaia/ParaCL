@@ -1,27 +1,27 @@
 #include "Parser_stmts.hpp"
 
 
-//--------------------------------------------RUN_PROGRAM--------------------------------------------------
-
-
-void run_program(std::shared_ptr<Lex_t> prog, std::istream & istr, std::ostream & ostr)
-{
-	prog->calculate(istr, ostr);
-}
-
-
 //--------------------------------------------PARSER_STMTS-------------------------------------------------
 
 
-std::shared_ptr<Lex_t> parse_scope()
+std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool reset)
 {
+	static bool MAIN = 1;
+
+	if (reset)
+	{
+		MAIN = 1;
+		return nullptr;
+	}
+
+	bool main = 0;
+	bool ONE_STMT = 0;
+
 	std::vector<std::shared_ptr<Statement>> prog_elems;
 	int size = lex_array->size();
 	std::shared_ptr<Statement> stmt;
 	
 	std::shared_ptr<Lex_t> scop;
-	bool main = 0;
-	bool ONE_STMT = 0;
 
 
 	if (MAIN)
@@ -54,23 +54,23 @@ std::shared_ptr<Lex_t> parse_scope()
 				switch (Curr->get_data())
 				{
 				case Statements_t::IF:
-					stmt = parse_if();
+					stmt = parse_if(lex_array);
 					break;
 				case Statements_t::WHILE:
-					stmt = parse_while();
+					stmt = parse_while(lex_array);
 					break;
 				case Statements_t::PRINT:
-					stmt = parse_print();
+					stmt = parse_print(lex_array);
 					break;
 				case Statements_t::RETURN:
-					stmt = parse_return();
+					stmt = parse_return(lex_array);
 					break;
 				}
 				break;
 			}
 			case Lex_kind_t::FUNCTION:
 			{
-				stmt = parse_declaration();
+				stmt = parse_declaration(lex_array);
 				break;
 			}
 			case Lex_kind_t::BINOP:
@@ -101,7 +101,7 @@ std::shared_ptr<Lex_t> parse_scope()
 			{
 				if (lex_array->is_scope() != Scope_t::RSCOPE)
 				{
-					std::shared_ptr<Lex_t> Stmt = parse_arithmetic();
+					std::shared_ptr<Lex_t> Stmt = parse_arithmetic(lex_array);
 
 					stmt = std::make_shared<Arithmetic>(Stmt);
 
@@ -165,7 +165,7 @@ std::shared_ptr<Lex_t> parse_scope()
 }
 
 
-std::shared_ptr<Statement> parse_if()
+std::shared_ptr<Statement> parse_if(std::shared_ptr<Lex_array_t> lex_array)
 {
 	lex_array->inc_lex();
 
@@ -174,21 +174,21 @@ std::shared_ptr<Statement> parse_if()
 		throw_exception("Syntax error in \"if\"\n", lex_array->get_num_curr_lex());
 	}
 
-	std::shared_ptr<Lex_t> L = parse_arithmetic();
-	std::shared_ptr<Lex_t> R = parse_scope();
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
+	std::shared_ptr<Lex_t> R = parse_scope(lex_array);
 	std::shared_ptr<Lex_t> Else = nullptr;
 
 	if ((lex_array->get_num_curr_lex() < lex_array->size()) && lex_array->is_else())
 	{
 		lex_array->inc_lex();
-		Else = parse_scope();
+		Else = parse_scope(lex_array);
 	}
 
 	return std::make_shared<If>(L, R, Else);
 }
 
 
-std::shared_ptr<Statement> parse_while()
+std::shared_ptr<Statement> parse_while(std::shared_ptr<Lex_array_t> lex_array)
 {
 	lex_array->inc_lex();
 
@@ -197,18 +197,18 @@ std::shared_ptr<Statement> parse_while()
 		throw_exception("Syntax error in \"while\"\n", lex_array->get_num_curr_lex());
 	}
 
-	std::shared_ptr<Lex_t> L = parse_arithmetic();
-	std::shared_ptr<Lex_t> R = parse_scope();
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
+	std::shared_ptr<Lex_t> R = parse_scope(lex_array);
 
 	return std::make_shared<While>(L, R);
 }
 
 
-std::shared_ptr<Statement> parse_print()
+std::shared_ptr<Statement> parse_print(std::shared_ptr<Lex_array_t> lex_array)
 {
 	lex_array->inc_lex();
 
-	std::shared_ptr<Lex_t> L = parse_arithmetic();
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
 
 	if(!lex_array->is_semicol())
 	{
@@ -221,11 +221,11 @@ std::shared_ptr<Statement> parse_print()
 }
 
 
-std::shared_ptr<Statement> parse_return()
+std::shared_ptr<Statement> parse_return(std::shared_ptr<Lex_array_t> lex_array)
 {
 	lex_array->inc_lex();
 
-	std::shared_ptr<Lex_t> L = parse_arithmetic();
+	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
 
 	if(!lex_array->is_semicol())
 	{
@@ -238,7 +238,7 @@ std::shared_ptr<Statement> parse_return()
 }
 
 
-std::shared_ptr<Statement> parse_declaration()
+std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_array)
 {
 	std::shared_ptr<Statement> stmt;
 	std::shared_ptr<Lex_t> func = lex_array->get_curr_lex();
@@ -293,7 +293,7 @@ std::shared_ptr<Statement> parse_declaration()
 		if ((lex_array->get_curr_lex())->get_kind() == Lex_kind_t::VAR)
 		{
 			std::string function_name = (lex_array->get_curr_lex())->short_name();
-			FUNCTIONS[function_name] = stmt;
+			AST_creator::FUNCTIONS[function_name] = stmt;
 		}
 		else
 		{
@@ -303,11 +303,11 @@ std::shared_ptr<Statement> parse_declaration()
 		lex_array->inc_lex();
 	}
 
-	std::shared_ptr<Lex_t> scope = parse_scope();
+	std::shared_ptr<Lex_t> scope = parse_scope(lex_array);
 
 	static_cast<Declaration*>(stmt.get())->add_scope(scope);
 
-	CURR_SCOPE->init_func(func->short_name(), stmt);
+	AST_creator::CURR_SCOPE->init_func(func->short_name(), stmt);
 
 	return stmt;
 }

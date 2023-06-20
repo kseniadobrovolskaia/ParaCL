@@ -14,15 +14,17 @@
 #include <signal.h>
 #include <memory>
 
+#include "AST_creator.hpp"
 
-extern bool EoF;
-extern std::vector<std::string> vars;					//variables appeared in lexical analysis
-extern std::vector<std::string> funcs;
 
-class Lex_array_t;
-extern std::shared_ptr<Lex_array_t> lex_array;
-
-void throw_exception(std::string mess, int error_elem);
+/**
+ * @brief throw_exception - function to display error messages
+ * 
+ * @param mess       - error message
+ * 		  error_elem - index token with error
+ * 		  lex_array_ - specified only when you need to set a static lex_array in this function
+ */
+void throw_exception(std::string mess, int error_elem, std::vector<std::shared_ptr<Lex_t>> lex_array_ = std::vector<std::shared_ptr<Lex_t>>());
 
 
 //--------------------------------------------LEX_KIND--------------------------------------------------------
@@ -62,12 +64,18 @@ enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, COLON, COMMA };
 //--------------------------------------------LEX_CLASS-------------------------------------------------------
 
 
+/**
+ * @brief class Lex_t - token as part of an Lex_array_t
+ */
 class Lex_t
 {
 	Lex_kind_t kind_;
-	int data_;              //for example, Scope_t::LSCOPE
-	int num_str_;			//line number with this token
-	int num_;				//index this token in lex_array
+	int data_;              ///for example, Scope_t::LSCOPE
+	int num_str_;			///line number with this token
+	int num_;				///index this token in lex_array
+
+	static std::vector<std::string> vars_;					///variables appeared in lexical analysis
+	static std::vector<std::string> funcs_;					///function names appeared in lexical analysis
 
 public:
 	Lex_t() = default;
@@ -81,6 +89,10 @@ public:
 	int get_str() const { return num_str_; };
 	int get_data() const { return data_; };
 	int get_num() const { return num_; };
+
+	static std::vector<std::string>& vars_table() { return vars_; }
+	static std::vector<std::string>& funcs_table() { return funcs_; }
+
 	virtual int calculate(std::istream &istr, std::ostream &ostr) const { return data_; };
 };
 

@@ -33,7 +33,7 @@ int While::run_stmt(std::istream &istr, std::ostream &ostr) const
 	{
 		rhs_->calculate(istr, ostr);
 
-		if (RETURN_COMMAND)
+		if (AST_creator::RETURN_COMMAND)
 			break;
 
 		condition = lhs_->calculate(istr, ostr);
@@ -55,12 +55,12 @@ int Print::run_stmt(std::istream &istr, std::ostream &ostr) const
 
 int Return::run_stmt(std::istream &istr, std::ostream &ostr) const
 {
-	if (!IN_FUNCTION)
+	if (!AST_creator::IN_FUNCTION)
 	{
 		throw_exception("You can return only from functions\n", lhs_->get_num() - 1);
 	}
 
-	RETURN_COMMAND = 1;
+	AST_creator::RETURN_COMMAND = 1;
 
 	int val = lhs_->calculate(istr, ostr);
 
@@ -78,7 +78,7 @@ int Arithmetic::run_stmt(std::istream &istr, std::ostream &ostr) const
 
 int Declaration::run_stmt(std::istream &istr, std::ostream &ostr) const
 {
-	CURR_SCOPE->init_func(func_->short_name(), this_.lock());
+	AST_creator::CURR_SCOPE->init_func(func_->short_name(), this_.lock());
 
 	return 0;
 }

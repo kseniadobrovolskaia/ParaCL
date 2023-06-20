@@ -2,42 +2,42 @@
 #include <unordered_map>
 
 
-std::shared_ptr<Lex_t> parse_function_call();
-std::shared_ptr<Lex_t> parse_arithmetic();
-std::shared_ptr<Lex_t> parse_negation();
-std::shared_ptr<Lex_t> parse_negative();
-std::shared_ptr<Lex_t> parse_unary();
-std::shared_ptr<Lex_t> parse_scope();
-std::shared_ptr<Lex_t> parse_asgn();
-std::shared_ptr<Lex_t> parse_bool();
-std::shared_ptr<Lex_t> parse_E();
-std::shared_ptr<Lex_t> parse_M();
-std::shared_ptr<Lex_t> parse_T();
+std::shared_ptr<Lex_t> parse_function_call(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_arithmetic(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_negation(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_negative(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_unary(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool reset = 0);
+std::shared_ptr<Lex_t> parse_asgn(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_bool(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_E(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_M(std::shared_ptr<Lex_array_t> lex_array);
+std::shared_ptr<Lex_t> parse_T(std::shared_ptr<Lex_array_t> lex_array);
 
 
 //---------------------------------------------PARSERS-----------------------------------------------------
 
 
-std::shared_ptr<Lex_t> parse_arithmetic()
+std::shared_ptr<Lex_t> parse_arithmetic(std::shared_ptr<Lex_array_t> lex_array)
 {
 	std::shared_ptr<Lex_t> root;
 
 	if (lex_array->is_scope() == Scope_t::RSCOPE)
 	{
-		root = parse_scope();
+		root = parse_scope(lex_array);
 	}
 	else
 	{
-		root = parse_asgn();
+		root = parse_asgn(lex_array);
 	}
 
 	return root;
 }
 
 
-std::shared_ptr<Lex_t> parse_asgn()
+std::shared_ptr<Lex_t> parse_asgn(std::shared_ptr<Lex_array_t> lex_array)
 {
-	std::shared_ptr<Lex_t> R, as, L = parse_bool();
+	std::shared_ptr<Lex_t> R, as, L = parse_bool(lex_array);
 	bool is_as;
 	
 	while (true)
@@ -62,7 +62,7 @@ std::shared_ptr<Lex_t> parse_asgn()
 
 			as = lex_array->get_curr_lex();
 			lex_array->inc_lex();
-			R = parse_bool();
+			R = parse_bool(lex_array);
 
 			L = std::make_shared<Assign_node>(L, R, *var, *as);
 		}
@@ -70,9 +70,9 @@ std::shared_ptr<Lex_t> parse_asgn()
 }
 
 
-std::shared_ptr<Lex_t> parse_bool()
+std::shared_ptr<Lex_t> parse_bool(std::shared_ptr<Lex_array_t> lex_array)
 {
-	std::shared_ptr<Lex_t> R, comp, L = parse_E();
+	std::shared_ptr<Lex_t> R, comp, L = parse_E(lex_array);
 	int is_comp;
 	
 	while (true)
@@ -86,16 +86,16 @@ std::shared_ptr<Lex_t> parse_bool()
 		{
 			comp = lex_array->get_curr_lex();
 			lex_array->inc_lex();
-			R = parse_E();	
+			R = parse_E(lex_array);	
 			L = std::make_shared<CompOp>(L, R, *comp);
 		}
 	}
 }
 
 
-std::shared_ptr<Lex_t> parse_E()
+std::shared_ptr<Lex_t> parse_E(std::shared_ptr<Lex_array_t> lex_array)
 {
-	std::shared_ptr<Lex_t> R, expr, L = parse_M();
+	std::shared_ptr<Lex_t> R, expr, L = parse_M(lex_array);
 	int is_p_m;
 	
 	while (true)
@@ -109,16 +109,16 @@ std::shared_ptr<Lex_t> parse_E()
 		{
 			expr = lex_array->get_curr_lex();
 			lex_array->inc_lex();
-			R = parse_M();	
+			R = parse_M(lex_array);	
 			L = std::make_shared<BinOp>(L, R, *expr);
 		}
 	}
 }
 
 
-std::shared_ptr<Lex_t> parse_M()
+std::shared_ptr<Lex_t> parse_M(std::shared_ptr<Lex_array_t> lex_array)
 {
-	std::shared_ptr<Lex_t> R, mult, L = parse_negation();
+	std::shared_ptr<Lex_t> R, mult, L = parse_negation(lex_array);
 	int is_m_d;
 
 	while (true)
@@ -132,14 +132,14 @@ std::shared_ptr<Lex_t> parse_M()
 		{
 			mult = lex_array->get_curr_lex();
 			lex_array->inc_lex();
-			R = parse_negation();
+			R = parse_negation(lex_array);
 			L = std::make_shared<BinOp>(L, R, *mult);
 		}
 	}
 }
 
 
-std::shared_ptr<Lex_t> parse_negation() // !expression
+std::shared_ptr<Lex_t> parse_negation(std::shared_ptr<Lex_array_t> lex_array) // !expression
 {
 	std::shared_ptr<Lex_t> L, R, neg;
 	bool is_neg;
@@ -150,13 +150,13 @@ std::shared_ptr<Lex_t> parse_negation() // !expression
 
 		if (!is_neg)
 		{
-			L = parse_negative();	
+			L = parse_negative(lex_array);	
 		}
 		else
 		{
 			neg = lex_array->get_curr_lex();
 			lex_array->inc_lex();
-			R = parse_negative();	
+			R = parse_negative(lex_array);	
 			L = std::make_shared<Negation>(R, *neg);
 		}
 
@@ -165,7 +165,7 @@ std::shared_ptr<Lex_t> parse_negation() // !expression
 }
 
 
-std::shared_ptr<Lex_t> parse_negative() // -expression
+std::shared_ptr<Lex_t> parse_negative(std::shared_ptr<Lex_array_t> lex_array) // -expression
 {
 	std::shared_ptr<Lex_t> L, R, neg;
 
@@ -175,22 +175,22 @@ std::shared_ptr<Lex_t> parse_negative() // -expression
 	{
 		neg = lex_array->get_curr_lex();
 		lex_array->inc_lex();
-		R = parse_unary();
+		R = parse_unary(lex_array);
 		std::shared_ptr<Lex_t> nul = std::make_shared<Value>(Lex_t(Lex_kind_t:: VALUE, 0, neg->get_str(), neg->get_num()), Value_type::NUMBER);
 		L = std::make_shared<BinOp>(nul, R, *neg);
 	}
 	else
 	{
-		L = parse_unary();
+		L = parse_unary(lex_array);
 	}
 
 	return L;
 }
 			
 
-std::shared_ptr<Lex_t> parse_unary()
+std::shared_ptr<Lex_t> parse_unary(std::shared_ptr<Lex_array_t> lex_array)
 {
-	std::shared_ptr<Lex_t> unop, L = parse_T();
+	std::shared_ptr<Lex_t> unop, L = parse_T(lex_array);
 	int is_unary;
 
 	while (true)
@@ -221,7 +221,7 @@ std::shared_ptr<Lex_t> parse_unary()
 }
 
 
-std::shared_ptr<Lex_t> parse_T()
+std::shared_ptr<Lex_t> parse_T(std::shared_ptr<Lex_array_t> lex_array)
 {
 	std::shared_ptr<Lex_t> T;
 
@@ -229,7 +229,7 @@ std::shared_ptr<Lex_t> parse_T()
 	{
 		lex_array->inc_lex();
 
-		T = parse_asgn();
+		T = parse_asgn(lex_array);
 
 		if (lex_array->is_brace() != Brace_t::RBRACE)
 		{
@@ -256,7 +256,7 @@ std::shared_ptr<Lex_t> parse_T()
 
 			if (lex_array->is_brace() == Brace_t::LBRACE)
 			{
-				T = parse_function_call();
+				T = parse_function_call(lex_array);
 			}
 			break;
 		}
@@ -273,7 +273,7 @@ std::shared_ptr<Lex_t> parse_T()
 		{
 			if (lex_array->is_scope() == Scope_t::LSCOPE)
 			{
-				T = parse_scope();
+				T = parse_scope(lex_array);
 				break;
 			}
 		}
@@ -290,14 +290,14 @@ std::shared_ptr<Lex_t> parse_T()
 //-----------------------------------------PARSE_FUNCTION_CALL---------------------------------------------
 
 
-std::shared_ptr<Lex_t> parse_function_call()
+std::shared_ptr<Lex_t> parse_function_call(std::shared_ptr<Lex_array_t> lex_array)
 {
 	std::shared_ptr<Lex_t> T;
 	Lex_t &func = *(lex_array->get_prev_lex());
 	std::string name = func.short_name();
 	std::vector <std::shared_ptr<Lex_t>> args;
 
-	std::shared_ptr<Statement> body = CURR_SCOPE->get_func_decl(name, lex_array->get_num_curr_lex() - 1);
+	std::shared_ptr<Statement> body = AST_creator::CURR_SCOPE->get_func_decl(name, lex_array->get_num_curr_lex() - 1);
 	
 	if (lex_array->is_brace() != Brace_t::LBRACE)
 	{
@@ -322,7 +322,7 @@ std::shared_ptr<Lex_t> parse_function_call()
 			}
 			lex_array->inc_lex();
 		}
-		arg = parse_arithmetic();
+		arg = parse_arithmetic(lex_array);
 		args.push_back(arg);
 	}
 

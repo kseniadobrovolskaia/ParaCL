@@ -5,12 +5,8 @@
 #include "Scope_table.hpp"
 
 
-extern std::shared_ptr<Scope_table> CURR_SCOPE;
-extern bool RETURN_COMMAND;
-extern int IN_FUNCTION;
-
-
 //--------------------------------------------LEXEME_CLASSES------------------------------------------------
+
 
 enum Value_type { INPUT, NUMBER };
 

@@ -1,7 +1,6 @@
 #include "Lex_methods.hpp"
 
 
-
 //---------------------------------------------CALCULATE----------------------------------------------------
 
 
@@ -23,9 +22,9 @@ int Value::calculate(std::istream &istr, std::ostream &ostr) const
 
 int Variable::calculate(std::istream &istr, std::ostream &ostr) const
 {
-	std::string var_name = vars[this->get_data()];
+	std::string var_name = Lex_t::vars_table()[this->get_data()];
 
-	return CURR_SCOPE->get_var(var_name, this->get_num());
+	return AST_creator::CURR_SCOPE->get_var(var_name, this->get_num());
 }
 
 
@@ -46,20 +45,20 @@ int Assign_node::calculate(std::istream &istr, std::ostream &ostr) const
 
 	if (dynamic_cast<Variable*>(var))
 	{
-		var_name = vars[var->get_data()];
-		CURR_SCOPE->init_var(var_name);
+		var_name = Lex_t::vars_table()[var->get_data()];
+		AST_creator::CURR_SCOPE->init_var(var_name);
 	}
 	else
 	{
 		var = &get_variable();
-		var_name = vars[var->get_data()];
+		var_name = Lex_t::vars_table()[var->get_data()];
 	}
 
 	lhs_->calculate(istr, ostr);
 
-	CURR_SCOPE->get_var(var_name, var->get_num()) = right_part;
+	AST_creator::CURR_SCOPE->get_var(var_name, var->get_num()) = right_part;
 
-	return CURR_SCOPE->get_var(var_name, var->get_num());
+	return AST_creator::CURR_SCOPE->get_var(var_name, var->get_num());
 }
 
 
@@ -101,16 +100,16 @@ int UnOp::calculate(std::istream &istr, std::ostream &ostr) const
 		var = &get_variable();
 	}
 	
-	var_name = vars[var->get_data()];
+	var_name = Lex_t::vars_table()[var->get_data()];
 
 	switch (this->get_data())
 	{
 		case Statements_t::INC:
-			CURR_SCOPE->get_var(var_name, this->get_num()) += 1;
-			return CURR_SCOPE->get_var(var_name, this->get_num());
+			AST_creator::CURR_SCOPE->get_var(var_name, this->get_num()) += 1;
+			return AST_creator::CURR_SCOPE->get_var(var_name, this->get_num());
 		case Statements_t::DEC:
-			CURR_SCOPE->get_var(var_name, this->get_num()) -= 1;
-			return CURR_SCOPE->get_var(var_name, this->get_num());
+			AST_creator::CURR_SCOPE->get_var(var_name, this->get_num()) -= 1;
+			return AST_creator::CURR_SCOPE->get_var(var_name, this->get_num());
 	}
 
 	throw_exception("Error: it is not clear what is in function \"UnOp::calculate\"\n", this->get_num());
@@ -146,14 +145,14 @@ int CompOp::calculate(std::istream &istr, std::ostream &ostr) const
 
 int Scope::calculate(std::istream &istr, std::ostream &ostr) const
 {
-	std::shared_ptr<Scope_table> scp_table = std::make_shared<Scope_table>(CURR_SCOPE);
-	std::shared_ptr<Scope_table> old_table = CURR_SCOPE;
+	std::shared_ptr<Scope_table> scp_table = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
+	std::shared_ptr<Scope_table> old_table = AST_creator::CURR_SCOPE;
 
-	CURR_SCOPE = scp_table;
+	AST_creator::CURR_SCOPE = scp_table;
 	int res = 0;
 
 	// auto run = [&](std::shared_ptr<Statement> stmt)
-	// 			 { stmt->run_stmt(istr, ostr); return RETURN_COMMAND; };
+	// 			 { stmt->run_stmt(istr, ostr); return AST_creator::RETURN_COMMAND; };
 
 	// std::find_if(stmts_.begin(), stmts_.end(), run); //this does not work:(
 
@@ -161,11 +160,11 @@ int Scope::calculate(std::istream &istr, std::ostream &ostr) const
 	{
 		res = stmt->run_stmt(istr, ostr);
 
-		if (RETURN_COMMAND)
+		if (AST_creator::RETURN_COMMAND)
 			break;
 	}
 
-	CURR_SCOPE = old_table;
+	AST_creator::CURR_SCOPE = old_table;
 
 	return res;
 }
@@ -173,7 +172,7 @@ int Scope::calculate(std::istream &istr, std::ostream &ostr) const
 
 int Function::calculate(std::istream &istr, std::ostream &ostr) const
 {
-	IN_FUNCTION++;
+	AST_creator::IN_FUNCTION++;
 	int res = 0;
 	std::shared_ptr<Scope_table> func_table_ = std::make_shared<Scope_table>();
 
@@ -195,8 +194,8 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 
 	std::shared_ptr<Lex_t> scope = static_cast<Declaration*>(decl_.get())->get_scope();
 
-	std::shared_ptr<Scope_table> old_curr_scope = CURR_SCOPE;
-	CURR_SCOPE = func_table_;
+	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
+	AST_creator::CURR_SCOPE = func_table_;
 
 	const std::vector<std::shared_ptr<Statement>> &stmts_ = static_cast<Scope*>(scope.get())->get_lhs();
 
@@ -204,16 +203,16 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 	{
 		res = stmt->run_stmt(istr, ostr);
 
-		if (RETURN_COMMAND)
+		if (AST_creator::RETURN_COMMAND)
 		{
-			RETURN_COMMAND = 0;
+			AST_creator::RETURN_COMMAND = 0;
 			break;
 		}
 	}
 
-	CURR_SCOPE = old_curr_scope;
+	AST_creator::CURR_SCOPE = old_curr_scope;
 
-	IN_FUNCTION--;
+	AST_creator::IN_FUNCTION--;
 	return res;
 }
 
@@ -340,9 +339,9 @@ std::string Lex_t::name() const
 		return static_cast<std::string>("COMPOP:") + type;
 	}
 	case Lex_kind_t::VAR:
-		return static_cast<std::string>("VAR:") + vars[data_];
+		return static_cast<std::string>("VAR:") + vars_[data_];
 	case Lex_kind_t::FUNCTION:
-		return static_cast<std::string>("FUNCTION:") + funcs[data_];
+		return static_cast<std::string>("FUNCTION:") + funcs_[data_];
 	}
 	return nullptr;
 }
@@ -356,9 +355,9 @@ std::string Lex_t::short_name() const
 	switch (kind_)
 	{
 	case Lex_kind_t::VAR:
-		return vars[data_];
+		return vars_[data_];
 	case Lex_kind_t::FUNCTION:
-		return funcs[data_];
+		return funcs_[data_];
 	case Lex_kind_t::BRACE:
 		return ((data_ == Brace_t::LBRACE) ? "(" : ")");
 	case Lex_kind_t::UNOP:

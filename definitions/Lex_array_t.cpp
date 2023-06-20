@@ -8,7 +8,7 @@
 
 void handler(int signo)
 {
-	EoF = 1;
+	Lex_array_t::EoF_ = 1;
 }
 
 
@@ -24,7 +24,7 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 	
 	while (istr >> elem)
 	{	
-		if (EoF)
+		if (EoF_)
 		{
 			break;
 		}
@@ -201,15 +201,12 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 				}
 				else if (word == "func")
 				{
-					if (lex_array_.size() < 2)
-					{
-						push_stmt(FUNC);
-						throw_exception("Bad function declaration\n", lex_array_.size() - 1);
-					}
 					if (lex_array_.back()->get_kind() != Lex_kind_t::STMT 
 					 || lex_array_.back()->get_data() != Statements_t::ASSIGN)
 					{
 						push_stmt(FUNC);
+
+						throw_exception("Set lex_array", 0, lex_array_); //This need to set lex_array in function "throw_exception"
 						throw_exception("Bad function declaration\n", lex_array_.size() - 1);
 					}
 					std::shared_ptr<Lex_t> ass = lex_array_.back();
@@ -219,6 +216,8 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 					{
 						push_stmt(ASSIGN);
 						push_stmt(FUNC);
+
+						throw_exception("Set lex_array", 0, lex_array_);
 						throw_exception("Bad function declaration\n", lex_array_.size() - 1);
 					}
 					
@@ -227,10 +226,10 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 
 					if (func->get_data() == (num_var - 1))
 					{
-						funcs.push_back(vars[num_var - 1]);
+						Lex_t::funcs_table().push_back(Lex_t::vars_table()[num_var - 1]);
 						num_funcs++;
 						num_var--;
-						vars.pop_back();
+						Lex_t::vars_table().pop_back();
 					}
 
 					push_function(num_funcs - 1);
@@ -239,16 +238,16 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 				}
 				else
 				{
-					std::vector<std::string>::iterator itr = std::find(vars.begin(), vars.end(), word);
-					if (itr == vars.end())
+					std::vector<std::string>::iterator itr = std::find(Lex_t::vars_table().begin(), Lex_t::vars_table().end(), word);
+					if (itr == Lex_t::vars_table().end())
 					{
 						push_var(num_var);
-						vars.push_back(word);
+						Lex_t::vars_table().push_back(word);
 						num_var++;					
 					}
 					else
 					{
-						push_var(std::distance(vars.begin(), itr));
+						push_var(std::distance(Lex_t::vars_table().begin(), itr));
 					}
 				}
 
@@ -264,7 +263,8 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 				std::string mess, line;
 
 				mess += "No such symbol exists\n";
-		
+
+				throw_exception("Set lex_array", 0, lex_array_);
 				throw_exception(mess, lex_array_.size() - 1);
 			}
 		}
@@ -272,6 +272,8 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 
 	    prev = elem;
 	}
+
+	throw_exception("Set lex_array", 0, lex_array_); //This need to set static lex_array in function "throw_exception"
 
 }
 

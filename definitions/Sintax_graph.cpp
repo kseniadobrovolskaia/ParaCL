@@ -1,9 +1,9 @@
 #include "Parser_stmts.hpp"
 
 
-void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog);
-void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num_node);
-void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstream &tree);
+void build_sintax_graph(std::shared_ptr<Lex_array_t> lex_array, std::vector<std::shared_ptr<Statement>> prog);
+void create_statement_nodes(std::shared_ptr<Lex_array_t> lex_array, Lex_t &curr_node, std::ofstream &file_tree, int *num_node);
+void create_scope_nodes(std::shared_ptr<Lex_array_t> lex_array, std::vector<std::shared_ptr<Statement>> prog, std::ofstream &tree);
 
 bool is_if_long_form(std::shared_ptr<Statement> stmt);
 bool is_if_while(std::shared_ptr<Statement> stmt);
@@ -13,7 +13,7 @@ bool is_arithmetic(std::shared_ptr<Statement> stmt);
 //-----------------------------------------------------BUILD_SINTAX_GRAPH------------------------------------------------------------------------------------------
 
 
-void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog)
+void build_sintax_graph(std::shared_ptr<Lex_array_t> lex_array, std::vector<std::shared_ptr<Statement>> prog)
 {
 	std::ofstream file_tree;
 
@@ -25,7 +25,7 @@ void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog)
 	}
 
 	file_tree << "digraph G{\n           node_0[label = \"Program\", style=\"filled\", shape=\"record\", fillcolor = \"purple\"];";
-	create_scope_nodes(prog, file_tree);
+	create_scope_nodes(lex_array, prog, file_tree);
 
 	file_tree << "}";
 	file_tree.close();	
@@ -35,7 +35,7 @@ void build_sintax_graph(std::vector<std::shared_ptr<Statement>> prog)
 //-------------------------------------------------------NODE_CREATORS------------------------------------------------------------------------------------------
 
 
-void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstream &file_tree)
+void create_scope_nodes(std::shared_ptr<Lex_array_t> lex_array, std::vector<std::shared_ptr<Statement>> prog, std::ofstream &file_tree)
 {
 	static int num_node = 1;
 	int prev_num_node, prev_stmt = num_node - 1, stmt, stmt_type, size_prog = prog.size();
@@ -56,7 +56,7 @@ void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstr
 
 		if (is_arithmetic(prog[prog_elem]))
 		{
-			create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
+			create_statement_nodes(lex_array, prog[prog_elem]->get_lhs(), file_tree, &num_node);
 			file_tree << "\n           node_" << stmt << "  -> node_" << stmt + 1 << ";\n";
 		}
 		else
@@ -68,7 +68,7 @@ void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstr
 			
 			num_node++;
 
-			create_statement_nodes(prog[prog_elem]->get_lhs(), file_tree, &num_node);
+			create_statement_nodes(lex_array, prog[prog_elem]->get_lhs(), file_tree, &num_node);
 			file_tree << "\n           node_" << stmt_type << "  -> node_" << stmt_type + 1 << ";\n";
 
 			prev_num_node = num_node;
@@ -77,7 +77,7 @@ void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstr
 			{
 				file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 				num_node++;
-				create_scope_nodes(static_cast<Scope*>(const_cast<Lex_t*>(&(static_cast<If*>(prog[prog_elem].get())->get_rhs())))->get_lhs(), file_tree);
+				create_scope_nodes(lex_array, static_cast<Scope*>(const_cast<Lex_t*>(&(static_cast<If*>(prog[prog_elem].get())->get_rhs())))->get_lhs(), file_tree);
 				file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				if (is_if_long_form(prog[prog_elem]))
 				{
@@ -88,7 +88,7 @@ void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstr
 			
 					file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 					num_node++;
-					create_scope_nodes(static_cast<Scope*>(&(static_cast<If*>(prog[prog_elem].get())->get_else()))->get_lhs(), file_tree);
+					create_scope_nodes(lex_array, static_cast<Scope*>(&(static_cast<If*>(prog[prog_elem].get())->get_else()))->get_lhs(), file_tree);
 					file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				}
 			}
@@ -97,7 +97,7 @@ void create_scope_nodes(std::vector<std::shared_ptr<Statement>> prog, std::ofstr
 }
 
 
-void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num_node)
+void create_statement_nodes(std::shared_ptr<Lex_array_t> lex_array, Lex_t &curr_node, std::ofstream &file_tree, int *num_node)
 {
 	static int prev_elem = 0;
 	int curr_elem = *num_node;
@@ -139,7 +139,7 @@ void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num
 	if ((lex_array->is_unop() >= 0) || lex_array->is_negation())
 	{
 		(*num_node)++;
-		create_statement_nodes(dynamic_cast<Ref_t*>(&curr_node)->get_variable(), file_tree, num_node);
+		create_statement_nodes(lex_array, dynamic_cast<Ref_t*>(&curr_node)->get_variable(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
 	}
@@ -151,10 +151,10 @@ void create_statement_nodes(Lex_t &curr_node, std::ofstream &file_tree, int *num
 
   	if (lex_array->is_binop() || lex_array->is_assign())
 	{
-		create_statement_nodes(static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_lhs(), file_tree, num_node);
+		create_statement_nodes(lex_array, static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_lhs(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
-		create_statement_nodes(static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_rhs(), file_tree, num_node);
+		create_statement_nodes(lex_array, static_cast<BinOp*>(const_cast<Lex_t*>(&curr_node))->get_rhs(), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
 	}
