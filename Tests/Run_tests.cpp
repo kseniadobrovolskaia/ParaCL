@@ -16,9 +16,9 @@ void Run_tests()
 		for (int num_test = 1; num_test < 16; num_test++)
 		{
 			std::cout << "Start test number " << num_test << std::endl;
-			std::string name_data = "tests/data/" + std::to_string(num_test) + "_test_data.txt";
-			std::string name_results = "tests/results/" + std::to_string(num_test) + "_test_results.txt";
-			std::string name_input = "tests/input/" + std::to_string(num_test) + "_test_input.txt";
+			std::string name_data = "../../Tests/tests/data/" + std::to_string(num_test) + "_test_data.txt";
+			std::string name_results = "../../Tests/tests/results/" + std::to_string(num_test) + "_test_results.txt";
+			std::string name_input = "../../Tests/tests/input/" + std::to_string(num_test) + "_test_input.txt";
 
 			std::ifstream data;
 
@@ -66,8 +66,8 @@ void Run_tests()
 	{	
 		std::cout << "Start input test number " << num_test << std::endl;
 
-		std::string name_input = "input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
-		std::string name_results = "input_tests/results/" + std::to_string(num_test) + "_input_results.txt";
+		std::string name_input = "../../Tests/input_tests/data/" + std::to_string(num_test) + "_input_test.txt";
+		std::string name_results = "../../Tests/input_tests/results/" + std::to_string(num_test) + "_input_results.txt";
 
 		std::ifstream input_data;
 
