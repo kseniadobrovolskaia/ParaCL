@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(ParaCL)
+project(tests)
 
 # GoogleTest requires at least C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -18,12 +18,21 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+
+add_compile_options(-Wall -std=c++20)
+
+
+include_directories(.././include) 
+
 add_executable(
   ParaCL_test
+  
+  Run_tests.cpp
   Test.cpp
 )
 target_link_libraries(
   ParaCL_test
+  ParaCL
   GTest::gtest_main
 )
 

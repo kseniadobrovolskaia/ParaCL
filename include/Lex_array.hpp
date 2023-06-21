@@ -5,33 +5,41 @@
 #include "Lexer.hpp"
 
 
+
+/**
+ * @brief class Lex_array_t - to store tokens, iterate through an array of tokens, and keep track of the line number
+ */
 class Lex_array_t {
 
 	int curr_lex_ = 0;
-	int num_str_ = 1;
+	int num_str_  = 1;
 	std::vector<std::shared_ptr<Lex_t>> lex_array_;
 
+	///variables and functions names appeared in lexical analysis
 	std::vector<std::string> vars_;
 	std::vector<std::string> funcs_;
 
 
 public:
+
+	///signal SIGINT sets to 1 and ends of array filling
 	static bool EoF_;
 
 	Lex_array_t(std::istream &istr);
 
-	int get_num_curr_lex() const { return curr_lex_; }
+	int  get_num_curr_lex() const { return curr_lex_; }
 	void inc_lex();
 	void set_curr_lex(int n);
 
 	std::shared_ptr<Lex_t> operator[](int n) const;
 	std::shared_ptr<Lex_t> get_elem(int n) const;
 
+	std::shared_ptr<Lex_t> get_prev_lex() const;
 	std::shared_ptr<Lex_t> get_curr_lex() const { return lex_array_[curr_lex_]; }
-	std::shared_ptr<Lex_t> get_prev_lex() const { return lex_array_[curr_lex_ - 1]; }
+	std::shared_ptr<Lex_t> get_next_lex() const;	
 
 	void print() const;
-	int size() const { return lex_array_.size(); }
+	int  size() const { return lex_array_.size(); }
 	void clear();
 
 	void push_binop(BinOp_t binop);

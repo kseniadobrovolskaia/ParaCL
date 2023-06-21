@@ -14,6 +14,12 @@ void handler(int signo)
 
 Lex_array_t::Lex_array_t(std::istream &istr)
 {
+	/// That there is nothing from the previous lexical analysis
+	Lex_t::vars_table().clear();
+	Lex_t::funcs_table().clear();
+	Lex_array_t::EoF_ = 0;
+
+
 	int num_var = 0, num_funcs = 0;
 	char elem, prev = '\0';
 	std::string word;
@@ -137,12 +143,42 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 			}
 			break;
 		case '(':
+			if (lex_array_.back()->get_kind() == Lex_kind_t::VAR)
+			{
+				std::shared_ptr<Lex_t> func = lex_array_.back();
+				lex_array_.pop_back();
+
+				if (func->get_data() == (num_var - 1))
+				{
+					Lex_t::funcs_table().push_back(Lex_t::vars_table()[num_var - 1]);
+					num_funcs++;
+					num_var--;
+					Lex_t::vars_table().pop_back();
+				}
+
+				push_function(num_funcs - 1);
+			}	
 			push_brace(LBRACE);
 			break;
 		case ')':
 			push_brace(RBRACE);
 			break;
 		case '{':
+			if (lex_array_.size() > 0 && (lex_array_.back()->get_kind() == Lex_kind_t::VAR))
+			{
+				std::shared_ptr<Lex_t> func = lex_array_.back();
+				lex_array_.pop_back();
+
+				if (func->get_data() == (num_var - 1))
+				{
+					Lex_t::funcs_table().push_back(Lex_t::vars_table()[num_var - 1]);
+					num_funcs++;
+					num_var--;
+					Lex_t::vars_table().pop_back();
+				}
+
+				push_function(num_funcs - 1);
+			}
 			push_scope(LSCOPE);
 			break;
 		case '}':
@@ -201,12 +237,18 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 				}
 				else if (word == "func")
 				{
-					if (lex_array_.back()->get_kind() != Lex_kind_t::STMT 
-					 || lex_array_.back()->get_data() != Statements_t::ASSIGN)
+					if (lex_array_.size() < 2)
+					{
+						throw_exception("Set lex_array", 0, lex_array_); //This need to set lex_array in function "throw_exception"
+						throw_exception("Bad function declaration\n", lex_array_.size() - 1);
+					}
+
+					if ((lex_array_.back()->get_kind() != Lex_kind_t::STMT)
+					 || (lex_array_.back()->get_data() != Statements_t::ASSIGN))
 					{
 						push_stmt(FUNC);
 
-						throw_exception("Set lex_array", 0, lex_array_); //This need to set lex_array in function "throw_exception"
+						throw_exception("Set lex_array", 0, lex_array_);
 						throw_exception("Bad function declaration\n", lex_array_.size() - 1);
 					}
 					std::shared_ptr<Lex_t> ass = lex_array_.back();
@@ -558,3 +600,24 @@ std::shared_ptr<Lex_t> Lex_array_t::get_elem(int n) const
 
 	return lex_array_[n];
 }
+
+
+std::shared_ptr<Lex_t> Lex_array_t::get_next_lex() const
+{ 
+	if ((curr_lex_ + 1) >= static_cast<int>(lex_array_.size()))
+	{
+		throw_exception("The number is greater than the size of the array\n", lex_array_.size() - 1);
+	}
+	return lex_array_[curr_lex_ + 1];
+}
+
+
+std::shared_ptr<Lex_t> Lex_array_t::get_prev_lex() const
+{ 
+	if (curr_lex_ == 0)
+	{
+		throw_exception("Previos elem is not exist\n", 0);
+	}
+	return lex_array_[curr_lex_ - 1];
+}
+

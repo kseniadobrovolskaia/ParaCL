@@ -253,11 +253,11 @@ std::shared_ptr<Lex_t> parse_T(std::shared_ptr<Lex_array_t> lex_array)
 		{
 			T = std::make_shared<Variable>(*(lex_array->get_curr_lex()));
 			lex_array->inc_lex();
-
-			if (lex_array->is_brace() == Brace_t::LBRACE)
-			{
-				T = parse_function_call(lex_array);
-			}
+			break;
+		}
+		case Lex_kind_t::FUNCTION:
+		{
+			T = parse_function_call(lex_array);
 			break;
 		}
 		case Lex_kind_t::SYMBOL:
@@ -293,15 +293,16 @@ std::shared_ptr<Lex_t> parse_T(std::shared_ptr<Lex_array_t> lex_array)
 std::shared_ptr<Lex_t> parse_function_call(std::shared_ptr<Lex_array_t> lex_array)
 {
 	std::shared_ptr<Lex_t> T;
-	Lex_t &func = *(lex_array->get_prev_lex());
+	Lex_t &func = *(lex_array->get_curr_lex());
 	std::string name = func.short_name();
 	std::vector <std::shared_ptr<Lex_t>> args;
 
-	std::shared_ptr<Statement> body = AST_creator::CURR_SCOPE->get_func_decl(name, lex_array->get_num_curr_lex() - 1);
+	std::shared_ptr<Statement> body = AST_creator::CURR_SCOPE->get_func_decl(name, lex_array->get_num_curr_lex());
 	
+	lex_array->inc_lex();
 	if (lex_array->is_brace() != Brace_t::LBRACE)
 	{
-		throw_exception("I dont now how I jump in this function(parse_function_call)\n", lex_array->get_num_curr_lex());
+		throw_exception("Incorrect function call\n", lex_array->get_num_curr_lex());
 	}
 	lex_array->inc_lex();
 

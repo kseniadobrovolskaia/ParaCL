@@ -68,11 +68,6 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 				}
 				break;
 			}
-			case Lex_kind_t::FUNCTION:
-			{
-				stmt = parse_declaration(lex_array);
-				break;
-			}
 			case Lex_kind_t::BINOP:
 			{
 				if (lex_array->is_plus_minus() != BinOp_t::SUB)
@@ -92,6 +87,15 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 				if ((lex_array->get_curr_lex())->get_data() == Symbols_t::ELSE)
 				{
 					throw_exception("You can not use \"else\" without \"if\"\n", lex_array->get_num_curr_lex());
+				}
+			}
+			case Lex_kind_t::FUNCTION:
+			{
+				if (((lex_array->get_next_lex())->get_kind() == Lex_kind_t::STMT)
+				&&  ((lex_array->get_next_lex())->get_data() == Statements_t::ASSIGN))
+				{
+					stmt = parse_declaration(lex_array);
+					break;
 				}
 			}
 			case Lex_kind_t::SCOPE:
@@ -290,7 +294,7 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 	{
 		lex_array->inc_lex();
 
-		if ((lex_array->get_curr_lex())->get_kind() == Lex_kind_t::VAR)
+		if ((lex_array->get_curr_lex())->get_kind() == Lex_kind_t::FUNCTION)
 		{
 			std::string function_name = (lex_array->get_curr_lex())->short_name();
 			AST_creator::FUNCTIONS[function_name] = stmt;

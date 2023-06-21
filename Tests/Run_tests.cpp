@@ -1,10 +1,13 @@
 #include "Parser_stmts.hpp"
 
 
-void clean_all_static_vars();
+void set_main()
+{
+	parse_scope(nullptr, 1); //This means MAIN = 1
+}
 
 
-int main()
+void Run_tests()
 {
 	try
 	{
@@ -49,7 +52,7 @@ int main()
 			creator.parsing();
 			
 			creator.run_program(input, results);
-			clean_all_static_vars();
+			set_main();
 		}
 	}
 	catch(std::exception & ex)
@@ -109,26 +112,7 @@ int main()
 			input_data.clear();
 		}
 
-		clean_all_static_vars();
+		set_main();
 	}
-
-	return 0;
 }
 
-
-void clean_all_static_vars()
-{
-	Lex_t::vars_table().clear();
-	Lex_t::funcs_table().clear();
-
-	Lex_array_t::EoF_ = 0;
-	
-	parse_scope(nullptr, 1); //This means MAIN = 1
-
-	AST_creator::RETURN_COMMAND = 0;
-	AST_creator::IN_FUNCTION = 0;
-
-	AST_creator::CURR_SCOPE->clean_var_table();
-	AST_creator::CURR_SCOPE->clean_func_table();
-	AST_creator::FUNCTIONS.clear();
-}

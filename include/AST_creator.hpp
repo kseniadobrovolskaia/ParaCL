@@ -17,8 +17,13 @@ class Lex_array_t;
  */
 class AST_creator {
 
-	std::shared_ptr<Lex_t> AST_;
+	std::shared_ptr<Lex_t>       AST_;
 	std::shared_ptr<Lex_array_t> Tokens_;
+
+	std::shared_ptr<Scope_table> CURR_SCOPE_;
+
+	//Global function names that are visible in all scopes
+	std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS_;
 
 
 public:
@@ -27,21 +32,18 @@ public:
 
 	void lexical_analysis(std::istream &istr);
 	void parsing();
+	void run_program(std::istream & istr, std::ostream & ostr);
 
 
 	void print_tokens();
 	void print_AST();
 
+	/// For class "Lex_t" in the methods "calculate" to know the current situation of the program
 	static bool RETURN_COMMAND;
-	static int IN_FUNCTION;
+	static int  IN_FUNCTION;
 
 	static std::shared_ptr<Scope_table> CURR_SCOPE;
-
-	//Global function names that are visible in all scopes
 	static std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
-	
-	void run_program(std::istream & istr, std::ostream & ostr);
-
 };
 
 

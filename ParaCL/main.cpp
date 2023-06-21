@@ -31,7 +31,7 @@ int main(int argc, char const *argv[])
 		}
 
 		creator.parsing();
-		
+
 		creator.run_program(std::cin, std::cout);
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
