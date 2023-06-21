@@ -44,18 +44,12 @@ void AST_creator::parsing()
 
 void AST_creator::print_tokens()
 { 
-	CURR_SCOPE     = CURR_SCOPE_;
-	FUNCTIONS      = FUNCTIONS_;
-
 	Tokens_->print();
 }
 
 
 void AST_creator::print_AST() 
 {
-	CURR_SCOPE     = CURR_SCOPE_;
-	FUNCTIONS      = FUNCTIONS_;
-
 	std::cout << "Program statements :" << std::endl;
 	
 	const std::vector<std::shared_ptr<Statement>> &stmts = (static_cast<Scope*>(AST_.get()))->get_lhs();

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26.4)
 
 project(definitions)
 
-add_compile_options(-Wall -Wextra -std=c++20)
+add_compile_options(-Wall -std=c++20)
 
 include_directories(.././include)			
 
