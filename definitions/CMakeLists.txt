@@ -2,7 +2,16 @@ cmake_minimum_required(VERSION 3.14)
 
 project(definitions)
 
-add_compile_options(-Wall -std=c++20)
+find_package(LLVM REQUIRED)
+if(NOT LLVM_FOUND)
+	message(SEND_ERROR "Failed to find LLVM13")
+	return()
+else()
+	include_directories(${LLVM_INCLUDE_DIR})
+endif()
+
+
+add_compile_options(-Wall -std=c++20 -fexceptions)
 
 include_directories(.././include)			
 
@@ -20,4 +29,6 @@ set(SOURCE_LIB  AST_creator.cpp
 
 
 add_library(ParaCL STATIC ${SOURCE_LIB})
+
+
 

@@ -4,7 +4,6 @@
 
 AST_creator::AST_creator()
 {
-	
 }
 
 
@@ -42,8 +41,45 @@ void AST_creator::parsing()
 }
 
 
+void AST_creator::codegen()
+{
+	const std::vector<std::shared_ptr<Statement>> stmts = 
+	static_cast<Scope*>(AST_.get())->get_lhs();
+
+	for (auto &elem : stmts)
+	{
+		//I fix it
+		if (dynamic_cast<Arithmetic*>(elem.get()))
+		{
+			std::cout << "Read Arithmetic:\n";
+			auto *func = elem->codegen();
+			func->print(llvm::errs());
+		}
+		else if (dynamic_cast<If*>(elem.get()))
+		{
+			std::cout << "Read If:\n";
+			auto *func = dynamic_cast<If*>(elem.get())->codegen_if();
+			func->print(llvm::errs());
+		}
+		else
+		{
+			std::cout << "Read definition:\n";
+			auto *func = elem->codegen();
+			func->print(llvm::errs());	
+		}
+		
+		std::cout << "\n";
+	}
+
+	std::cout << "\n\n\n";
+	AST_creator::TheModule->print(llvm::errs(), nullptr);
+}
+
+
 void AST_creator::print_tokens()
 { 
+	std::cout << "Program tokens :" << std::endl;
+
 	Tokens_->print();
 }
 

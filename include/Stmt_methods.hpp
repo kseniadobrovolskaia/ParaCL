@@ -5,26 +5,67 @@
 
 
 //------------------------------------ABSTRACT_STATEMENT_CLASS---------------------------------------------------
-#if 0 //Definition in file "Lex_methods.hpp", left here for comfort
 
+
+/**
+ * @brief class Statement - program and any scope consists of an array of Statements
+ * 
+ */
 class Statement{
 
 	Statements_t kind_;
 
 public:
 	Statement(Statements_t kind) : kind_(kind) {};
+
 	virtual ~Statement() = default;
 
-	Statements_t  get_kind() const { return kind_; };
-	virtual Lex_t &get_lhs() const = 0;
+	Statements_t        get_kind() const { return kind_; };
+	virtual Lex_t      &get_lhs()  const = 0;
+	virtual std::string name()     const = 0;
 
-	virtual std::string name() const = 0;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const = 0;
+	virtual llvm::Function *codegen() { return nullptr; };
+	virtual int             run_stmt(std::istream &istr, std::ostream &ostr) const = 0;
 };
 
-#endif
 
-//---------------------------------------STATEMENT_CLASSES-------------------------------------------------
+//-----------------------------------------STATEMENT_CLASSES-----------------------------------------------------
+
+
+class Declaration final : public Statement {
+
+	///No global at the place of declaration
+	std::shared_ptr<Lex_t> func_;
+
+	///Function
+	std::shared_ptr<Lex_t> scope_;
+
+	///To place a pointer to this declaration in a Scope_table
+	std::weak_ptr<Statement> this_;
+
+	///Function arguments
+	std::vector<std::shared_ptr<Lex_t>> vars_;
+
+public:
+	Declaration(std::shared_ptr<Lex_t> func, std::vector<std::shared_ptr<Lex_t>> &vars) : 
+	Statement(Statements_t::FUNC), func_(func), vars_(std::move(vars)) {};
+
+	virtual ~Declaration() = default;
+	
+	void                                       set_decl(std::weak_ptr<Statement> This) { this_ = This; };
+	virtual Lex_t                             &get_lhs() const override                { return *func_; };
+	std::shared_ptr<Lex_t>                     get_scope() const                       { return scope_; };
+	const std::vector<std::shared_ptr<Lex_t>> &get_args() const                        { return vars_; };
+	void                                       add_scope(std::shared_ptr<Lex_t> scope) { scope_ = scope; };
+	virtual std::string                        name() const override;
+	std::string 							   get_func_name() const                   { return Lex_t::funcs_table()[func_->get_data()]; };
+
+	llvm::Function *codegen() override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+};
+
+
+//---------------------------------------------------------------------------------------------------------------
 
 
 class If final : public Statement {
@@ -37,16 +78,19 @@ public:
 
 	virtual ~If() = default;
 
-	virtual Lex_t &get_lhs() const override { return *lhs_; };
-  	Lex_t         &get_rhs() const          { return *rhs_; };
-  	Lex_t         &get_else() const         { if (!else_) throw_exception("This operator has no \"else\" \n", lhs_->get_num() - 1); return *else_; };
-
+	virtual Lex_t      &get_lhs() const override { return *lhs_; };
+  	Lex_t              &get_rhs() const          { return *rhs_; };
+  	Lex_t              &get_else() const         { if (!else_) throw_exception("This operator has no \"else\" \n", lhs_->get_num() - 1); return *else_; };
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const override;
+
+	llvm::Function *codegen() override { return nullptr; }
+	//I fix it
+	llvm::Value    *codegen_if();
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
 
 
 class While final : public Statement {
@@ -59,15 +103,16 @@ public:
 
 	virtual ~While() = default;
 	
-	virtual Lex_t &get_lhs() const override { return *lhs_; };
-  	Lex_t         &get_rhs() const          { return *rhs_; };
-
+	virtual Lex_t      &get_lhs() const override { return *lhs_; };
+  	Lex_t              &get_rhs() const          { return *rhs_; };
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const override;
+
+	llvm::Function *codegen() override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
 
 
 class Print final : public Statement {
@@ -80,14 +125,15 @@ public:
 
 	virtual ~Print() = default;
 	
-	virtual Lex_t &get_lhs() const override { return *lhs_; };
-
+	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const override;
+
+	llvm::Function *codegen() override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
 
 
 class Return final : public Statement {
@@ -100,14 +146,15 @@ public:
 
 	virtual ~Return() = default;
 	
-	virtual Lex_t &get_lhs() const override { return *lhs_; };
-
+	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const override;
+
+	llvm::Function *codegen() override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
 
 
 class Arithmetic final : public Statement {
@@ -120,10 +167,11 @@ public:
 
 	virtual ~Arithmetic() = default;
 	
-	virtual Lex_t &get_lhs() const override { return *lhs_; };
-
+	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const override;
+
+	llvm::Function *codegen() override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 

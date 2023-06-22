@@ -1,4 +1,4 @@
-#include "Lex_methods.hpp"
+#include "Stmt_methods.hpp"
 
 
 //---------------------------------------------CALCULATE----------------------------------------------------
@@ -214,6 +214,202 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 
 	AST_creator::IN_FUNCTION--;
 	return res;
+}
+
+
+//----------------------------------------------CODEGEN--------------------------------------------------
+
+
+llvm::Value *Value::codegen()
+{
+	const llvm::APInt value(32, this->get_data(), true);
+
+	return llvm::ConstantInt::get(*AST_creator::TheContext, value);
+}
+
+
+llvm::Value *Variable::codegen()
+{
+	std::string var_name = Lex_t::vars_table()[this->get_data()];
+
+	llvm::Value *Var = AST_creator::NamedValues[var_name];
+
+  	if (!Var)
+  	{
+  		throw_exception("Unknown variable name\n", this->get_num());
+  	}
+
+  	return Var;
+}
+
+
+llvm::Value *Negation::codegen()
+{
+	llvm::Value *right = rhs_->codegen();
+	const llvm::APInt zero(32, 0, true);
+  	
+  	return AST_creator::Builder->CreateICmpNE(right, 
+    llvm::ConstantInt::get(*AST_creator::TheContext, zero), "neg");
+}
+
+
+#if 0
+
+I fix it
+llvm::Value *Assign_node::codegen()
+{
+	Lex_t *var = lhs_.get();
+	std::string var_name;
+
+	int right_part = rhs_->calculate(istr, ostr);
+
+	if (dynamic_cast<Variable*>(var))
+	{
+		var_name = vars[var->get_data()];
+		CURR_SCOPE->init_var(var_name);
+	}
+	else
+	{
+		var = &get_variable();
+		var_name = vars[var->get_data()];
+	}
+
+	lhs_->calculate(istr, ostr);
+
+	CURR_SCOPE->get_var(var_name, var->get_num()) = right_part;
+
+	return CURR_SCOPE->get_var(var_name, var->get_num());
+}
+
+#endif
+
+
+llvm::Value *Scope::codegen()
+{
+	//I fix it
+	if (dynamic_cast<If*>((stmts_[0]).get()))
+	{
+		return dynamic_cast<If*>((stmts_[0]).get())->codegen_if();
+	}
+
+	return (stmts_[0]->get_lhs()).codegen();
+}
+
+
+llvm::Value *Function::codegen()
+{
+	// or simple name()
+	std::string func_name = static_cast<Declaration*>(decl_.get())->get_func_name();
+	llvm::Function *Call = AST_creator::TheModule->getFunction(func_name);
+
+	if (!Call)
+	{
+    	throw_exception("Unknown variable name\n", this->get_num());
+  	}
+
+  	int args_size = args_.size();
+
+	if (static_cast<int>(Call->arg_size()) != args_size)
+	{
+		throw_exception("Incorrect count arguments\n", this->get_num());
+	}
+   
+	std::vector<llvm::Value*> ArgsV;
+
+  	for (auto &&arg : args_)
+  	{
+  		ArgsV.push_back(arg->codegen());
+    }
+    
+  	return AST_creator::Builder->CreateCall(Call, ArgsV, "calltmp");
+}
+
+
+llvm::Value *UnOp::codegen()
+{
+	const llvm::APInt one(32, 1, true);
+	
+	llvm::Value *left = lhs_->codegen();
+	llvm::Value *right = llvm::ConstantInt::get(*AST_creator::TheContext, one);
+
+  	if (!left || !right) 
+  	{
+  		throw_exception("Non-existing operand\n", this->get_num());
+  	};
+
+	switch (this->get_data())
+	{
+		case Statements_t::INC:
+			return AST_creator::Builder->CreateAdd(left, right, "addtmp");
+		case Statements_t::DEC:
+			return AST_creator::Builder->CreateSub(left, right, "subtmp");
+	}
+			
+	throw_exception("Error: it is not clear what is in function \"UnOp::Codegen\"\n", this->get_num());
+	return nullptr;
+}
+
+
+
+llvm::Value *BinOp::codegen()
+{
+	llvm::Value *left = lhs_->codegen();
+  	llvm::Value *right = rhs_->codegen();
+
+  	if (!left || !right) 
+  	{
+  		throw_exception("Non-existing operand\n", this->get_num());
+  	};
+
+	switch (this->get_data())
+	{
+		case BinOp_t::ADD:
+			return AST_creator::Builder->CreateAdd(left, right, "addtmp");
+		case BinOp_t::SUB:
+			return AST_creator::Builder->CreateSub(left, right, "subtmp");
+		case BinOp_t::MULT:
+			return AST_creator::Builder->CreateMul(left, right, "multtmp");
+		case BinOp_t::DIV:
+			if (right == 0)
+			{
+				throw_exception("Division by zero\n", this->get_num());
+			}
+			return AST_creator::Builder->CreateSDiv(left, right, "divtmp");
+	}
+
+	throw_exception("Error: it is not clear what is in function \"BinOp::Codegen\"\n", this->get_num());
+	return nullptr;
+}
+
+
+llvm::Value *CompOp::codegen()
+{
+	llvm::Value *left = lhs_->codegen();
+  	llvm::Value *right = rhs_->codegen();
+
+  	if (!left || !right) 
+  	{
+  		throw_exception("Non-existing operand\n", this->get_num());
+  	};
+
+	switch (this->get_data())
+	{
+		case CompOp_t::LESS:
+			return AST_creator::Builder->CreateICmpULT(left, right, "lesstmp");
+		case CompOp_t::GREATER:
+			return AST_creator::Builder->CreateICmpUGT(left, right, "greatertmp");
+		case CompOp_t::LESorEQ:
+			return AST_creator::Builder->CreateICmpULE(left, right, "LESorEQtmp");
+		case CompOp_t::GRorEQ:
+			return AST_creator::Builder->CreateICmpUGE(left, right, "GRorEQtmp");
+		case CompOp_t::EQUAL:
+			return AST_creator::Builder->CreateICmpEQ(left, right, "EQtmp");
+		case CompOp_t::NOT_EQUAL:
+			return AST_creator::Builder->CreateICmpNE(left, right, "NEtmp");
+	}
+
+	throw_exception("Error: it is not clear what is in function \"CompOp::Codegen\"\n", this->get_num());
+	return nullptr;
 }
 
 

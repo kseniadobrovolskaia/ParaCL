@@ -22,65 +22,8 @@ public:
 
 	Value_type get_type() const { return type_; }
 
-	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
-};
-
-
-//--------------------------------------------ABSTRACT_STATEMENT_CLASS-----------------------
-
-
-/**
- * @brief class Statement - program and any scope consists of an array of Statements
- * 
- */
-class Statement{
-
-	Statements_t kind_;
-
-public:
-	Statement(Statements_t kind) : kind_(kind) {};
-
-	virtual ~Statement() = default;
-
-	Statements_t  get_kind() const { return kind_; };
-	virtual Lex_t &get_lhs() const = 0;
-
-	virtual std::string name() const = 0;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const = 0;
-};
-
-
-//-----------------------------------------------DECLARATION---------------------------------
-
-
-class Declaration final : public Statement {
-
-	///Token "func" at the place of declaration
-	std::shared_ptr<Lex_t> func_;
-
-	///Function
-	std::shared_ptr<Lex_t> scope_;
-
-	///To place a pointer to this declaration in a Scope_table
-	std::weak_ptr<Statement> this_;
-
-	///Function arguments
-	std::vector<std::shared_ptr<Lex_t>> vars_;
-
-public:
-	Declaration(std::shared_ptr<Lex_t> func, std::vector<std::shared_ptr<Lex_t>> &vars) : 
-	Statement(Statements_t::FUNC), func_(func), vars_(std::move(vars)) {};
-
-	virtual ~Declaration() = default;
-	
-	void                                       set_decl(std::weak_ptr<Statement> This) { this_ = This; };
-	virtual Lex_t                             &get_lhs() const override                { return *func_; };
-	std::shared_ptr<Lex_t>                     get_scope() const                       { return scope_; };
-	const std::vector<std::shared_ptr<Lex_t>> &get_args() const                        { return vars_; };
-	void                                       add_scope(std::shared_ptr<Lex_t> scope) { scope_ = scope; };
-
-	virtual std::string name() const override;
-	virtual int run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() override;
+	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -99,7 +42,8 @@ public:
 
 	const std::vector<std::shared_ptr<Statement>> &get_lhs() const { return stmts_; };
 
-	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() override;
+	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -124,7 +68,8 @@ public:
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const   { return args_; };
 	void                                       print_args() const { std::for_each(args_.begin(), args_.end(), [](std::shared_ptr<Lex_t> arg){ std::cout << arg->name() << " ";});};
 
-	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() override;
+	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -144,7 +89,8 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen() override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -164,7 +110,8 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen() override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -183,7 +130,8 @@ public:
 
  	Lex_t &get_rhs() const { return *rhs_; };
 
- 	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+ 	llvm::Value *codegen() override;
+ 	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -207,7 +155,7 @@ public:
 };
 
 
-//----------------------------------CLASSES_THAT_RETURN_A_REFERENCE-----------------------------------------
+//----------------------------------CLASSES_THAT_RETURN_A_VARIABLE-----------------------------------------
 
 
 class Variable : public Lex_t {
@@ -217,7 +165,8 @@ public:
 
  	virtual ~Variable() = default;
 
- 	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+ 	llvm::Value *codegen() override;
+ 	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -237,7 +186,8 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+  	//llvm::Value *codegen() override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -254,7 +204,8 @@ public:
 
   	virtual ~UnOp() = default;
   	
-  	virtual int calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen() override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
 

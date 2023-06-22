@@ -4,15 +4,12 @@
 
 #include <algorithm>
 #include <typeinfo>
-#include <iostream>
 #include <cstdlib>
 #include <stdio.h>
 #include <ctype.h>
 #include <fstream>
-#include <string>
 #include <vector>
 #include <signal.h>
-#include <memory>
 
 #include "AST_creator.hpp"
 
@@ -98,7 +95,8 @@ public:
 	static std::vector<std::string>& vars_table()  { return vars_; }
 	static std::vector<std::string>& funcs_table() { return funcs_; }
 
-	virtual int calculate(std::istream &istr, std::ostream &ostr) const { return data_; };
+	virtual llvm::Value *codegen()                                               { return nullptr; }
+	virtual int          calculate(std::istream &istr, std::ostream &ostr) const { return data_; };
 };
 
 

@@ -15,14 +15,22 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
+find_package(LLVM REQUIRED)
+if(NOT LLVM_FOUND)
+  message(SEND_ERROR "Failed to find LLVM13")
+  return()
+else()
+  include_directories(${LLVM_INCLUDE_DIR})
+endif()
+
+add_compile_options(-Wall -std=c++20 -fexceptions)
+
 
 enable_testing()
 
 
-add_compile_options(-Wall -std=c++20)
-
-
-include_directories(.././include) 
+include_directories(. ././include
+                    ${LLVM_INCLUDE_DIR}) 
 
 add_executable(
   ParaCL_test
@@ -33,6 +41,7 @@ add_executable(
 target_link_libraries(
   ParaCL_test
   ParaCL
+  LLVM
   GTest::gtest_main
 )
 

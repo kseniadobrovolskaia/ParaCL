@@ -9,10 +9,18 @@ int main(int argc, char const *argv[])
 {
 	try
 	{
-		
+		bool CODEGEN = 0;
 		AST_creator creator;
 
 		if (argc > 1)
+		{
+			if (!strcmp(argv[1],"CODEGEN"))
+			{
+				CODEGEN = 1;
+				creator.lexical_analysis(std::cin);
+			}
+		}
+		else if (argc > 1)
 		{
 			std::ifstream data;
 
@@ -32,7 +40,10 @@ int main(int argc, char const *argv[])
 
 		creator.parsing();
 
-		creator.run_program(std::cin, std::cout);
+		if (CODEGEN)
+			creator.codegen();
+		else
+			creator.run_program(std::cin, std::cout);
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
 				// "shotwell sintax_tree.png");
