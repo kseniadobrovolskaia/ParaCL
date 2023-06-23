@@ -24,7 +24,8 @@ public:
 	virtual Lex_t      &get_lhs()  const = 0;
 	virtual std::string name()     const = 0;
 
-	virtual llvm::Function *codegen() { return nullptr; };
+	virtual llvm::Function *codegen_func() const { return nullptr; };
+	virtual llvm::Value    *codegen()      const = 0;
 	virtual int             run_stmt(std::istream &istr, std::ostream &ostr) const = 0;
 };
 
@@ -60,7 +61,8 @@ public:
 	virtual std::string                        name() const override;
 	std::string 							   get_func_name() const                   { return Lex_t::funcs_table()[func_->get_data()]; };
 
-	llvm::Function *codegen() override;
+	llvm::Value    *codegen() const override;
+	llvm::Function *codegen_func() const override;
 	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
@@ -83,10 +85,8 @@ public:
   	Lex_t              &get_else() const         { if (!else_) throw_exception("This operator has no \"else\" \n", lhs_->get_num() - 1); return *else_; };
 	virtual std::string name() const override;
 
-	llvm::Function *codegen() override { return nullptr; }
-	//I fix it
-	llvm::Value    *codegen_if();
-	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -107,8 +107,8 @@ public:
   	Lex_t              &get_rhs() const          { return *rhs_; };
 	virtual std::string name() const override;
 
-	llvm::Function *codegen() override;
-	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -128,8 +128,8 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Function *codegen() override;
-	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -149,8 +149,8 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Function *codegen() override;
-	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen() const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 
 
@@ -170,7 +170,8 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Function *codegen() override;
+	llvm::Value    *codegen() const override;
+	llvm::Function *codegen_func() const override;
 	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
 };
 

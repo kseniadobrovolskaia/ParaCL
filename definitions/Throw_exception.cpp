@@ -14,6 +14,11 @@ void throw_exception(std::string mess, int error_elem, std::vector<std::shared_p
 		return;
 	}
 
+	if (error_elem < 0)
+	{
+		throw std::logic_error("Syntax error\n");
+	}
+
 	bool is_last_elem = 0;
 	std::string command = mess;
 

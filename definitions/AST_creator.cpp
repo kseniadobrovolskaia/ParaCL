@@ -37,14 +37,21 @@ void AST_creator::parsing()
 	CURR_SCOPE     = CURR_SCOPE_;
 	FUNCTIONS      = FUNCTIONS_;
 
+	//may be parse_arithmetic?
 	AST_ = parse_scope(Tokens_);
 }
 
 
 void AST_creator::codegen()
 {
+	if (!AST_)
+	{
+		return;
+	}
+
 	const std::vector<std::shared_ptr<Statement>> stmts = 
 	static_cast<Scope*>(AST_.get())->get_lhs();
+
 
 	for (auto &elem : stmts)
 	{
@@ -52,24 +59,24 @@ void AST_creator::codegen()
 		if (dynamic_cast<Arithmetic*>(elem.get()))
 		{
 			std::cout << "Read Arithmetic:\n";
-			auto *func = elem->codegen();
+			auto *func = elem->codegen_func();
 			func->print(llvm::errs());
 		}
-		else if (dynamic_cast<If*>(elem.get()))
+		else if (dynamic_cast<Declaration*>(elem.get()))
 		{
-			std::cout << "Read If:\n";
-			auto *func = dynamic_cast<If*>(elem.get())->codegen_if();
+			std::cout << "Read definition:\n";
+			auto *func = elem->codegen_func();
 			func->print(llvm::errs());
 		}
 		else
 		{
-			std::cout << "Read definition:\n";
 			auto *func = elem->codegen();
 			func->print(llvm::errs());	
 		}
 		
 		std::cout << "\n";
 	}
+	
 
 	std::cout << "\n\n\n";
 	AST_creator::TheModule->print(llvm::errs(), nullptr);

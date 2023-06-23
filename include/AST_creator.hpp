@@ -66,10 +66,10 @@ public:
 	static std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
 
 	/// To build LLVM IR
-	static std::shared_ptr<llvm::LLVMContext>  TheContext;
-	static std::shared_ptr<llvm::Module>       TheModule;
-	static std::shared_ptr<llvm::IRBuilder<>>  Builder;
-	static std::map<std::string, llvm::Value*> NamedValues;
+	static std::shared_ptr<llvm::LLVMContext>       TheContext;
+	static std::shared_ptr<llvm::Module>            TheModule;
+	static std::shared_ptr<llvm::IRBuilder<>>       Builder;
+	static std::map<std::string, llvm::AllocaInst*> NamedValues;
 
 };
 

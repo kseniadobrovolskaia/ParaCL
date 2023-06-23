@@ -87,7 +87,22 @@ int Declaration::run_stmt(std::istream &istr, std::ostream &ostr) const
 //-----------------------------------------------CODEGEN------------------------------------------------
 
 
-llvm::Function *Declaration::codegen()
+llvm::Value *Declaration::codegen() const
+{
+	const llvm::APInt zero(32, 0, true);
+	return llvm::ConstantInt::get(*AST_creator::TheContext, zero);
+}
+
+
+static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Func, const std::string &VarName)
+{
+  llvm::IRBuilder<> TmpB(&Func->getEntryBlock(), Func->getEntryBlock().begin());
+
+  return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*AST_creator::TheContext), 0, VarName.c_str());
+}
+
+
+llvm::Function *Declaration::codegen_func() const
 {
 	//two! functions this function must generate
 	std::string decl_name = Lex_t::funcs_table()[func_->get_data()];
@@ -104,20 +119,22 @@ llvm::Function *Declaration::codegen()
   		throw_exception("Redefinition of function\n", func_->get_num() - 1);
   	}
 
-  	AST_creator::NamedValues.clear();
+  	llvm::BasicBlock *Block = llvm::BasicBlock::Create(*AST_creator::TheContext, "entry", Func);
+  	AST_creator::Builder->SetInsertPoint(Block);
+  	
+  	AST_creator::NamedValues.clear();//it strange
 
   	unsigned Idx = 0;
-
   	for (auto &Arg : Func->args())
   	{
   		std::string name = Lex_t::vars_table()[vars_[Idx++]->get_data()];
-  		Arg.setName(name);
 
-  		AST_creator::NamedValues[name] = &Arg;
+  		llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(Func, name);
+  		AST_creator::Builder->CreateStore(&Arg, Alloca);
+
+  		AST_creator::NamedValues[name] = Alloca;
   	} 
 
-	llvm::BasicBlock *Block = llvm::BasicBlock::Create(*AST_creator::TheContext, "entry", Func);
-  	AST_creator::Builder->SetInsertPoint(Block);
 
   	if (llvm::Value *RetVal = scope_->codegen())
   	{
@@ -135,7 +152,7 @@ llvm::Function *Declaration::codegen()
 }
 
 
-llvm::Value *If::codegen_if()
+llvm::Value *If::codegen() const
 {
 	llvm::Value *Cond = lhs_->codegen();
 
@@ -145,19 +162,26 @@ llvm::Value *If::codegen_if()
   	}
 
   	const llvm::APInt zero(32, 0, true);
-  	
-  	Cond = AST_creator::Builder->CreateICmpNE(Cond, 
-    llvm::ConstantInt::get(*AST_creator::TheContext, zero), "ifcond");
+	llvm::Value *Zero = llvm::ConstantInt::get(*AST_creator::TheContext, zero);
 
-	llvm::Function *Func = (AST_creator::Builder->GetInsertBlock())->getParent();
-  	
+  	Cond = AST_creator::Builder->CreateICmpNE(Cond, Zero, "ifcond");
+
+  	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+	llvm::Function *Func = InsertBB->getParent();
 	llvm::BasicBlock *ThenBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "then", Func);
 
-	//move в if (else_) I fix it
-	llvm::BasicBlock *ElseBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "else");
+	llvm::BasicBlock *ElseBB;
 	llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "ifcont");
 
-	AST_creator::Builder->CreateCondBr(Cond, ThenBB, ElseBB);
+	if (else_)
+	{
+		ElseBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "else");
+		AST_creator::Builder->CreateCondBr(Cond, ThenBB, ElseBB);
+	}
+	else
+	{
+		AST_creator::Builder->CreateCondBr(Cond, ThenBB, MergeBB);
+	}
 
 	AST_creator::Builder->SetInsertPoint(ThenBB);
 
@@ -169,22 +193,31 @@ llvm::Value *If::codegen_if()
   	}
 
 	AST_creator::Builder->CreateBr(MergeBB);
-	
 	ThenBB = AST_creator::Builder->GetInsertBlock();
 
-	//Now if there is not else - segfault
-	Func->getBasicBlockList().push_back(ElseBB);
-	AST_creator::Builder->SetInsertPoint(ElseBB);
+	llvm::Value *Else;
 
-	llvm::Value *Else = else_->codegen();
-	
-	if (!Else)
-  	{
-  		throw_exception("Error in codegen else in \"if\"\n", else_->get_num());
-  	}
+	if (else_)
+	{
+		Func->getBasicBlockList().push_back(ElseBB);
+		AST_creator::Builder->SetInsertPoint(ElseBB);
 
-	AST_creator::Builder->CreateBr(MergeBB);
-	ElseBB = AST_creator::Builder->GetInsertBlock();
+		Else = else_->codegen();
+		
+		if (!Else)
+	  	{
+	  		throw_exception("Error in codegen else in \"if\"\n", else_->get_num());
+	  	}
+
+		AST_creator::Builder->CreateBr(MergeBB);
+		ElseBB = AST_creator::Builder->GetInsertBlock();
+	}
+	else
+	{
+		const llvm::APInt zero(32, 0, true);
+		Else = llvm::ConstantInt::get(*AST_creator::TheContext, zero);
+		ElseBB = InsertBB;
+	}
 
 	Func->getBasicBlockList().push_back(MergeBB);
 	AST_creator::Builder->SetInsertPoint(MergeBB);
@@ -197,26 +230,67 @@ llvm::Value *If::codegen_if()
 	return PN;
 }
 
+
+llvm::Value *While::codegen() const
+{
+  	const llvm::APInt zero(32, 0, true);
+	llvm::Value *Zero = llvm::ConstantInt::get(*AST_creator::TheContext, zero);
+
+  	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+	llvm::Function *Func = InsertBB->getParent();
+
+	llvm::BasicBlock *CondBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "loopCond", Func);
+	AST_creator::Builder->CreateBr(CondBB);
+	AST_creator::Builder->SetInsertPoint(CondBB);
+
+	llvm::Value *Cond = lhs_->codegen();
+	Cond = AST_creator::Builder->CreateICmpNE(Cond, Zero, "whilecond");
+
+ 	if (!Cond)
+  	{
+  		throw_exception("Error in codegen condition in \"while\"\n", lhs_->get_num());
+  	}
+	
+	llvm::BasicBlock *LoopBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "loop");
+	llvm::BasicBlock *EndBB = llvm::BasicBlock::Create(*AST_creator::TheContext, "loopEnd");
+	
+	Func->getBasicBlockList().push_back(LoopBB);
+	AST_creator::Builder->CreateCondBr(Cond, LoopBB, EndBB);
+	CondBB = AST_creator::Builder->GetInsertBlock();
+
+	AST_creator::Builder->SetInsertPoint(LoopBB);
+
+	llvm::Value *Loop = rhs_->codegen();
+
+	AST_creator::Builder->CreateBr(CondBB);
+	LoopBB = AST_creator::Builder->GetInsertBlock();//may be InsertBB..?
+
+	Func->getBasicBlockList().push_back(EndBB);
+	AST_creator::Builder->SetInsertPoint(EndBB);
+
+	return Zero;
+}
+
 //I do it
-llvm::Function *While::codegen()
+llvm::Value *Print::codegen() const
 {
 	return nullptr;
 }
 
 //I do it
-llvm::Function *Print::codegen()
-{
-	return nullptr;
-}
-
-//I do it
-llvm::Function *Return::codegen()
+llvm::Value *Return::codegen() const
 {
 	return nullptr;
 }
 
 
-llvm::Function *Arithmetic::codegen()
+llvm::Value *Arithmetic::codegen() const
+{
+	return lhs_->codegen();
+}
+
+
+llvm::Function *Arithmetic::codegen_func() const
 {
 	///Create function without name
 	std::string decl_name = "";

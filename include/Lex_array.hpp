@@ -35,7 +35,7 @@ public:
 	std::shared_ptr<Lex_t> get_elem(int n) const;
 
 	std::shared_ptr<Lex_t> get_prev_lex() const;
-	std::shared_ptr<Lex_t> get_curr_lex() const { return lex_array_[curr_lex_]; }
+	std::shared_ptr<Lex_t> get_curr_lex() const;
 	std::shared_ptr<Lex_t> get_next_lex() const;	
 
 	void print() const;

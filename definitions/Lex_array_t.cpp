@@ -315,8 +315,10 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 	    prev = elem;
 	}
 
-	throw_exception("Set lex_array", 0, lex_array_); //This need to set static lex_array in function "throw_exception"
-
+	if (lex_array_.size() != 0)
+	{
+		throw_exception("Set lex_array", 0, lex_array_); //This need to set static lex_array in function "throw_exception"
+	}
 }
 
 
@@ -384,7 +386,7 @@ void Lex_array_t::push_bad_symbol(int symbol)
 
 int Lex_array_t::is_plus_minus() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 	
 	if ((node.get_kind() != Lex_kind_t::BINOP)
 	|| (node.get_data() > 1))
@@ -397,7 +399,7 @@ int Lex_array_t::is_plus_minus() const
 
 int Lex_array_t::is_mul_div() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	if ((node.get_kind() != Lex_kind_t::BINOP)
 	|| (node.get_data() < 2))
@@ -410,7 +412,7 @@ int Lex_array_t::is_mul_div() const
 
 int Lex_array_t::is_compop() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	if (node.get_kind() != Lex_kind_t::COMPOP)
 	{
@@ -422,7 +424,7 @@ int Lex_array_t::is_compop() const
 
 int Lex_array_t::is_brace() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	if (node.get_kind() != Lex_kind_t::BRACE)
 	{
@@ -434,7 +436,7 @@ int Lex_array_t::is_brace() const
 
 int Lex_array_t::is_unop() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	if (node.get_kind() != Lex_kind_t::UNOP)
 	{
@@ -446,7 +448,7 @@ int Lex_array_t::is_unop() const
 
 int Lex_array_t::is_scope() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	if (node.get_kind() != Lex_kind_t::SCOPE)
 	{
@@ -458,7 +460,7 @@ int Lex_array_t::is_scope() const
 
 bool Lex_array_t::is_scan() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::SYMBOL) 
 		&& (node.get_data() == Symbols_t::SCAN);
@@ -467,7 +469,7 @@ bool Lex_array_t::is_scan() const
 
 bool Lex_array_t::is_negation() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::SYMBOL)
 		&& (node.get_data() == Symbols_t::NEGATION);
@@ -476,7 +478,7 @@ bool Lex_array_t::is_negation() const
 
 bool Lex_array_t::is_binop() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::BINOP)
 	   	|| (node.get_kind() == Lex_kind_t::COMPOP);
@@ -485,7 +487,7 @@ bool Lex_array_t::is_binop() const
 
 bool Lex_array_t::is_assign() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::STMT)
 	  	&& (node.get_data() == Statements_t::ASSIGN);
@@ -494,7 +496,7 @@ bool Lex_array_t::is_assign() const
 
 bool Lex_array_t::is_semicol() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::SYMBOL)
 		&& (node.get_data() == Symbols_t::SEMICOL);
@@ -503,7 +505,7 @@ bool Lex_array_t::is_semicol() const
 
 bool Lex_array_t::is_return() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::STMT)
 		&& (node.get_data() == Statements_t::RETURN);
@@ -512,7 +514,7 @@ bool Lex_array_t::is_return() const
 
 bool Lex_array_t::is_comma() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::SYMBOL)
 		&& (node.get_data() == Symbols_t::COMMA);
@@ -521,7 +523,7 @@ bool Lex_array_t::is_comma() const
 
 bool Lex_array_t::is_colon() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::SYMBOL)
 		&& (node.get_data() == Symbols_t::COLON);
@@ -530,7 +532,7 @@ bool Lex_array_t::is_colon() const
 
 bool Lex_array_t::is_else() const
 {
-	Lex_t &node = *lex_array_[curr_lex_];
+	Lex_t &node = *get_curr_lex();
 
 	return (node.get_kind() == Lex_kind_t::SYMBOL)
 		&& (node.get_data() == Symbols_t::ELSE);
@@ -562,7 +564,7 @@ void Lex_array_t::set_curr_lex(int n)
 { 
 	if (n >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("The number is greater than the size of the array\n", lex_array_.size() - 1);
+		throw_exception("Syntax error\n", lex_array_.size() - 1);
 	}
 
 	curr_lex_ = n;
@@ -573,7 +575,7 @@ void Lex_array_t::inc_lex()
 { 
 	if ((curr_lex_ - 1) >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("The number is greater than the size of the array\n", lex_array_.size() - 1);
+		throw_exception("Syntax error\n", lex_array_.size() - 1);
 	}
 
 	curr_lex_++;
@@ -584,7 +586,7 @@ std::shared_ptr<Lex_t> Lex_array_t::operator[](int n) const
 {
 	if (n >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("The number is greater than the size of the array\n", lex_array_.size() - 1);
+		throw_exception("Syntax error\n", lex_array_.size() - 1);
 	}
 
 	return lex_array_[n];
@@ -595,7 +597,7 @@ std::shared_ptr<Lex_t> Lex_array_t::get_elem(int n) const
 { 
 	if (n >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("The number is greater than the size of the array\n", lex_array_.size() - 1);
+		throw_exception("Syntax error\n", lex_array_.size() - 1);
 	}
 
 	return lex_array_[n];
@@ -606,9 +608,19 @@ std::shared_ptr<Lex_t> Lex_array_t::get_next_lex() const
 { 
 	if ((curr_lex_ + 1) >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("The number is greater than the size of the array\n", lex_array_.size() - 1);
+		throw_exception("Syntax error\n", lex_array_.size() - 1);
 	}
 	return lex_array_[curr_lex_ + 1];
+}
+
+
+std::shared_ptr<Lex_t> Lex_array_t::get_curr_lex() const
+{ 
+	if (curr_lex_ >= static_cast<int>(lex_array_.size()))
+	{
+		throw_exception("Syntax error\n", lex_array_.size() - 1);
+	}
+	return lex_array_[curr_lex_];
 }
 
 

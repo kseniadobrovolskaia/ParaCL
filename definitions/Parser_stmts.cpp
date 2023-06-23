@@ -18,7 +18,13 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 	bool ONE_STMT = 0;
 
 	std::vector<std::shared_ptr<Statement>> prog_elems;
-	int size = lex_array->size();
+	int size;
+
+	if (!(size = lex_array->size()))
+	{
+		return nullptr;
+	}
+
 	std::shared_ptr<Statement> stmt;
 	
 	std::shared_ptr<Lex_t> scop;
@@ -32,7 +38,7 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 	}
 	else if (lex_array->is_scope() == Scope_t::LSCOPE)
 	{
-		scop = (lex_array->get_curr_lex());
+		scop = lex_array->get_curr_lex();
 		lex_array->inc_lex();
 	}
 	else
@@ -131,7 +137,6 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 				}
 				else
 				{
-
 					if (main)
 					{
 						throw_exception("Invalid input: bad program building\n", lex_array->get_num_curr_lex());
@@ -162,7 +167,7 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 
 	if (!main)
 	{
-		throw_exception("I dont understand everything\n", lex_array->get_num_curr_lex());
+		throw_exception("Forgot to close scope \"}\"\n", lex_array->get_num_curr_lex());
 	}
 	
 	return std::make_shared<Scope>(prog_elems, *scop);

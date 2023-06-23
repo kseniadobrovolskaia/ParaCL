@@ -232,14 +232,14 @@ llvm::Value *Variable::codegen()
 {
 	std::string var_name = Lex_t::vars_table()[this->get_data()];
 
-	llvm::Value *Var = AST_creator::NamedValues[var_name];
+	llvm::AllocaInst *Var = AST_creator::NamedValues[var_name];
 
   	if (!Var)
   	{
   		throw_exception("Unknown variable name\n", this->get_num());
   	}
 
-  	return Var;
+  	return AST_creator::Builder->CreateLoad(Var->getAllocatedType(), Var, var_name.c_str());
 }
 
 
@@ -248,51 +248,58 @@ llvm::Value *Negation::codegen()
 	llvm::Value *right = rhs_->codegen();
 	const llvm::APInt zero(32, 0, true);
   	
-  	return AST_creator::Builder->CreateICmpNE(right, 
+  	right = AST_creator::Builder->CreateICmpEQ(right, 
     llvm::ConstantInt::get(*AST_creator::TheContext, zero), "neg");
+
+    right = AST_creator::Builder->CreateUIToFP(right, llvm::Type::getDoubleTy(*AST_creator::TheContext), "doubletmp");
+	return AST_creator::Builder->CreateFPToSI(right, llvm::Type::getInt32Ty(*AST_creator::TheContext), "inttmp");
 }
 
 
-#if 0
-
-I fix it
 llvm::Value *Assign_node::codegen()
 {
+	llvm::Value *Val = rhs_->codegen();
+
+  	if (!Val)
+  	{
+  		throw_exception("Non-existing operand\n", rhs_->get_num());
+  	}
+	
 	Lex_t *var = lhs_.get();
 	std::string var_name;
 
-	int right_part = rhs_->calculate(istr, ostr);
-
 	if (dynamic_cast<Variable*>(var))
 	{
-		var_name = vars[var->get_data()];
-		CURR_SCOPE->init_var(var_name);
+		var_name = Lex_t::vars_table()[var->get_data()];
 	}
 	else
 	{
 		var = &get_variable();
-		var_name = vars[var->get_data()];
+		var_name = Lex_t::vars_table()[var->get_data()];
 	}
 
-	lhs_->calculate(istr, ostr);
+	llvm::AllocaInst *Var = AST_creator::NamedValues[var_name];
 
-	CURR_SCOPE->get_var(var_name, var->get_num()) = right_part;
+  	if (!Var)
+  	{
+  		throw_exception("Unknown variable name\n", this->get_num());
+  	}
 
-	return CURR_SCOPE->get_var(var_name, var->get_num());
+  	AST_creator::Builder->CreateStore(Val, Var);
+
+  	return Val;
 }
-
-#endif
 
 
 llvm::Value *Scope::codegen()
 {
-	//I fix it
-	if (dynamic_cast<If*>((stmts_[0]).get()))
+	if (!stmts_.size())
 	{
-		return dynamic_cast<If*>((stmts_[0]).get())->codegen_if();
+		const llvm::APInt zero(32, 0, true);
+		return llvm::ConstantInt::get(*AST_creator::TheContext, zero);
 	}
 
-	return (stmts_[0]->get_lhs()).codegen();
+	return stmts_[0]->codegen();
 }
 
 
@@ -327,28 +334,40 @@ llvm::Value *Function::codegen()
 
 llvm::Value *UnOp::codegen()
 {
-	const llvm::APInt one(32, 1, true);
+	const llvm::APInt one(32, 1, true);	
+	llvm::Value *One = llvm::ConstantInt::get(*AST_creator::TheContext, one);
 	
-	llvm::Value *left = lhs_->codegen();
-	llvm::Value *right = llvm::ConstantInt::get(*AST_creator::TheContext, one);
+	Lex_t *var = &get_variable();
+	std::string var_name;
 
-  	if (!left || !right) 
+	llvm::Value *Var = var->codegen();
+
+  	if (!Var)
   	{
-  		throw_exception("Non-existing operand\n", this->get_num());
-  	};
+  		throw_exception("Unknown variable name\n", this->get_num());
+  	}
+
+  	llvm::Value *Val;
 
 	switch (this->get_data())
 	{
 		case Statements_t::INC:
-			return AST_creator::Builder->CreateAdd(left, right, "addtmp");
+			Val = AST_creator::Builder->CreateAdd(Var, One, "Inctmp");
+			break;
 		case Statements_t::DEC:
-			return AST_creator::Builder->CreateSub(left, right, "subtmp");
+			Val = AST_creator::Builder->CreateSub(Var, One, "Dectmp");
+			break;
 	}
-			
-	throw_exception("Error: it is not clear what is in function \"UnOp::Codegen\"\n", this->get_num());
-	return nullptr;
-}
 
+  	if (!Val)
+  	{
+  		throw_exception("Non-existing operand\n", lhs_->get_num());
+  	}
+
+  	AST_creator::Builder->CreateStore(Val, Var);
+
+  	return Val;
+}
 
 
 llvm::Value *BinOp::codegen()
@@ -391,25 +410,31 @@ llvm::Value *CompOp::codegen()
   	{
   		throw_exception("Non-existing operand\n", this->get_num());
   	};
-
+  
 	switch (this->get_data())
 	{
 		case CompOp_t::LESS:
-			return AST_creator::Builder->CreateICmpULT(left, right, "lesstmp");
+			left = AST_creator::Builder->CreateICmpSLT(left, right, "lesstmp");
+			break;
 		case CompOp_t::GREATER:
-			return AST_creator::Builder->CreateICmpUGT(left, right, "greatertmp");
+			left = AST_creator::Builder->CreateICmpSGT(left, right, "greatertmp");
+			break;
 		case CompOp_t::LESorEQ:
-			return AST_creator::Builder->CreateICmpULE(left, right, "LESorEQtmp");
+			left = AST_creator::Builder->CreateICmpSLE(left, right, "LESorEQtmp");
+			break;
 		case CompOp_t::GRorEQ:
-			return AST_creator::Builder->CreateICmpUGE(left, right, "GRorEQtmp");
+			left = AST_creator::Builder->CreateICmpSGE(left, right, "GRorEQtmp");
+			break;
 		case CompOp_t::EQUAL:
-			return AST_creator::Builder->CreateICmpEQ(left, right, "EQtmp");
+			left = AST_creator::Builder->CreateICmpEQ(left, right, "EQtmp");
+			break;
 		case CompOp_t::NOT_EQUAL:
-			return AST_creator::Builder->CreateICmpNE(left, right, "NEtmp");
+			left = AST_creator::Builder->CreateICmpNE(left, right, "NEtmp");
+			break;
 	}
-
-	throw_exception("Error: it is not clear what is in function \"CompOp::Codegen\"\n", this->get_num());
-	return nullptr;
+	
+	left = AST_creator::Builder->CreateUIToFP(left, llvm::Type::getDoubleTy(*AST_creator::TheContext), "doubletmp");
+	return AST_creator::Builder->CreateFPToSI(left, llvm::Type::getInt32Ty(*AST_creator::TheContext), "inttmp");
 }
 
 

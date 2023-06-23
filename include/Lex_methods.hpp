@@ -186,7 +186,7 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	//llvm::Value *codegen() override;
+  	llvm::Value *codegen() override;
   	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
 };
 
