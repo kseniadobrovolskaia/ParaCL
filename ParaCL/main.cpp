@@ -19,19 +19,19 @@ int main(int argc, char const *argv[])
 				CODEGEN = 1;
 				creator.lexical_analysis(std::cin);
 			}
-		}
-		else if (argc > 1)
-		{
-			std::ifstream data;
-
-			data.open(argv[1]);
-			if (!(data.is_open()))
+			else
 			{
-				std::cerr << "File \"" << argv[1] << "\" did not open" << std::endl;
-				exit(EXIT_FAILURE);
-			}
+				std::ifstream data;
 
-			creator.lexical_analysis(data);
+				data.open(argv[1]);
+				if (!(data.is_open()))
+				{
+					std::cerr << "File \"" << argv[1] << "\" did not open\n";
+					exit(EXIT_FAILURE);
+				}
+
+				creator.lexical_analysis(data);
+			}
 		}
 		else
 		{
@@ -40,10 +40,22 @@ int main(int argc, char const *argv[])
 
 		creator.parsing();
 
-		if (CODEGEN)
-			creator.codegen();
-		else
+		std::string file_name = "../../llvmIR.txt";
+		std::ofstream llvmIR;
+
+		llvmIR.open(file_name);
+		if (!(llvmIR.is_open()))
+		{
+		  std::cerr << "File \"" << file_name << "\" did not open\n";
+		  exit(EXIT_FAILURE);
+		}
+		
+		creator.codegen(llvmIR);
+
+		if (!CODEGEN)
+		{
 			creator.run_program(std::cin, std::cout);
+		}
 
 		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
 				// "shotwell sintax_tree.png");

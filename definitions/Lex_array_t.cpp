@@ -27,7 +27,7 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 	signal(SIGINT, handler);
 
 	istr >> std::noskipws;
-	
+
 	while (istr >> elem)
 	{	
 		if (EoF_)

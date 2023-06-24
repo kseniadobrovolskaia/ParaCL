@@ -48,7 +48,7 @@ public:
 
 	void lexical_analysis(std::istream &istr);
 	void parsing();
-	void codegen();
+	void codegen(std::ostream &ostr);
 	void run_program(std::istream & istr, std::ostream & ostr);
 
 	std::shared_ptr<Lex_t>       get_AST()        const { return AST_; };

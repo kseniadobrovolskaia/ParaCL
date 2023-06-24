@@ -47,7 +47,7 @@ void AST_creator::parsing()
 }
 
 
-void AST_creator::codegen()
+void AST_creator::codegen(std::ostream &ostr)
 {
 	CURR_SCOPE = std::make_shared<Scope_table>();
 
@@ -57,7 +57,7 @@ void AST_creator::codegen()
 	}
 
 	Arithmetic Anonim(AST_);
-	auto *func = Anonim.codegen_func();
+	Anonim.codegen_func();
 	
 	std::cout << "\n\n\n";
 	AST_creator::TheModule->print(llvm::errs(), nullptr);

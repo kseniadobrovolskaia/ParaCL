@@ -57,7 +57,7 @@ int Return::run_stmt(std::istream &istr, std::ostream &ostr) const
 {
 	if (!AST_creator::IN_FUNCTION)
 	{
-		throw_exception("You can return only from functions\n", lhs_->get_num() - 1);
+		throw_exception("You can return only from functions\n", lhs_->get_num());
 	}
 
 	AST_creator::RETURN_COMMAND = 1;
@@ -91,17 +91,6 @@ llvm::Value *Declaration::codegen() const
 {
 	const llvm::APInt zero(32, 0, true);
 	return llvm::ConstantInt::get(*AST_creator::TheContext, zero);
-}
-
-
-static llvm::AllocaInst *CreateEntryBlockAlloca(const std::string &VarName)
-{
-	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
-	llvm::Function *Func = InsertBB->getParent();
-	
-	llvm::IRBuilder<> TmpB(&Func->getEntryBlock(), Func->getEntryBlock().begin());
-
-	return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*AST_creator::TheContext), 0, VarName.c_str());
 }
 
 
@@ -143,7 +132,7 @@ llvm::Function *Declaration::codegen_func() const
 
   	if (!RetVal)
   	{
-		throw_exception("Error in declaration codegen\n", scope_->get_num() - 1);
+		throw_exception("Error in declaration codegen\n", scope_->get_num());
   	}
 
   	AST_creator::Builder->CreateRet(RetVal);
@@ -267,10 +256,10 @@ llvm::Value *While::codegen() const
 
 	AST_creator::Builder->SetInsertPoint(LoopBB);
 
-	llvm::Value *Loop = rhs_->codegen();
+	rhs_->codegen();
 
 	AST_creator::Builder->CreateBr(CondBB);
-	LoopBB = AST_creator::Builder->GetInsertBlock();//may be InsertBB..?
+	LoopBB = AST_creator::Builder->GetInsertBlock();
 
 	Func->getBasicBlockList().push_back(EndBB);
 	AST_creator::Builder->SetInsertPoint(EndBB);
@@ -278,16 +267,52 @@ llvm::Value *While::codegen() const
 	return Zero;
 }
 
-//I do it
+
 llvm::Value *Print::codegen() const
 {
-	return nullptr;
+	llvm::Value *Val = lhs_->codegen();
+
+	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+
+ 	llvm::Function *func_printf = AST_creator::TheModule->getFunction("printf");
+
+    if (!func_printf)
+    {
+    	std::vector<llvm::Type *> Ints(1, llvm::Type::getInt32Ty(*AST_creator::TheContext));
+	  	
+	  	llvm::FunctionType *FuncType =
+	    llvm::FunctionType::get(llvm::Type::getInt32Ty(*AST_creator::TheContext), Ints, false);
+
+	  	func_printf = 
+	  	llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "printf", AST_creator::TheModule.get());
+
+        func_printf->setCallingConv(llvm::CallingConv::C);
+    }
+
+    llvm::Value *str = AST_creator::Builder->CreateGlobalStringPtr("%d");
+    std::vector <llvm::Value*> call_params;
+    call_params.push_back(str);
+	
+	call_params.push_back(Val);
+ 
+   	llvm::CallInst::Create(func_printf, call_params, "calltmp", InsertBB);
+    
+    return Val;
 }
 
-//I do it
+
 llvm::Value *Return::codegen() const
 {
-	return nullptr;
+	llvm::Value *RetVal = lhs_->codegen();
+
+  	if (!RetVal)
+  	{
+		throw_exception("Error in codegen Return\n", lhs_->get_num());
+  	}
+
+  	AST_creator::Builder->CreateRet(RetVal);
+
+  	return RetVal;
 }
 
 

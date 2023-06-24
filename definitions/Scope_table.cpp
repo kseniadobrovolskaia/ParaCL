@@ -22,8 +22,8 @@ void Scope_table::init_var(const std::string &name)
 	}
 }
 
-//i fix it
-static llvm::AllocaInst *CreateEntryBlockAlloca(const std::string &VarName)
+
+static llvm::AllocaInst *CreateAlloca(const std::string &VarName)
 {
 	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
 	llvm::Function *Func = InsertBB->getParent();
@@ -38,7 +38,7 @@ llvm::AllocaInst *Scope_table::alloca_var(const std::string &name, int num_lexem
 {
   	if (!is_var_alloca(name))
 	{
-		VarNames[name] = CreateEntryBlockAlloca(name);
+		VarNames[name] = CreateAlloca(name);
 		return VarNames[name];
 	}
 
@@ -134,7 +134,7 @@ llvm::AllocaInst *Scope_table::get_var_addr(const std::string &name, int num_lex
 		}
 		else
 		{
-			throw_exception("Unallocated variable in current scope\n", num_lexem);
+			throw_exception("Uninitialized variable in current scope\n", num_lexem);
 		}
 	}
 
@@ -152,7 +152,7 @@ llvm::Function *Scope_table::get_func_addr(const std::string &name, int num_lexe
 		}
 		else
 		{
-			throw_exception("Unknown function name\n", num_lexem);
+			throw_exception("Uninitialized function in current scope\n", num_lexem);
 		}
 	}
 
@@ -175,7 +175,7 @@ std::shared_ptr<Statement> Scope_table::get_func_decl(const std::string &name, i
 				return AST_creator::FUNCTIONS[name];
 			}
 			
-			throw_exception("This function was not declared\n", num_lexem);
+			throw_exception("Uninitialized function in current scope\n", num_lexem);
 		}
 	}
 

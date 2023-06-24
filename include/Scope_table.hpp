@@ -18,7 +18,7 @@ class Scope_table
 	///Scope which contains this scope
 	std::shared_ptr<Scope_table> higher_scope_;
 
-	///Variables declared in this scope
+	///Variables declared in this scope with they indexes in Lex_t::vars_table()
 	std::unordered_map<std::string, int> vars_;
 
 	///Functions declared in this scope

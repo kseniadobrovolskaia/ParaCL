@@ -25,7 +25,7 @@ void Run_tests()
 			data.open(name_data);
 			if (!(data.is_open()))
 			{
-			  std::cerr << "File \"" << name_data << "\" did not open" << std::endl;
+			  std::cerr << "File \"" << name_data << "\" did not open\n";
 			  exit(EXIT_FAILURE);
 			}
 
@@ -34,7 +34,7 @@ void Run_tests()
 			input.open(name_input);
 			if (!(input.is_open()))
 			{
-			  std::cerr << "File \"" << name_input << "\" did not open" << std::endl;
+			  std::cerr << "File \"" << name_input << "\" did not open\n";
 			  exit(EXIT_FAILURE);
 			}
 
@@ -43,7 +43,7 @@ void Run_tests()
 			results.open(name_results);
 			if (!(results.is_open()))
 			{
-			  std::cerr << "File \"" << name_results << "\" did not open" << std::endl;
+			  std::cerr << "File \"" << name_results << "\" did not open\n";
 			  exit(EXIT_FAILURE);
 			}
 
@@ -74,7 +74,7 @@ void Run_tests()
 		input_data.open(name_input);
 		if (!(input_data.is_open()))
 		{
-			std::cerr << "File \"" << name_input << "\" did not open" << std::endl;
+			std::cerr << "File \"" << name_input << "\" did not open\n";
 		    exit(EXIT_FAILURE);
 		}
 
@@ -83,7 +83,7 @@ void Run_tests()
 
 		if (!(results.is_open()))
 		{
-		  std::cerr << "File \"" << name_results << "\" did not open" << std::endl;
+		  std::cerr << "File \"" << name_results << "\" did not open\n";
 		  exit(EXIT_FAILURE);
 		}
 

@@ -179,7 +179,7 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 	
 	AST_creator::IN_FUNCTION++;
 	int res = 0;
-	std::shared_ptr<Scope_table> parent_table = (Definit->get_scope_table())->get_high_scope();//i fix it
+	std::shared_ptr<Scope_table> parent_table = (Definit->get_scope_table())->get_high_scope();
 
 	std::shared_ptr<Scope_table> func_table = std::make_shared<Scope_table>(parent_table);
 
@@ -229,9 +229,36 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 
 llvm::Value *Value::codegen()
 {
-	const llvm::APInt value(32, this->get_data(), true);
+	if (type_ != Value_type::INPUT)
+	{	
+		const llvm::APInt value(32, this->get_data(), true);
 
-	return llvm::ConstantInt::get(*AST_creator::TheContext, value);
+		return llvm::ConstantInt::get(*AST_creator::TheContext, value);
+	}
+
+	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+ 	llvm::Function *func_scanf = AST_creator::TheModule->getFunction("scanf");
+
+    if (!func_scanf)
+    {
+    	std::vector<llvm::Type *> Ints(0, llvm::Type::getInt32Ty(*AST_creator::TheContext));
+	  	
+	  	llvm::FunctionType *FuncType =
+	    llvm::FunctionType::get(llvm::Type::getInt32Ty(*AST_creator::TheContext), Ints, false);
+
+	  	func_scanf = 
+	  	llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "scanf", AST_creator::TheModule.get());
+
+        func_scanf->setCallingConv(llvm::CallingConv::C);
+    }
+
+    llvm::Value *str = AST_creator::Builder->CreateGlobalStringPtr("%d");
+    std::vector <llvm::Value*> call_params;
+    call_params.push_back(str);
+ 
+    llvm::CallInst *call = llvm::CallInst::Create(func_scanf, call_params, "calltmp", InsertBB);
+    
+   	return call;
 }
 
 
@@ -319,7 +346,7 @@ llvm::Value *Scope::codegen()
 	{
 		if (dynamic_cast<Declaration*>(elem.get()))
 		{
-			auto *func = elem->codegen_func();
+			elem->codegen_func();
 		}
 		else
 		{
