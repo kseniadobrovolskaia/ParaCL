@@ -41,21 +41,31 @@ class Declaration final : public Statement {
 	///Function
 	std::shared_ptr<Lex_t> scope_;
 
+	///Scope for this function
+	std::shared_ptr<Scope_table> func_scope_;
+
 	///To place a pointer to this declaration in a Scope_table
 	std::weak_ptr<Statement> this_;
+
+	std::string global_name_;
 
 	///Function arguments
 	std::vector<std::shared_ptr<Lex_t>> vars_;
 
+
 public:
-	Declaration(std::shared_ptr<Lex_t> func, std::vector<std::shared_ptr<Lex_t>> &vars) : 
-	Statement(Statements_t::FUNC), func_(func), vars_(std::move(vars)) {};
+	Declaration(std::shared_ptr<Lex_t> func, std::shared_ptr<Scope_table> func_scope, std::vector<std::shared_ptr<Lex_t>> &vars) : 
+	Statement(Statements_t::FUNC), func_(func), func_scope_(func_scope), vars_(std::move(vars)) {};
+
+	Declaration(std::shared_ptr<Lex_t> func, std::shared_ptr<Scope_table> func_scope, std::string gl_name, std::vector<std::shared_ptr<Lex_t>> &vars) : 
+	Statement(Statements_t::FUNC), func_(func), func_scope_(func_scope), global_name_(gl_name), vars_(std::move(vars)) {};
 
 	virtual ~Declaration() = default;
 	
 	void                                       set_decl(std::weak_ptr<Statement> This) { this_ = This; };
 	virtual Lex_t                             &get_lhs() const override                { return *func_; };
 	std::shared_ptr<Lex_t>                     get_scope() const                       { return scope_; };
+	std::shared_ptr<Scope_table>			   get_scope_table() const                 { return func_scope_; };
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const                        { return vars_; };
 	void                                       add_scope(std::shared_ptr<Lex_t> scope) { scope_ = scope; };
 	virtual std::string                        name() const override;

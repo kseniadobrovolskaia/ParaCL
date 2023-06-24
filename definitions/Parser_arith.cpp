@@ -297,8 +297,6 @@ std::shared_ptr<Lex_t> parse_function_call(std::shared_ptr<Lex_array_t> lex_arra
 	std::string name = func.short_name();
 	std::vector <std::shared_ptr<Lex_t>> args;
 
-	std::shared_ptr<Statement> body = AST_creator::CURR_SCOPE->get_func_decl(name, lex_array->get_num_curr_lex());
-	
 	lex_array->inc_lex();
 	if (lex_array->is_brace() != Brace_t::LBRACE)
 	{
@@ -329,7 +327,7 @@ std::shared_ptr<Lex_t> parse_function_call(std::shared_ptr<Lex_array_t> lex_arra
 
 	lex_array->inc_lex();
 
-	T = std::make_shared<Function>(body, args, func);
+	T = std::make_shared<Function>(args, func);
 
 	return T;
 }

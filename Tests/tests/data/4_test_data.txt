@@ -18,12 +18,12 @@ foo = func(x) : f
 		print x;
 	};
 	
-	z = f(0) + z;
-	bar(f(0));
+	z = f(0) + 5;
+	bar(0);
 };
 
-print bar(10);
-print b(10);
+print b(0);
+print foo(10);
 
 	
 

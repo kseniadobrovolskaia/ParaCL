@@ -176,7 +176,6 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 					num_var--;
 					Lex_t::vars_table().pop_back();
 				}
-
 				push_function(num_funcs - 1);
 			}
 			push_scope(LSCOPE);

@@ -52,19 +52,15 @@ public:
 
 class Function : public Lex_t {
 
-	///Declaration
-	std::shared_ptr<Statement> decl_;
-
 	///Arguments
 	std::vector<std::shared_ptr<Lex_t>> args_;
 
 public:
-	Function(std::shared_ptr<Statement> decl, std::vector<std::shared_ptr<Lex_t>> &args, const Lex_t &func) : 
-	Lex_t(func), decl_(decl), args_(std::move(args)){};
+	Function(std::vector<std::shared_ptr<Lex_t>> &args, const Lex_t &func) : 
+	Lex_t(func), args_(std::move(args)){};
 
 	virtual ~Function() = default;
 
-	std::shared_ptr<Statement>                 get_rhs() const    { return decl_; };
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const   { return args_; };
 	void                                       print_args() const { std::for_each(args_.begin(), args_.end(), [](std::shared_ptr<Lex_t> arg){ std::cout << arg->name() << " ";});};
 

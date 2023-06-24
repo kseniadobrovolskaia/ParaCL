@@ -172,11 +172,18 @@ int Scope::calculate(std::istream &istr, std::ostream &ostr) const
 
 int Function::calculate(std::istream &istr, std::ostream &ostr) const
 {
+	std::string func_name = this->short_name();
+
+	std::shared_ptr<Statement> Definition = AST_creator::CURR_SCOPE->get_func_decl(func_name, this->get_num());
+	Declaration *Definit = static_cast<Declaration*>(Definition.get());
+	
 	AST_creator::IN_FUNCTION++;
 	int res = 0;
-	std::shared_ptr<Scope_table> func_table_ = std::make_shared<Scope_table>();
+	std::shared_ptr<Scope_table> parent_table = (Definit->get_scope_table())->get_high_scope();//i fix it
 
-	const std::vector<std::shared_ptr<Lex_t>> &args = static_cast<Declaration*>(decl_.get())->get_args();
+	std::shared_ptr<Scope_table> func_table = std::make_shared<Scope_table>(parent_table);
+
+	const std::vector<std::shared_ptr<Lex_t>> &args = Definit->get_args();
 	
 	if (args_.size() != args.size())
 	{
@@ -186,20 +193,20 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 	for (int num_arg = 0, count_args = args.size(); num_arg < count_args; num_arg++)
 	{
 		std::string name = args[num_arg]->short_name();
-		func_table_->init_var(name);
+		func_table->init_var(name);
 
 		int val = args_[num_arg]->calculate(istr, ostr);
-		func_table_->get_var(name, args_[num_arg]->get_str()) = val;
+		func_table->get_var(name, args_[num_arg]->get_str()) = val;
 	}
 
-	std::shared_ptr<Lex_t> scope = static_cast<Declaration*>(decl_.get())->get_scope();
+	std::shared_ptr<Lex_t> scope = Definit->get_scope();
 
 	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
-	AST_creator::CURR_SCOPE = func_table_;
+	AST_creator::CURR_SCOPE = func_table;
 
-	const std::vector<std::shared_ptr<Statement>> &stmts_ = static_cast<Scope*>(scope.get())->get_lhs();
+	const std::vector<std::shared_ptr<Statement>> &stmts = static_cast<Scope*>(scope.get())->get_lhs();
 
-	for (auto &&stmt : stmts_)
+	for (auto &&stmt : stmts)
 	{
 		res = stmt->run_stmt(istr, ostr);
 
@@ -232,7 +239,7 @@ llvm::Value *Variable::codegen()
 {
 	std::string var_name = Lex_t::vars_table()[this->get_data()];
 
-	llvm::AllocaInst *Var = AST_creator::NamedValues[var_name];
+	llvm::AllocaInst *Var = AST_creator::CURR_SCOPE->get_var_addr(var_name, this->get_num());
 
   	if (!Var)
   	{
@@ -278,7 +285,7 @@ llvm::Value *Assign_node::codegen()
 		var_name = Lex_t::vars_table()[var->get_data()];
 	}
 
-	llvm::AllocaInst *Var = AST_creator::NamedValues[var_name];
+	llvm::AllocaInst *Var = AST_creator::CURR_SCOPE->alloca_var(var_name, this->get_num());
 
   	if (!Var)
   	{
@@ -293,25 +300,47 @@ llvm::Value *Assign_node::codegen()
 
 llvm::Value *Scope::codegen()
 {
+	std::shared_ptr<Scope_table> curr_scope = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
+	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
+	
+	AST_creator::CURR_SCOPE = curr_scope;
+
+  	
+	const llvm::APInt zero(32, 0, true);
+		
 	if (!stmts_.size())
 	{
-		const llvm::APInt zero(32, 0, true);
 		return llvm::ConstantInt::get(*AST_creator::TheContext, zero);
 	}
+	
+	llvm::Value *last_expr = llvm::ConstantInt::get(*AST_creator::TheContext, zero);
 
-	return stmts_[0]->codegen();
+	for (auto &elem : stmts_)
+	{
+		if (dynamic_cast<Declaration*>(elem.get()))
+		{
+			auto *func = elem->codegen_func();
+		}
+		else
+		{
+			last_expr = elem->codegen();
+		}
+	}
+
+	AST_creator::CURR_SCOPE = old_curr_scope;
+
+	return last_expr;
 }
 
 
 llvm::Value *Function::codegen()
 {
-	// or simple name()
-	std::string func_name = static_cast<Declaration*>(decl_.get())->get_func_name();
+	std::string func_name = this->short_name();
 	llvm::Function *Call = AST_creator::TheModule->getFunction(func_name);
 
 	if (!Call)
 	{
-    	throw_exception("Unknown variable name\n", this->get_num());
+		Call = AST_creator::CURR_SCOPE->get_func_addr(func_name, this->get_num());
   	}
 
   	int args_size = args_.size();

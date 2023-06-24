@@ -94,18 +94,28 @@ llvm::Value *Declaration::codegen() const
 }
 
 
-static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Func, const std::string &VarName)
+static llvm::AllocaInst *CreateEntryBlockAlloca(const std::string &VarName)
 {
-  llvm::IRBuilder<> TmpB(&Func->getEntryBlock(), Func->getEntryBlock().begin());
+	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+	llvm::Function *Func = InsertBB->getParent();
+	
+	llvm::IRBuilder<> TmpB(&Func->getEntryBlock(), Func->getEntryBlock().begin());
 
-  return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*AST_creator::TheContext), 0, VarName.c_str());
+	return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*AST_creator::TheContext), 0, VarName.c_str());
 }
 
 
 llvm::Function *Declaration::codegen_func() const
 {
-	//two! functions this function must generate
-	std::string decl_name = Lex_t::funcs_table()[func_->get_data()];
+	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+
+	std::string decl_name = func_->short_name();
+
+	if (global_name_.size() > 0)
+	{
+		decl_name = global_name_;
+	}
+
 	std::vector<llvm::Type *> Ints(vars_.size(), llvm::Type::getInt32Ty(*AST_creator::TheContext));
   	
   	llvm::FunctionType *FuncType =
@@ -114,41 +124,38 @@ llvm::Function *Declaration::codegen_func() const
   	llvm::Function *Func = 
   	llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, decl_name, AST_creator::TheModule.get());
 
-  	if (!(Func->empty()))
-  	{
-  		throw_exception("Redefinition of function\n", func_->get_num() - 1);
-  	}
-
   	llvm::BasicBlock *Block = llvm::BasicBlock::Create(*AST_creator::TheContext, "entry", Func);
   	AST_creator::Builder->SetInsertPoint(Block);
   	
-  	AST_creator::NamedValues.clear();//it strange
+  	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
+	AST_creator::CURR_SCOPE = func_scope_;
 
   	unsigned Idx = 0;
   	for (auto &Arg : Func->args())
   	{
   		std::string name = Lex_t::vars_table()[vars_[Idx++]->get_data()];
 
-  		llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(Func, name);
+  		llvm::AllocaInst *Alloca = AST_creator::CURR_SCOPE->alloca_var(name, func_->get_num() + 3);
   		AST_creator::Builder->CreateStore(&Arg, Alloca);
-
-  		AST_creator::NamedValues[name] = Alloca;
   	} 
 
+  	llvm::Value *RetVal = scope_->codegen();
 
-  	if (llvm::Value *RetVal = scope_->codegen())
+  	if (!RetVal)
   	{
-    	AST_creator::Builder->CreateRet(RetVal);
-		verifyFunction(*Func);
-
-    	return Func;
+		throw_exception("Error in declaration codegen\n", scope_->get_num() - 1);
   	}
 
-	Func->eraseFromParent();
+  	AST_creator::Builder->CreateRet(RetVal);
+	verifyFunction(*Func);
 
-	throw_exception("Error in declaration codegen\n", scope_->get_num() - 1);
+  	AST_creator::CURR_SCOPE = old_curr_scope;
 
-  	return nullptr;
+  	AST_creator::CURR_SCOPE->add_func(func_->short_name(), Func);
+
+  	AST_creator::Builder->SetInsertPoint(InsertBB);
+
+  	return Func;
 }
 
 
@@ -292,6 +299,8 @@ llvm::Value *Arithmetic::codegen() const
 
 llvm::Function *Arithmetic::codegen_func() const
 {
+	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+
 	///Create function without name
 	std::string decl_name = "";
 	std::vector<llvm::Type *> Ints(0, llvm::Type::getInt32Ty(*AST_creator::TheContext));
@@ -302,27 +311,28 @@ llvm::Function *Arithmetic::codegen_func() const
   	llvm::Function *Func = 
   	llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, decl_name, AST_creator::TheModule.get());
 
-  	if (!(Func->empty()))
-  	{
-  		throw_exception("Redefinition of function\n", lhs_->get_num() - 1);
-  	}
-    
 	llvm::BasicBlock *Block = llvm::BasicBlock::Create(*AST_creator::TheContext, "entry", Func);
   	AST_creator::Builder->SetInsertPoint(Block);
 
-  	if (llvm::Value *RetVal = lhs_->codegen())
-  	{
-    	AST_creator::Builder->CreateRet(RetVal);
-		verifyFunction(*Func);
+  	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
+  	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
+	AST_creator::CURR_SCOPE = func_scope;
 
-    	return Func;
+	llvm::Value *RetVal = lhs_->codegen();
+
+  	if (!RetVal)
+  	{
+		throw_exception("Error in declaration codegen\n", lhs_->get_num());
   	}
 
-	Func->eraseFromParent();
+  	AST_creator::Builder->CreateRet(RetVal);
+	verifyFunction(*Func);
 
-	throw_exception("Error in declaration codegen\n", lhs_->get_num() - 1);
+  	AST_creator::CURR_SCOPE = old_curr_scope;
 
-	return nullptr;
+  	AST_creator::Builder->SetInsertPoint(InsertBB);
+
+  	return Func;
 }
 
 

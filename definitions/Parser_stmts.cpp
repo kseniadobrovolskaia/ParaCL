@@ -249,6 +249,8 @@ std::shared_ptr<Statement> parse_return(std::shared_ptr<Lex_array_t> lex_array)
 
 std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_array)
 {
+	std::string global_name;
+
 	std::shared_ptr<Statement> stmt;
 	std::shared_ptr<Lex_t> func = lex_array->get_curr_lex();
 
@@ -292,8 +294,7 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 	}
 	lex_array->inc_lex();
 
-	stmt = std::make_shared<Declaration>(func, vars_in_func);
-	static_cast<Declaration*>(stmt.get())->set_decl(std::weak_ptr(stmt));
+	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
 
 	if (lex_array->is_colon())
 	{
@@ -301,8 +302,7 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 
 		if ((lex_array->get_curr_lex())->get_kind() == Lex_kind_t::FUNCTION)
 		{
-			std::string function_name = (lex_array->get_curr_lex())->short_name();
-			AST_creator::FUNCTIONS[function_name] = stmt;
+			global_name = (lex_array->get_curr_lex())->short_name();
 		}
 		else
 		{
@@ -312,11 +312,24 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 		lex_array->inc_lex();
 	}
 
+	stmt = std::make_shared<Declaration>(func, func_scope, global_name, vars_in_func);
+	static_cast<Declaration*>(stmt.get())->set_decl(std::weak_ptr(stmt));
+
+	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
+	AST_creator::CURR_SCOPE = func_scope;
+
 	std::shared_ptr<Lex_t> scope = parse_scope(lex_array);
+
+	AST_creator::CURR_SCOPE = old_curr_scope;
 
 	static_cast<Declaration*>(stmt.get())->add_scope(scope);
 
 	AST_creator::CURR_SCOPE->init_func(func->short_name(), stmt);
+
+	if (global_name.size() > 0)
+	{
+		AST_creator::FUNCTIONS[global_name] = stmt;
+	}
 
 	return stmt;
 }
