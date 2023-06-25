@@ -70,30 +70,25 @@ class Lex_t
 	int data_;              ///for example, Scope_t::LSCOPE
 	int num_str_;			///line number with this token
 	int num_;				///index this token in lex_array
-
-	static std::vector<std::string> vars_;					///variables appeared in lexical analysis
-	static std::vector<std::string> funcs_;					///function names appeared in lexical analysis
+	std::string name_;
 
 public:
 	Lex_t() = default;
 	
-	Lex_t(Lex_kind_t kind, int data, int num_str, int num) : 
-	kind_(kind), data_(data), num_str_(num_str), num_(num) {};
+	Lex_t(Lex_kind_t kind, int data, int num_str, int num, std::string name) : 
+	kind_(kind), data_(data), num_str_(num_str), num_(num), name_(name){};
 
 	Lex_t(const Lex_t &rhs) : 
-	kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_), num_(rhs.num_){};
+	kind_(rhs.kind_), data_(rhs.data_), num_str_(rhs.num_str_), num_(rhs.num_), name_(rhs.name_){};
 	
 	virtual ~Lex_t() = default;
 
 	std::string name() const;
-	std::string short_name() const;
-	Lex_kind_t  get_kind() const { return kind_; };
-	int         get_str()  const { return num_str_; };
-	int         get_data() const { return data_; };
-	int         get_num()  const { return num_; };
-
-	static std::vector<std::string>& vars_table()  { return vars_; }
-	static std::vector<std::string>& funcs_table() { return funcs_; }
+	std::string short_name() const { return name_; };
+	Lex_kind_t  get_kind()   const { return kind_; };
+	int         get_str()    const { return num_str_; };
+	int         get_data()   const { return data_; };
+	int         get_num()    const { return num_; };
 
 	virtual llvm::Value *codegen()                                               { return nullptr; }
 	virtual int          calculate(std::istream &istr, std::ostream &ostr) const { return data_; };

@@ -16,8 +16,8 @@ class Lex_array_t {
 	std::vector<std::shared_ptr<Lex_t>> lex_array_;
 
 	///variables and functions names appeared in lexical analysis
-	std::vector<std::string> vars_;
-	std::vector<std::string> funcs_;
+	std::vector<std::string> vars_table;
+	std::vector<std::string> funcs_table;
 
 
 public:

@@ -27,9 +27,7 @@ int Value::calculate(std::istream &istr, std::ostream &ostr) const
 
 int Variable::calculate(std::istream &istr, std::ostream &ostr) const
 {
-	std::string var_name = Lex_t::vars_table()[this->get_data()];
-
-	return AST_creator::CURR_SCOPE->get_var(var_name, this->get_num());
+	return AST_creator::CURR_SCOPE->get_var(this->short_name(), this->get_num());
 }
 
 
@@ -43,20 +41,20 @@ int Negation::calculate(std::istream &istr, std::ostream &ostr) const
 
 int Assign_node::calculate(std::istream &istr, std::ostream &ostr) const
 {
-	Lex_t *var = lhs_.get();
+	std::shared_ptr<Lex_t> var = lhs_;
 	std::string var_name;
 
 	int right_part = rhs_->calculate(istr, ostr);
 
-	if (dynamic_cast<Variable*>(var))
+	if (std::dynamic_pointer_cast<Variable>(var))
 	{
-		var_name = Lex_t::vars_table()[var->get_data()];
+		var_name = var->short_name();
 		AST_creator::CURR_SCOPE->init_var(var_name);
 	}
 	else
 	{
-		var = &get_variable();
-		var_name = Lex_t::vars_table()[var->get_data()];
+		var = get_variable();
+		var_name = var->short_name();
 	}
 
 	lhs_->calculate(istr, ostr);
@@ -96,16 +94,16 @@ int BinOp::calculate(std::istream &istr, std::ostream &ostr) const
 int UnOp::calculate(std::istream &istr, std::ostream &ostr) const
 {
 	lhs_->calculate(istr, ostr);
-	Lex_t *var = lhs_.get();
+	std::shared_ptr<Lex_t> var = lhs_;
 
 	std::string var_name;
 	
-	if (!dynamic_cast<Variable*>(var))
+	if (!std::dynamic_pointer_cast<Variable>(var))
 	{
-		var = &get_variable();
+		var = get_variable();
 	}
 	
-	var_name = Lex_t::vars_table()[var->get_data()];
+	var_name = var->short_name();
 
 	switch (this->get_data())
 	{
@@ -175,7 +173,7 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 	std::string func_name = this->short_name();
 
 	std::shared_ptr<Statement> Definition = AST_creator::CURR_SCOPE->get_func_decl(func_name, this->get_num());
-	Declaration *Definit = static_cast<Declaration*>(Definition.get());
+	std::shared_ptr<Declaration> Definit = std::static_pointer_cast<Declaration>(Definition);
 	
 	std::shared_ptr<Scope_table> parent_table = (Definit->get_scope_table())->get_high_scope();
 
@@ -202,7 +200,7 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
 	AST_creator::CURR_SCOPE = func_table;
 
-	const std::vector<std::shared_ptr<Statement>> &stmts = static_cast<Scope*>(scope.get())->get_lhs();
+	const std::vector<std::shared_ptr<Statement>> &stmts = std::static_pointer_cast<Scope>(scope)->get_lhs();
 
 	int res = 0;
 	for (auto &&stmt : stmts)
@@ -262,7 +260,7 @@ llvm::Value *Value::codegen()
 
 llvm::Value *Variable::codegen()
 {
-	std::string var_name = Lex_t::vars_table()[this->get_data()];
+	std::string var_name = this->short_name();
 
 	llvm::AllocaInst *Var = AST_creator::CURR_SCOPE->get_var_addr(var_name, this->get_num());
 
@@ -297,17 +295,17 @@ llvm::Value *Assign_node::codegen()
   		throw_exception("Non-existing operand\n", rhs_->get_num());
   	}
 	
-	Lex_t *var = lhs_.get();
+	std::shared_ptr<Lex_t> var = lhs_;
 	std::string var_name;
 
-	if (dynamic_cast<Variable*>(var))
+	if (std::dynamic_pointer_cast<Variable>(var))
 	{
-		var_name = Lex_t::vars_table()[var->get_data()];
+		var_name = var->short_name();
 	}
 	else
 	{
-		var = &get_variable();
-		var_name = Lex_t::vars_table()[var->get_data()];
+		var = get_variable();
+		var_name = var->short_name();
 	}
 
 	llvm::AllocaInst *Var = AST_creator::CURR_SCOPE->alloca_var(var_name, this->get_num());
@@ -342,7 +340,7 @@ llvm::Value *Scope::codegen()
 
 	for (auto &elem : stmts_)
 	{
-		if (dynamic_cast<Declaration*>(elem.get()))
+		if (std::dynamic_pointer_cast<Declaration>(elem))
 		{
 			elem->codegen_func();
 		}
@@ -391,7 +389,7 @@ llvm::Value *UnOp::codegen()
 	const llvm::APInt one(32, 1, true);	
 	llvm::Value *One = llvm::ConstantInt::get(*AST_creator::TheContext, one);
 	
-	Lex_t *var = &get_variable();
+	std::shared_ptr<Lex_t> var = get_variable();
 	std::string var_name;
 
 	llvm::Value *Var = var->codegen();
@@ -614,9 +612,9 @@ std::string Lex_t::name() const
 		return static_cast<std::string>("COMPOP:") + type;
 	}
 	case Lex_kind_t::VAR:
-		return static_cast<std::string>("VAR:") + vars_[data_];
+		return static_cast<std::string>("VAR:") + name_;
 	case Lex_kind_t::FUNCTION:
-		return static_cast<std::string>("FUNCTION:") + funcs_[data_];
+		return static_cast<std::string>("FUNCTION:") + name_;
 	}
 	return nullptr;
 }
@@ -624,7 +622,7 @@ std::string Lex_t::name() const
 
 //---------------------------------------SHORT_NAMES---------------------------------------------------
 
-
+/*
 std::string Lex_t::short_name() const
 {
 	switch (kind_)
@@ -711,3 +709,4 @@ std::string Lex_t::short_name() const
 	}
 	return nullptr;
 }
+*/

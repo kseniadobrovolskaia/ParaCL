@@ -34,7 +34,7 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 	{
 		MAIN = 0;
 		main = 1;
-		scop = std::make_shared<Lex_t>(Lex_kind_t::SCOPE, Scope_t::LSCOPE, (lex_array->get_curr_lex())->get_str(), (lex_array->get_curr_lex())->get_num());
+		scop = std::make_shared<Lex_t>(Lex_kind_t::SCOPE, Scope_t::LSCOPE, (lex_array->get_curr_lex())->get_str(), (lex_array->get_curr_lex())->get_num(), "SCOPE");
 	}
 	else if (lex_array->is_scope() == Scope_t::LSCOPE)
 	{
@@ -43,7 +43,7 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 	}
 	else
 	{
-		scop = std::make_shared<Lex_t>(Lex_kind_t::SCOPE, Scope_t::LSCOPE, (lex_array->get_curr_lex())->get_str(), (lex_array->get_curr_lex())->get_num());
+		scop = std::make_shared<Lex_t>(Lex_kind_t::SCOPE, Scope_t::LSCOPE, (lex_array->get_curr_lex())->get_str(), (lex_array->get_curr_lex())->get_num(), "SCOPE");
 		ONE_STMT = 1;
 	}
 
@@ -119,7 +119,7 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 					lex_array->set_curr_lex(cur_num - 1);
 					int is_scp = lex_array->is_scope();
 					lex_array->set_curr_lex(cur_num);
-					
+
 					if (is_scp == Scope_t::RSCOPE)
 					{
 						break;
@@ -143,7 +143,7 @@ std::shared_ptr<Lex_t> parse_scope(std::shared_ptr<Lex_array_t> lex_array, bool 
 					}
 
 					lex_array->inc_lex();
-
+					
 					return std::make_shared<Scope>(prog_elems, *scop);
 				}
 			}
@@ -318,7 +318,7 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 	}
 
 	stmt = std::make_shared<Declaration>(func, func_scope, global_name, vars_in_func);
-	static_cast<Declaration*>(stmt.get())->set_decl(std::weak_ptr(stmt));
+	std::static_pointer_cast<Declaration>(stmt)->set_decl(std::weak_ptr(stmt));
 
 	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
 	AST_creator::CURR_SCOPE = func_scope;
@@ -331,7 +331,7 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 
 	AST_creator::CURR_SCOPE = old_curr_scope;
 
-	static_cast<Declaration*>(stmt.get())->add_scope(scope);
+	std::static_pointer_cast<Declaration>(stmt)->add_scope(scope);
 
 	AST_creator::CURR_SCOPE->init_func(func->short_name(), stmt);
 

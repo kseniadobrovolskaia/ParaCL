@@ -22,14 +22,7 @@ std::shared_ptr<Lex_t> parse_arithmetic(std::shared_ptr<Lex_array_t> lex_array)
 {
 	std::shared_ptr<Lex_t> root;
 
-	if (lex_array->is_scope() == Scope_t::RSCOPE)
-	{
-		root = parse_scope(lex_array);
-	}
-	else
-	{
-		root = parse_asgn(lex_array);
-	}
+	root = parse_asgn(lex_array);
 
 	return root;
 }
@@ -49,11 +42,11 @@ std::shared_ptr<Lex_t> parse_asgn(std::shared_ptr<Lex_array_t> lex_array)
 		}
 		else
 		{
-			Lex_t *var = L.get();
+			std::shared_ptr<Lex_t> var = L;
 
-			if (dynamic_cast<Ref_t*>(var))
+			if (std::dynamic_pointer_cast<Ref_t>(var))
 			{
-				var = &(dynamic_cast<Ref_t*>(var)->get_variable());
+				var = std::dynamic_pointer_cast<Ref_t>(var)->get_variable();
 			}
 			else if (var->get_kind() != Lex_kind_t::VAR)
 			{
@@ -64,7 +57,7 @@ std::shared_ptr<Lex_t> parse_asgn(std::shared_ptr<Lex_array_t> lex_array)
 			lex_array->inc_lex();
 			R = parse_bool(lex_array);
 
-			L = std::make_shared<Assign_node>(L, R, *var, *as);
+			L = std::make_shared<Assign_node>(L, R, var, *as);
 		}
 	}
 }
@@ -176,7 +169,7 @@ std::shared_ptr<Lex_t> parse_negative(std::shared_ptr<Lex_array_t> lex_array) //
 		neg = lex_array->get_curr_lex();
 		lex_array->inc_lex();
 		R = parse_unary(lex_array);
-		std::shared_ptr<Lex_t> nul = std::make_shared<Value>(Lex_t(Lex_kind_t:: VALUE, 0, neg->get_str(), neg->get_num()), Value_type::NUMBER);
+		std::shared_ptr<Lex_t> nul = std::make_shared<Value>(Lex_t(Lex_kind_t::VALUE, 0, neg->get_str(), neg->get_num(), "0"), Value_type::NUMBER);
 		L = std::make_shared<BinOp>(nul, R, *neg);
 	}
 	else
@@ -202,11 +195,11 @@ std::shared_ptr<Lex_t> parse_unary(std::shared_ptr<Lex_array_t> lex_array)
 		}
 		else
 		{
-			Lex_t *var = L.get();
+			std::shared_ptr<Lex_t> var = L;
 
-			if (dynamic_cast<Ref_t*>(var))
+			if (std::dynamic_pointer_cast<Ref_t>(var))
 			{
-				var = &(dynamic_cast<Ref_t*>(var)->get_variable());
+				var = std::dynamic_pointer_cast<Ref_t>(var)->get_variable();
 			}
 			else if (var->get_kind() != Lex_kind_t::VAR)
 			{
@@ -215,7 +208,7 @@ std::shared_ptr<Lex_t> parse_unary(std::shared_ptr<Lex_array_t> lex_array)
 
 			unop = lex_array->get_curr_lex();
 			lex_array->inc_lex();
-			L = std::make_shared<UnOp>(L, *var, *unop);
+			L = std::make_shared<UnOp>(L, var, *unop);
 		}
 	}
 }

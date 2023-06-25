@@ -77,7 +77,7 @@ void create_scope_nodes(std::shared_ptr<Lex_array_t> lex_array, std::vector<std:
 			{
 				file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 				num_node++;
-				create_scope_nodes(lex_array, static_cast<Scope*>(const_cast<Lex_t*>(&(static_cast<If*>(prog[prog_elem].get())->get_rhs())))->get_lhs(), file_tree);
+				create_scope_nodes(lex_array, static_cast<Scope*>(const_cast<Lex_t*>(&(std::static_pointer_cast<If>(prog[prog_elem])->get_rhs())))->get_lhs(), file_tree);
 				file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				if (is_if_long_form(prog[prog_elem]))
 				{
@@ -88,7 +88,7 @@ void create_scope_nodes(std::shared_ptr<Lex_array_t> lex_array, std::vector<std:
 			
 					file_tree << "\n           node_" << num_node << "[label = \"scope\", style=\"filled\", shape=\"record\", fillcolor = \"snow\"];";
 					num_node++;
-					create_scope_nodes(lex_array, static_cast<Scope*>(&(static_cast<If*>(prog[prog_elem].get())->get_else()))->get_lhs(), file_tree);
+					create_scope_nodes(lex_array, static_cast<Scope*>(&(std::static_pointer_cast<If>(prog[prog_elem])->get_else()))->get_lhs(), file_tree);
 					file_tree << "\n           node_" << stmt_type << "  -> node_" << prev_num_node << ";\n";
 				}
 			}
@@ -139,7 +139,7 @@ void create_statement_nodes(std::shared_ptr<Lex_array_t> lex_array, Lex_t &curr_
 	if ((lex_array->is_unop() >= 0) || lex_array->is_negation())
 	{
 		(*num_node)++;
-		create_statement_nodes(lex_array, dynamic_cast<Ref_t*>(&curr_node)->get_variable(), file_tree, num_node);
+		create_statement_nodes(lex_array, *(dynamic_cast<Ref_t*>(&curr_node)->get_variable()), file_tree, num_node);
 		file_tree << "\n           node_" << curr_elem << "  -> node_" << prev_elem << ";\n";
 		prev_elem = curr_elem;
 	}

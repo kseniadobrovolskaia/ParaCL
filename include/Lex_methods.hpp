@@ -140,14 +140,14 @@ public:
  */
 class Ref_t
 {
-	Lex_t &var_;
+	std::shared_ptr<Lex_t> var_;
 
 public:
-	Ref_t(Lex_t &var) : var_(var) {};
+	Ref_t(std::shared_ptr<Lex_t> var) : var_(var) {};
 
 	virtual ~Ref_t() = default;
 
-	virtual Lex_t &get_variable() const { return var_; };
+	virtual std::shared_ptr<Lex_t> get_variable() const { return var_; };
 };
 
 
@@ -174,7 +174,7 @@ class Assign_node : public Lex_t, public Ref_t {
   	std::shared_ptr<Lex_t> lhs_, rhs_;
 
 public:
-  	Assign_node(std::shared_ptr<Lex_t> lhs, std::shared_ptr<Lex_t> rhs, Lex_t &var, const Lex_t &ass) : 
+  	Assign_node(std::shared_ptr<Lex_t> lhs, std::shared_ptr<Lex_t> rhs, std::shared_ptr<Lex_t> var, const Lex_t &ass) : 
   	Lex_t(ass), Ref_t(var), lhs_(lhs), rhs_(rhs){};
 
   	virtual ~Assign_node() = default;
@@ -195,7 +195,7 @@ class UnOp : public Lex_t, public Ref_t {
   	std::shared_ptr<Lex_t> lhs_;
 
 public:
-  	UnOp(std::shared_ptr<Lex_t> lhs, Lex_t &var, const Lex_t &unop) : 
+  	UnOp(std::shared_ptr<Lex_t> lhs, std::shared_ptr<Lex_t> var, const Lex_t &unop) : 
   	Lex_t(unop), Ref_t(var), lhs_(lhs) {};
 
   	virtual ~UnOp() = default;

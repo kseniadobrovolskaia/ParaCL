@@ -15,10 +15,8 @@ void handler(int signo)
 Lex_array_t::Lex_array_t(std::istream &istr)
 {
 	/// That there is nothing from the previous lexical analysis
-	Lex_t::vars_table().clear();
-	Lex_t::funcs_table().clear();
-	Lex_array_t::EoF_ = 0;
 
+	Lex_array_t::EoF_ = 0;
 
 	int num_var = 0, num_funcs = 0;
 	char elem, prev = '\0';
@@ -150,10 +148,10 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 
 				if (func->get_data() == (num_var - 1))
 				{
-					Lex_t::funcs_table().push_back(Lex_t::vars_table()[num_var - 1]);
+					funcs_table.push_back(vars_table[num_var - 1]);
 					num_funcs++;
 					num_var--;
-					Lex_t::vars_table().pop_back();
+					vars_table.pop_back();
 				}
 
 				push_function(num_funcs - 1);
@@ -171,10 +169,10 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 
 				if (func->get_data() == (num_var - 1))
 				{
-					Lex_t::funcs_table().push_back(Lex_t::vars_table()[num_var - 1]);
+					funcs_table.push_back(vars_table[num_var - 1]);
 					num_funcs++;
 					num_var--;
-					Lex_t::vars_table().pop_back();
+					vars_table.pop_back();
 				}
 				push_function(num_funcs - 1);
 			}
@@ -267,10 +265,10 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 
 					if (func->get_data() == (num_var - 1))
 					{
-						Lex_t::funcs_table().push_back(Lex_t::vars_table()[num_var - 1]);
+						funcs_table.push_back(vars_table[num_var - 1]);
 						num_funcs++;
 						num_var--;
-						Lex_t::vars_table().pop_back();
+						vars_table.pop_back();
 					}
 
 					push_function(num_funcs - 1);
@@ -279,16 +277,16 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 				}
 				else
 				{
-					std::vector<std::string>::iterator itr = std::find(Lex_t::vars_table().begin(), Lex_t::vars_table().end(), word);
-					if (itr == Lex_t::vars_table().end())
+					std::vector<std::string>::iterator itr = std::find(vars_table.begin(), vars_table.end(), word);
+					if (itr == vars_table.end())
 					{
+						vars_table.push_back(word);
 						push_var(num_var);
-						Lex_t::vars_table().push_back(word);
 						num_var++;					
 					}
 					else
 					{
-						push_var(std::distance(Lex_t::vars_table().begin(), itr));
+						push_var(std::distance(vars_table.begin(), itr));
 					}
 				}
 
@@ -318,6 +316,9 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 	{
 		throw_exception("Set lex_array", 0, lex_array_); //This need to set static lex_array in function "throw_exception"
 	}
+
+	vars_table.clear();
+	funcs_table.clear();
 }
 
 
@@ -326,57 +327,57 @@ Lex_array_t::Lex_array_t(std::istream &istr)
 
 void Lex_array_t::push_binop(BinOp_t binop)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::BINOP, binop, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::BINOP, binop, num_str_, lex_array_.size(), "BINOP"));
 }
 
 void Lex_array_t::push_unop(Statements_t unop)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::UNOP, unop, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::UNOP, unop, num_str_, lex_array_.size(), "UNOP"));
 }
 
 void Lex_array_t::push_brace(Brace_t brace)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::BRACE, brace, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::BRACE, brace, num_str_, lex_array_.size(), "BRACE"));
 }
 
 void Lex_array_t::push_scope(Scope_t scope)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::SCOPE, scope, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::SCOPE, scope, num_str_, lex_array_.size(), "SCOPE"));
 }
 
 void Lex_array_t::push_stmt(Statements_t kw)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::STMT, kw, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::STMT, kw, num_str_, lex_array_.size(), "KeyWord"));
 }
 
 void Lex_array_t::push_var(int num_var)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::VAR, num_var, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::VAR, num_var, num_str_, lex_array_.size(), vars_table[num_var]));
 }
 
 void Lex_array_t::push_function(int num_func)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::FUNCTION, num_func, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::FUNCTION, num_func, num_str_, lex_array_.size(), funcs_table[num_func]));
 }
 
 void Lex_array_t::push_value(int value)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::VALUE, value, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::VALUE, value, num_str_, lex_array_.size(), std::to_string(value)));
 }
 
 void Lex_array_t::push_compop(CompOp_t compop)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::COMPOP, compop, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::COMPOP, compop, num_str_, lex_array_.size(), "COMPOP"));
 }
 
 void Lex_array_t::push_symbol(Symbols_t symbol)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::SYMBOL, symbol, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::SYMBOL, symbol, num_str_, lex_array_.size(), "Symbol"));
 }
 
 void Lex_array_t::push_bad_symbol(int symbol)
 {
-	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::BAD_SYMBOL, symbol, num_str_, lex_array_.size()));
+	lex_array_.push_back(std::make_shared<Lex_t>(Lex_kind_t::BAD_SYMBOL, symbol, num_str_, lex_array_.size(), "BadSymbol"));
 }
 
 
@@ -561,22 +562,12 @@ void Lex_array_t::clear()
 
 void Lex_array_t::set_curr_lex(int n)
 { 
-	if (n >= static_cast<int>(lex_array_.size()))
-	{
-		throw_exception("Syntax error\n", lex_array_.size() - 1);
-	}
-
 	curr_lex_ = n;
 }
 
 
 void Lex_array_t::inc_lex()
 { 
-	if ((curr_lex_ - 1) >= static_cast<int>(lex_array_.size()))
-	{
-		throw_exception("Syntax error\n", lex_array_.size() - 1);
-	}
-
 	curr_lex_++;
 }
 
@@ -585,7 +576,7 @@ std::shared_ptr<Lex_t> Lex_array_t::operator[](int n) const
 {
 	if (n >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("Syntax error\n", lex_array_.size() - 1);
+		throw_exception("Syntax error1\n", lex_array_.size() - 1);
 	}
 
 	return lex_array_[n];
@@ -596,7 +587,7 @@ std::shared_ptr<Lex_t> Lex_array_t::get_elem(int n) const
 { 
 	if (n >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("Syntax error\n", lex_array_.size() - 1);
+		throw_exception("Syntax error2\n", lex_array_.size() - 1);
 	}
 
 	return lex_array_[n];
@@ -607,7 +598,7 @@ std::shared_ptr<Lex_t> Lex_array_t::get_next_lex() const
 { 
 	if ((curr_lex_ + 1) >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("Syntax error\n", lex_array_.size() - 1);
+		throw_exception("Syntax error3\n", lex_array_.size() - 1);
 	}
 	return lex_array_[curr_lex_ + 1];
 }
@@ -617,7 +608,7 @@ std::shared_ptr<Lex_t> Lex_array_t::get_curr_lex() const
 { 
 	if (curr_lex_ >= static_cast<int>(lex_array_.size()))
 	{
-		throw_exception("Syntax error\n", lex_array_.size() - 1);
+		throw_exception("Syntax error4\n", lex_array_.size() - 1);
 	}
 	return lex_array_[curr_lex_];
 }

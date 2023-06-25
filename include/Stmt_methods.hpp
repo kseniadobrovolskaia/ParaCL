@@ -69,7 +69,7 @@ public:
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const                        { return vars_; };
 	void                                       add_scope(std::shared_ptr<Lex_t> scope) { scope_ = scope; };
 	virtual std::string                        name() const override;
-	std::string 							   get_func_name() const                   { return Lex_t::funcs_table()[func_->get_data()]; };
+	std::string 							   get_func_name() const                   { return func_->short_name(); };
 
 	llvm::Value    *codegen() const override;
 	llvm::Function *codegen_func() const override;

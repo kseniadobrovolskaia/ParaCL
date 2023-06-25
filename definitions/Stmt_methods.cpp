@@ -117,7 +117,7 @@ llvm::Function *Declaration::codegen_func() const
   	unsigned Idx = 0;
   	for (auto &Arg : Func->args())
   	{
-  		std::string name = Lex_t::vars_table()[vars_[Idx++]->get_data()];
+  		std::string name = vars_[Idx++]->short_name();
 
   		llvm::AllocaInst *Alloca = AST_creator::CURR_SCOPE->alloca_var(name, func_->get_num() + 3);
   		AST_creator::Builder->CreateStore(&Arg, Alloca);

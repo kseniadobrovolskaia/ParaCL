@@ -6,10 +6,6 @@
 
 
 
-
-std::vector<std::string> Lex_t::vars_;
-std::vector<std::string> Lex_t::funcs_;
-
 bool Lex_array_t::EoF_;
 
 bool AST_creator::RETURN_COMMAND;

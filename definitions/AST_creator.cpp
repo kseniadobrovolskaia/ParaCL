@@ -54,7 +54,7 @@ void AST_creator::codegen(const std::string &file_name)
 	///Print LLVM IR in file "file_name"
 	std::error_code EC;
   	llvm::raw_fd_ostream OS(file_name, EC);
-  	AST_creator::TheModule->print(OS, nullptr);
+  	AST_creator::TheModule->print(llvm::errs(), nullptr);
 }
 
 
@@ -70,7 +70,7 @@ void AST_creator::print_AST()
 {
 	std::cout << "Program statements :" << std::endl;
 	
-	const std::vector<std::shared_ptr<Statement>> &stmts = (static_cast<Scope*>(AST_.get()))->get_lhs();
+	const std::vector<std::shared_ptr<Statement>> &stmts = std::static_pointer_cast<Scope>(AST_)->get_lhs();
 
 	for (auto &&elem : stmts)
 	{
