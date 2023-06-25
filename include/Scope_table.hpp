@@ -49,10 +49,11 @@ public:
 	std::shared_ptr<Scope_table> get_high_scope() const { return higher_scope_; };
 	void                         print_scope() const;
 
-	void clean_alloca_table() noexcept;
-	void clean_var_table() noexcept;
-	void clean_func_table() noexcept;
+	void clean_alloca_table() noexcept { VarNames.clear(); };
+	void clean_func_table()   noexcept { funcs_.clear(); };
+	void clean_var_table()    noexcept { vars_.clear(); };
+	void clean() noexcept;
 };
 
 
-#endif
+#endif//SCOPE_TABLE_H

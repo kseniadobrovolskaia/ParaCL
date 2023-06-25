@@ -92,7 +92,7 @@ public:
 
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
   	Lex_t              &get_rhs() const          { return *rhs_; };
-  	Lex_t              &get_else() const         { if (!else_) throw_exception("This operator has no \"else\" \n", lhs_->get_num() - 1); return *else_; };
+  	Lex_t              &get_else() const         { if (!else_) throw_exception("This \"if\" has no \"else\"\n", lhs_->get_num() - 1); return *else_; };
 	virtual std::string name() const override;
 
 	llvm::Value *codegen() const override;
@@ -186,5 +186,5 @@ public:
 };
 
 
-#endif
+#endif//STMT_METHODS_H
 

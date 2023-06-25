@@ -74,4 +74,4 @@ public:
 };
 
 
-#endif
+#endif//LEX_ARRAY_T_H

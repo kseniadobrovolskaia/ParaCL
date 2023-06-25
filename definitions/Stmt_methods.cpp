@@ -55,11 +55,6 @@ int Print::run_stmt(std::istream &istr, std::ostream &ostr) const
 
 int Return::run_stmt(std::istream &istr, std::ostream &ostr) const
 {
-	if (!AST_creator::IN_FUNCTION)
-	{
-		throw_exception("You can return only from functions\n", lhs_->get_num());
-	}
-
 	AST_creator::RETURN_COMMAND = 1;
 
 	int val = lhs_->calculate(istr, ostr);
@@ -132,7 +127,7 @@ llvm::Function *Declaration::codegen_func() const
 
   	if (!RetVal)
   	{
-		throw_exception("Error in declaration codegen\n", scope_->get_num());
+		throw_exception("Error in codegen return in declaration\n", scope_->get_num());
   	}
 
   	AST_creator::Builder->CreateRet(RetVal);

@@ -9,8 +9,6 @@
 #include <unordered_map>
 
 
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -18,8 +16,9 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/raw_ostream.h"
+
 
 
 class Lex_t;
@@ -36,8 +35,6 @@ class AST_creator {
 	std::shared_ptr<Lex_t>       AST_;
 	std::shared_ptr<Lex_array_t> Tokens_;
 
-	std::shared_ptr<Scope_table> CURR_SCOPE_;
-
 	//Global function names that are visible in all scopes
 	std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS_;
 
@@ -48,12 +45,11 @@ public:
 
 	void lexical_analysis(std::istream &istr);
 	void parsing();
-	void codegen(std::ostream &ostr);
+	void codegen(const std::string &file_name);
 	void run_program(std::istream & istr, std::ostream & ostr);
 
-	std::shared_ptr<Lex_t>       get_AST()        const { return AST_; };
-	std::shared_ptr<Lex_array_t> get_Tokens()     const { return Tokens_; };
-	std::shared_ptr<Scope_table> get_curr_scope() const { return CURR_SCOPE_; };
+	std::shared_ptr<Lex_t>       get_AST()    const { return AST_; };
+	std::shared_ptr<Lex_array_t> get_Tokens() const { return Tokens_; };
 	
 	void print_tokens();
 	void print_AST();
@@ -69,9 +65,7 @@ public:
 	static std::shared_ptr<llvm::LLVMContext>       TheContext;
 	static std::shared_ptr<llvm::Module>            TheModule;
 	static std::shared_ptr<llvm::IRBuilder<>>       Builder;
-	static std::map<std::string, llvm::AllocaInst*> NamedValues;
-
 };
 
 
-#endif
+#endif//AST_CREATOR_H

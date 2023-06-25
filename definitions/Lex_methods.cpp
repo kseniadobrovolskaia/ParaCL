@@ -16,6 +16,11 @@ int Value::calculate(std::istream &istr, std::ostream &ostr) const
 	istr >> std::ws;
 	istr >> number;
 
+	if (istr.fail())
+	{
+		throw std::logic_error("Incorrect input\n");
+	}
+
 	return number;
 }
 
@@ -151,11 +156,6 @@ int Scope::calculate(std::istream &istr, std::ostream &ostr) const
 	AST_creator::CURR_SCOPE = scp_table;
 	int res = 0;
 
-	// auto run = [&](std::shared_ptr<Statement> stmt)
-	// 			 { stmt->run_stmt(istr, ostr); return AST_creator::RETURN_COMMAND; };
-
-	// std::find_if(stmts_.begin(), stmts_.end(), run); //this does not work:(
-
 	for (auto &&stmt : stmts_)
 	{
 		res = stmt->run_stmt(istr, ostr);
@@ -177,8 +177,6 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 	std::shared_ptr<Statement> Definition = AST_creator::CURR_SCOPE->get_func_decl(func_name, this->get_num());
 	Declaration *Definit = static_cast<Declaration*>(Definition.get());
 	
-	AST_creator::IN_FUNCTION++;
-	int res = 0;
 	std::shared_ptr<Scope_table> parent_table = (Definit->get_scope_table())->get_high_scope();
 
 	std::shared_ptr<Scope_table> func_table = std::make_shared<Scope_table>(parent_table);
@@ -206,6 +204,7 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 
 	const std::vector<std::shared_ptr<Statement>> &stmts = static_cast<Scope*>(scope.get())->get_lhs();
 
+	int res = 0;
 	for (auto &&stmt : stmts)
 	{
 		res = stmt->run_stmt(istr, ostr);
@@ -219,7 +218,6 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 
 	AST_creator::CURR_SCOPE = old_curr_scope;
 
-	AST_creator::IN_FUNCTION--;
 	return res;
 }
 

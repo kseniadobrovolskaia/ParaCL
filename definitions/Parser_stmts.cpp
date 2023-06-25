@@ -232,6 +232,11 @@ std::shared_ptr<Statement> parse_print(std::shared_ptr<Lex_array_t> lex_array)
 
 std::shared_ptr<Statement> parse_return(std::shared_ptr<Lex_array_t> lex_array)
 {
+	if (!AST_creator::IN_FUNCTION)
+	{
+		throw_exception("You can return only from functions\n", lex_array->get_num_curr_lex());
+	}
+
 	lex_array->inc_lex();
 
 	std::shared_ptr<Lex_t> L = parse_arithmetic(lex_array);
@@ -294,7 +299,7 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 	}
 	lex_array->inc_lex();
 
-	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
+	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>();
 
 	if (lex_array->is_colon())
 	{
@@ -318,7 +323,11 @@ std::shared_ptr<Statement> parse_declaration(std::shared_ptr<Lex_array_t> lex_ar
 	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
 	AST_creator::CURR_SCOPE = func_scope;
 
+	AST_creator::IN_FUNCTION++;
+
 	std::shared_ptr<Lex_t> scope = parse_scope(lex_array);
+
+	AST_creator::IN_FUNCTION--;
 
 	AST_creator::CURR_SCOPE = old_curr_scope;
 

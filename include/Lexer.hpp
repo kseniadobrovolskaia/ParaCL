@@ -100,4 +100,4 @@ public:
 };
 
 
-#endif
+#endif//LEXER_H

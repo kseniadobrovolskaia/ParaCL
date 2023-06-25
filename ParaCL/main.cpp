@@ -1,36 +1,41 @@
 #include "Parser_stmts.hpp"
 
 
-void build_sintax_graph(std::shared_ptr<Lex_array_t> lex_array, std::vector<std::shared_ptr<Statement>> prog);
-
 
 
 int main(int argc, char const *argv[])
 {
 	try
 	{
-		bool CODEGEN = 0;
+		bool CODEGEN = 0;///Print dump to file without execution
 		AST_creator creator;
 
 		if (argc > 1)
 		{
+			bool from_file = 0;
+
 			if (!strcmp(argv[1],"CODEGEN"))
 			{
 				CODEGEN = 1;
-				creator.lexical_analysis(std::cin);
+				if (argc > 2)
+					from_file = 1;
+			}
+
+			std::ifstream data;
+
+			if (!CODEGEN || from_file)
+			{
+				data.open(argv[from_file + 1]);
+				if (!(data.is_open()))
+				{
+					std::cerr << "File \"" << argv[from_file + 1] << "\" did not open\n";
+					exit(EXIT_FAILURE);
+				}
+				creator.lexical_analysis(data);
 			}
 			else
 			{
-				std::ifstream data;
-
-				data.open(argv[1]);
-				if (!(data.is_open()))
-				{
-					std::cerr << "File \"" << argv[1] << "\" did not open\n";
-					exit(EXIT_FAILURE);
-				}
-
-				creator.lexical_analysis(data);
+				creator.lexical_analysis(std::cin);
 			}
 		}
 		else
@@ -38,28 +43,17 @@ int main(int argc, char const *argv[])
 			creator.lexical_analysis(std::cin);
 		}
 
+
 		creator.parsing();
 
-		std::string file_name = "../../llvmIR.txt";
-		std::ofstream llvmIR;
+		std::string file_name = "llvmIR.txt";
 
-		llvmIR.open(file_name);
-		if (!(llvmIR.is_open()))
-		{
-		  std::cerr << "File \"" << file_name << "\" did not open\n";
-		  exit(EXIT_FAILURE);
-		}
-		
-		creator.codegen(llvmIR);
+		creator.codegen(file_name);
 
 		if (!CODEGEN)
 		{
 			creator.run_program(std::cin, std::cout);
 		}
-
-		//system ("dot sintax_tree.txt -Tpng -o sintax_tree.png\n"
-				// "shotwell sintax_tree.png");
-	
 	}
 	catch(std::exception & ex)
 	{

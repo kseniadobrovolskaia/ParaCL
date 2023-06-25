@@ -11,7 +11,7 @@ else()
 endif()
 
 
-add_compile_options(-Wall -std=c++20 -fexceptions)
+add_compile_options(-Wall -std=c++2a -fexceptions)
 
 include_directories(.././include)			
 

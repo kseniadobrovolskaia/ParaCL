@@ -23,7 +23,7 @@ else()
   include_directories(${LLVM_INCLUDE_DIR})
 endif()
 
-add_compile_options(-Wall -std=c++20 -fexceptions)
+add_compile_options(-Wall -std=c++2a -fexceptions)
 
 
 enable_testing()

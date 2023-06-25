@@ -205,5 +205,5 @@ public:
 };
 
 
-#endif
+#endif//LEX_METHODS_H
 

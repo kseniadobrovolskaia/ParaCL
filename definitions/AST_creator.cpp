@@ -9,47 +9,39 @@ AST_creator::AST_creator()
 
 void AST_creator::lexical_analysis(std::istream &istr)
 {
-	/// That there is nothing from the previous lexical analysis
-	CURR_SCOPE = std::make_shared<Scope_table>();
-	FUNCTIONS.clear();
-
 	Tokens_ = std::make_shared<Lex_array_t>(istr);
-
-	/// We write the result of the analysis to the local members of the class object
-	CURR_SCOPE_ = CURR_SCOPE;
-	FUNCTIONS_  = FUNCTIONS;
 }
 
 
 void AST_creator::run_program(std::istream & istr, std::ostream & ostr)
 {
 	RETURN_COMMAND = 0;
-	IN_FUNCTION    = 0;
-	CURR_SCOPE     = CURR_SCOPE_;
+	CURR_SCOPE     = std::make_shared<Scope_table>();
 	FUNCTIONS      = FUNCTIONS_;
 
 	AST_->calculate(istr, ostr);
-
-	CURR_SCOPE_ = CURR_SCOPE;
-	FUNCTIONS_  = FUNCTIONS;
 }
 
 
 void AST_creator::parsing()
 {
-	CURR_SCOPE     = CURR_SCOPE_;
-	FUNCTIONS      = FUNCTIONS_;
+	IN_FUNCTION = 0;
+
+	/// That there is nothing from the previous parsing
+	CURR_SCOPE = std::make_shared<Scope_table>();
+	FUNCTIONS.clear();
 
 	AST_ = parse_scope(Tokens_);
 
-	CURR_SCOPE_ = CURR_SCOPE;
 	FUNCTIONS_  = FUNCTIONS;
 }
 
 
-void AST_creator::codegen(std::ostream &ostr)
+void AST_creator::codegen(const std::string &file_name)
 {
-	CURR_SCOPE = std::make_shared<Scope_table>();
+	RETURN_COMMAND = 0;
+	CURR_SCOPE     = std::make_shared<Scope_table>();
+	FUNCTIONS      = FUNCTIONS_;	
 
 	if (!AST_)
 	{
@@ -58,9 +50,11 @@ void AST_creator::codegen(std::ostream &ostr)
 
 	Arithmetic Anonim(AST_);
 	Anonim.codegen_func();
-	
-	std::cout << "\n\n\n";
-	AST_creator::TheModule->print(llvm::errs(), nullptr);
+
+	///Print LLVM IR in file "file_name"
+	std::error_code EC;
+  	llvm::raw_fd_ostream OS(file_name, EC);
+  	AST_creator::TheModule->print(OS, nullptr);
 }
 
 

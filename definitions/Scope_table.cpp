@@ -183,19 +183,10 @@ std::shared_ptr<Statement> Scope_table::get_func_decl(const std::string &name, i
 }
 
 
-void Scope_table::clean_var_table() noexcept
+void Scope_table::clean() noexcept
 {
 	vars_.clear();
-}
-
-
-void Scope_table::clean_func_table() noexcept
-{
 	funcs_.clear();
-}
-
-
-void Scope_table::clean_alloca_table() noexcept
-{
 	VarNames.clear();
+	FuncNames.clear();
 }
