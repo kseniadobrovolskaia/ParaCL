@@ -1,11 +1,6 @@
 #include "Parser_stmts.hpp"
 
 
-void set_main()
-{
-	parse_scope(nullptr, 1); //This means MAIN = 1
-}
-
 
 void Run_tests()
 {
@@ -52,7 +47,6 @@ void Run_tests()
 			creator.parsing();
 			
 			creator.run_program(input, results);
-			set_main();
 		}
 	}
 	catch(std::exception & ex)
@@ -111,8 +105,6 @@ void Run_tests()
 			results.close();
 			input_data.clear();
 		}
-
-		set_main();
 	}
 }
 

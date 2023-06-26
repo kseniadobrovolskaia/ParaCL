@@ -102,7 +102,7 @@ int Scope_table::is_func_exist(const std::string &name) const
 		return higher_scope_->is_func_exist(name);
 	}
 
-	return AST_creator::FUNCTIONS.contains(name);
+	return 0;
 }
 
 
@@ -170,16 +170,24 @@ std::shared_ptr<Statement> Scope_table::get_func_decl(const std::string &name, i
 		}
 		else
 		{
-			if (AST_creator::FUNCTIONS.contains(name))
-			{
-				return AST_creator::FUNCTIONS[name];
-			}
-			
 			throw_exception("Uninitialized function in current scope\n", num_lexem);
 		}
 	}
 
 	return funcs_[name];
+}
+
+
+std::unordered_map<std::string, std::shared_ptr<Statement>> Scope_table::get_global_funcs() const 
+{ 
+	if (higher_scope_)
+	{
+		return higher_scope_->get_global_funcs(); 
+	}
+
+	throw_exception("Where is the main scope?\n", 1);
+
+	return std::unordered_map<std::string, std::shared_ptr<Statement>>();
 }
 
 
@@ -189,4 +197,35 @@ void Scope_table::clean() noexcept
 	funcs_.clear();
 	VarNames.clear();
 	FuncNames.clear();
+}
+
+
+//------------------------------------------------MAIN_SCOPE_TABLE-----------------------------------------
+
+
+int Main_Scope_table::is_func_exist(const std::string &name) const
+{
+	if (funcs_.contains(name))
+	{
+		return 1;
+	}
+
+	return FUNCTIONS.contains(name);
+}
+
+
+
+std::shared_ptr<Statement> Main_Scope_table::get_func_decl(const std::string &name, int num_lexem)
+{
+	if (!funcs_.contains(name))
+	{
+		if (FUNCTIONS.contains(name))
+		{
+			return FUNCTIONS[name];
+		}
+			
+		throw_exception("Uninitialized function in current scope\n", num_lexem);
+	}
+
+	return funcs_[name];
 }

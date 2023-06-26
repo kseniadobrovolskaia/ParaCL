@@ -22,8 +22,8 @@ public:
 
 	Value_type get_type() const { return type_; }
 
-	llvm::Value *codegen() override;
-	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) override;
+	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -42,8 +42,8 @@ public:
 
 	const std::vector<std::shared_ptr<Statement>> &get_lhs() const { return stmts_; };
 
-	llvm::Value *codegen() override;
-	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) override;
+	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -64,8 +64,8 @@ public:
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const   { return args_; };
 	void                                       print_args() const { std::for_each(args_.begin(), args_.end(), [](std::shared_ptr<Lex_t> arg){ std::cout << arg->name() << " ";});};
 
-	llvm::Value *codegen() override;
-	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) override;
+	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -85,8 +85,8 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	llvm::Value *codegen() override;
-  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen(AST_creator &creator) override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -106,8 +106,8 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	llvm::Value *codegen() override;
-  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen(AST_creator &creator) override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -126,8 +126,8 @@ public:
 
  	Lex_t &get_rhs() const { return *rhs_; };
 
- 	llvm::Value *codegen() override;
- 	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+ 	llvm::Value *codegen(AST_creator &creator) override;
+ 	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -161,8 +161,8 @@ public:
 
  	virtual ~Variable() = default;
 
- 	llvm::Value *codegen() override;
- 	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+ 	llvm::Value *codegen(AST_creator &creator) override;
+ 	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -182,8 +182,8 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	llvm::Value *codegen() override;
-  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen(AST_creator &creator) override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -200,8 +200,8 @@ public:
 
   	virtual ~UnOp() = default;
   	
-  	llvm::Value *codegen() override;
-  	virtual int  calculate(std::istream &istr, std::ostream &ostr) const override;
+  	llvm::Value *codegen(AST_creator &creator) override;
+  	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 

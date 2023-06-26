@@ -4,7 +4,7 @@
 //---------------------------------------------CALCULATE----------------------------------------------------
 
 
-int Value::calculate(std::istream &istr, std::ostream &ostr) const
+int Value::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
 	if (type_ != Value_type::INPUT)
 	{	
@@ -25,31 +25,31 @@ int Value::calculate(std::istream &istr, std::ostream &ostr) const
 }
 
 
-int Variable::calculate(std::istream &istr, std::ostream &ostr) const
+int Variable::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	return AST_creator::CURR_SCOPE->get_var(this->short_name(), this->get_num());
+	return creator.get_CURR_SCOPE()->get_var(this->short_name(), this->get_num());
 }
 
 
-int Negation::calculate(std::istream &istr, std::ostream &ostr) const
+int Negation::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	int right = rhs_->calculate(istr, ostr);
+	int right = rhs_->calculate(istr, ostr, creator);
 
 	return !right;
 }
 
 
-int Assign_node::calculate(std::istream &istr, std::ostream &ostr) const
+int Assign_node::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
 	std::shared_ptr<Lex_t> var = lhs_;
 	std::string var_name;
 
-	int right_part = rhs_->calculate(istr, ostr);
+	int right_part = rhs_->calculate(istr, ostr, creator);
 
 	if (std::dynamic_pointer_cast<Variable>(var))
 	{
 		var_name = var->short_name();
-		AST_creator::CURR_SCOPE->init_var(var_name);
+		creator.init_var(var_name);
 	}
 	else
 	{
@@ -57,18 +57,19 @@ int Assign_node::calculate(std::istream &istr, std::ostream &ostr) const
 		var_name = var->short_name();
 	}
 
-	lhs_->calculate(istr, ostr);
+	lhs_->calculate(istr, ostr, creator);
 
-	AST_creator::CURR_SCOPE->get_var(var_name, var->get_num()) = right_part;
+//!!!!!!!!!!!!!!!!!!!!!!!
+	creator.get_var(var_name, var->get_num()) = right_part;
 
-	return AST_creator::CURR_SCOPE->get_var(var_name, var->get_num());
+	return creator.get_var(var_name, var->get_num());
 }
 
 
-int BinOp::calculate(std::istream &istr, std::ostream &ostr) const
+int BinOp::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	int left = lhs_->calculate(istr, ostr);
-	int right = rhs_->calculate(istr, ostr);
+	int left = lhs_->calculate(istr, ostr, creator);
+	int right = rhs_->calculate(istr, ostr, creator);
 
 	switch (this->get_data())
 	{
@@ -91,9 +92,9 @@ int BinOp::calculate(std::istream &istr, std::ostream &ostr) const
 }
 
 
-int UnOp::calculate(std::istream &istr, std::ostream &ostr) const
+int UnOp::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	lhs_->calculate(istr, ostr);
+	lhs_->calculate(istr, ostr, creator);
 	std::shared_ptr<Lex_t> var = lhs_;
 
 	std::string var_name;
@@ -108,11 +109,11 @@ int UnOp::calculate(std::istream &istr, std::ostream &ostr) const
 	switch (this->get_data())
 	{
 		case Statements_t::INC:
-			AST_creator::CURR_SCOPE->get_var(var_name, this->get_num()) += 1;
-			return AST_creator::CURR_SCOPE->get_var(var_name, this->get_num());
+			creator.get_var(var_name, this->get_num()) += 1;
+			return creator.get_var(var_name, this->get_num());
 		case Statements_t::DEC:
-			AST_creator::CURR_SCOPE->get_var(var_name, this->get_num()) -= 1;
-			return AST_creator::CURR_SCOPE->get_var(var_name, this->get_num());
+			creator.get_var(var_name, this->get_num()) -= 1;
+			return creator.get_var(var_name, this->get_num());
 	}
 
 	throw_exception("Error: it is not clear what is in function \"UnOp::calculate\"\n", this->get_num());
@@ -120,10 +121,10 @@ int UnOp::calculate(std::istream &istr, std::ostream &ostr) const
 }
 
 
-int CompOp::calculate(std::istream &istr, std::ostream &ostr) const
+int CompOp::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	int left = lhs_->calculate(istr, ostr);
-	int right = rhs_->calculate(istr, ostr);
+	int left = lhs_->calculate(istr, ostr, creator);
+	int right = rhs_->calculate(istr, ostr, creator);
 
 	switch (this->get_data())
 	{
@@ -146,38 +147,36 @@ int CompOp::calculate(std::istream &istr, std::ostream &ostr) const
 }
 
 
-int Scope::calculate(std::istream &istr, std::ostream &ostr) const
+int Scope::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	std::shared_ptr<Scope_table> scp_table = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
-	std::shared_ptr<Scope_table> old_table = AST_creator::CURR_SCOPE;
+	std::shared_ptr<Scope_table> scp_table = std::make_shared<Scope_table>(creator.get_CURR_SCOPE());
+	std::shared_ptr<Scope_table> old_table = creator.get_CURR_SCOPE();
 
-	AST_creator::CURR_SCOPE = scp_table;
+	creator.set_CURR_SCOPE(scp_table);
 	int res = 0;
 
 	for (auto &&stmt : stmts_)
 	{
-		res = stmt->run_stmt(istr, ostr);
+		res = stmt->run_stmt(istr, ostr, creator);
 
-		if (AST_creator::RETURN_COMMAND)
+		if (creator.is_return())
 			break;
 	}
 
-	AST_creator::CURR_SCOPE = old_table;
+	creator.set_CURR_SCOPE(old_table);
 
 	return res;
 }
 
 
-int Function::calculate(std::istream &istr, std::ostream &ostr) const
+int Function::calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
 	std::string func_name = this->short_name();
 
-	std::shared_ptr<Statement> Definition = AST_creator::CURR_SCOPE->get_func_decl(func_name, this->get_num());
+	std::shared_ptr<Statement> Definition = creator.get_CURR_SCOPE()->get_func_decl(func_name, this->get_num());
 	std::shared_ptr<Declaration> Definit = std::static_pointer_cast<Declaration>(Definition);
 	
-	std::shared_ptr<Scope_table> parent_table = (Definit->get_scope_table())->get_high_scope();
-
-	std::shared_ptr<Scope_table> func_table = std::make_shared<Scope_table>(parent_table);
+	std::shared_ptr<Scope_table> func_table = std::make_shared<Main_Scope_table>(creator.get_CURR_SCOPE()->get_global_funcs());
 
 	const std::vector<std::shared_ptr<Lex_t>> &args = Definit->get_args();
 	
@@ -191,30 +190,30 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 		std::string name = args[num_arg]->short_name();
 		func_table->init_var(name);
 
-		int val = args_[num_arg]->calculate(istr, ostr);
+		int val = args_[num_arg]->calculate(istr, ostr, creator);
 		func_table->get_var(name, args_[num_arg]->get_str()) = val;
 	}
 
 	std::shared_ptr<Lex_t> scope = Definit->get_scope();
 
-	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
-	AST_creator::CURR_SCOPE = func_table;
+	std::shared_ptr<Scope_table> old_curr_scope = creator.get_CURR_SCOPE();
+	creator.set_CURR_SCOPE(func_table);
 
 	const std::vector<std::shared_ptr<Statement>> &stmts = std::static_pointer_cast<Scope>(scope)->get_lhs();
 
 	int res = 0;
 	for (auto &&stmt : stmts)
 	{
-		res = stmt->run_stmt(istr, ostr);
+		res = stmt->run_stmt(istr, ostr, creator);
 
-		if (AST_creator::RETURN_COMMAND)
+		if (creator.is_return())
 		{
-			AST_creator::RETURN_COMMAND = 0;
+			*(creator.set_return()) = 0;
 			break;
 		}
 	}
 
-	AST_creator::CURR_SCOPE = old_curr_scope;
+	creator.set_CURR_SCOPE(old_curr_scope);
 
 	return res;
 }
@@ -223,7 +222,7 @@ int Function::calculate(std::istream &istr, std::ostream &ostr) const
 //----------------------------------------------CODEGEN--------------------------------------------------
 
 
-llvm::Value *Value::codegen()
+llvm::Value *Value::codegen(AST_creator &creator)
 {
 	if (type_ != Value_type::INPUT)
 	{	
@@ -258,11 +257,11 @@ llvm::Value *Value::codegen()
 }
 
 
-llvm::Value *Variable::codegen()
+llvm::Value *Variable::codegen(AST_creator &creator)
 {
 	std::string var_name = this->short_name();
 
-	llvm::AllocaInst *Var = AST_creator::CURR_SCOPE->get_var_addr(var_name, this->get_num());
+	llvm::AllocaInst *Var = creator.get_CURR_SCOPE()->get_var_addr(var_name, this->get_num());
 
   	if (!Var)
   	{
@@ -273,9 +272,9 @@ llvm::Value *Variable::codegen()
 }
 
 
-llvm::Value *Negation::codegen()
+llvm::Value *Negation::codegen(AST_creator &creator)
 {
-	llvm::Value *right = rhs_->codegen();
+	llvm::Value *right = rhs_->codegen(creator);
 	const llvm::APInt zero(32, 0, true);
   	
   	right = AST_creator::Builder->CreateICmpEQ(right, 
@@ -286,9 +285,9 @@ llvm::Value *Negation::codegen()
 }
 
 
-llvm::Value *Assign_node::codegen()
+llvm::Value *Assign_node::codegen(AST_creator &creator)
 {
-	llvm::Value *Val = rhs_->codegen();
+	llvm::Value *Val = rhs_->codegen(creator);
 
   	if (!Val)
   	{
@@ -308,7 +307,7 @@ llvm::Value *Assign_node::codegen()
 		var_name = var->short_name();
 	}
 
-	llvm::AllocaInst *Var = AST_creator::CURR_SCOPE->alloca_var(var_name, this->get_num());
+	llvm::AllocaInst *Var = creator.get_CURR_SCOPE()->alloca_var(var_name, this->get_num());
 
   	if (!Var)
   	{
@@ -321,12 +320,12 @@ llvm::Value *Assign_node::codegen()
 }
 
 
-llvm::Value *Scope::codegen()
+llvm::Value *Scope::codegen(AST_creator &creator)
 {
-	std::shared_ptr<Scope_table> curr_scope = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
-	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
+	std::shared_ptr<Scope_table> curr_scope = std::make_shared<Scope_table>(creator.get_CURR_SCOPE());
+	std::shared_ptr<Scope_table> old_curr_scope = creator.get_CURR_SCOPE();
 	
-	AST_creator::CURR_SCOPE = curr_scope;
+	creator.set_CURR_SCOPE(curr_scope);
 
   	
 	const llvm::APInt zero(32, 0, true);
@@ -342,28 +341,28 @@ llvm::Value *Scope::codegen()
 	{
 		if (std::dynamic_pointer_cast<Declaration>(elem))
 		{
-			elem->codegen_func();
+			elem->codegen_func(creator);
 		}
 		else
 		{
-			last_expr = elem->codegen();
+			last_expr = elem->codegen(creator);
 		}
 	}
 
-	AST_creator::CURR_SCOPE = old_curr_scope;
+	creator.set_CURR_SCOPE(old_curr_scope);
 
 	return last_expr;
 }
 
 
-llvm::Value *Function::codegen()
+llvm::Value *Function::codegen(AST_creator &creator)
 {
 	std::string func_name = this->short_name();
 	llvm::Function *Call = AST_creator::TheModule->getFunction(func_name);
 
 	if (!Call)
 	{
-		Call = AST_creator::CURR_SCOPE->get_func_addr(func_name, this->get_num());
+		Call = creator.get_CURR_SCOPE()->get_func_addr(func_name, this->get_num());
   	}
 
   	int args_size = args_.size();
@@ -377,14 +376,14 @@ llvm::Value *Function::codegen()
 
   	for (auto &&arg : args_)
   	{
-  		ArgsV.push_back(arg->codegen());
+  		ArgsV.push_back(arg->codegen(creator));
     }
     
   	return AST_creator::Builder->CreateCall(Call, ArgsV, "calltmp");
 }
 
 
-llvm::Value *UnOp::codegen()
+llvm::Value *UnOp::codegen(AST_creator &creator)
 {
 	const llvm::APInt one(32, 1, true);	
 	llvm::Value *One = llvm::ConstantInt::get(*AST_creator::TheContext, one);
@@ -392,7 +391,7 @@ llvm::Value *UnOp::codegen()
 	std::shared_ptr<Lex_t> var = get_variable();
 	std::string var_name;
 
-	llvm::Value *Var = var->codegen();
+	llvm::Value *Var = var->codegen(creator);
 
   	if (!Var)
   	{
@@ -422,10 +421,10 @@ llvm::Value *UnOp::codegen()
 }
 
 
-llvm::Value *BinOp::codegen()
+llvm::Value *BinOp::codegen(AST_creator &creator)
 {
-	llvm::Value *left = lhs_->codegen();
-  	llvm::Value *right = rhs_->codegen();
+	llvm::Value *left = lhs_->codegen(creator);
+  	llvm::Value *right = rhs_->codegen(creator);
 
   	if (!left || !right) 
   	{
@@ -453,10 +452,10 @@ llvm::Value *BinOp::codegen()
 }
 
 
-llvm::Value *CompOp::codegen()
+llvm::Value *CompOp::codegen(AST_creator &creator)
 {
-	llvm::Value *left = lhs_->codegen();
-  	llvm::Value *right = rhs_->codegen();
+	llvm::Value *left = lhs_->codegen(creator);
+  	llvm::Value *right = rhs_->codegen(creator);
 
   	if (!left || !right) 
   	{
@@ -622,15 +621,15 @@ std::string Lex_t::name() const
 
 //---------------------------------------SHORT_NAMES---------------------------------------------------
 
-/*
+
 std::string Lex_t::short_name() const
 {
 	switch (kind_)
 	{
 	case Lex_kind_t::VAR:
-		return vars_[data_];
+		return name_;
 	case Lex_kind_t::FUNCTION:
-		return funcs_[data_];
+		return name_;
 	case Lex_kind_t::BRACE:
 		return ((data_ == Brace_t::LBRACE) ? "(" : ")");
 	case Lex_kind_t::UNOP:
@@ -709,4 +708,3 @@ std::string Lex_t::short_name() const
 	}
 	return nullptr;
 }
-*/

@@ -84,14 +84,14 @@ public:
 	virtual ~Lex_t() = default;
 
 	std::string name() const;
-	std::string short_name() const { return name_; };
+	std::string short_name() const;
 	Lex_kind_t  get_kind()   const { return kind_; };
 	int         get_str()    const { return num_str_; };
 	int         get_data()   const { return data_; };
 	int         get_num()    const { return num_; };
 
-	virtual llvm::Value *codegen()                                               { return nullptr; }
-	virtual int          calculate(std::istream &istr, std::ostream &ostr) const { return data_; };
+	virtual llvm::Value *codegen(AST_creator &creator)                                                 { return nullptr; }
+	virtual int          calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const { return data_; };
 };
 
 

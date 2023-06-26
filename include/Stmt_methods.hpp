@@ -24,9 +24,9 @@ public:
 	virtual Lex_t      &get_lhs()  const = 0;
 	virtual std::string name()     const = 0;
 
-	virtual llvm::Function *codegen_func() const { return nullptr; };
-	virtual llvm::Value    *codegen()      const = 0;
-	virtual int             run_stmt(std::istream &istr, std::ostream &ostr) const = 0;
+	virtual llvm::Function *codegen_func(AST_creator &creator) const { return nullptr; };
+	virtual llvm::Value    *codegen(AST_creator &creator)      const = 0;
+	virtual int             run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const = 0;
 };
 
 
@@ -41,9 +41,6 @@ class Declaration final : public Statement {
 	///Function
 	std::shared_ptr<Lex_t> scope_;
 
-	///Scope for this function
-	std::shared_ptr<Scope_table> func_scope_;
-
 	///To place a pointer to this declaration in a Scope_table
 	std::weak_ptr<Statement> this_;
 
@@ -54,26 +51,25 @@ class Declaration final : public Statement {
 
 
 public:
-	Declaration(std::shared_ptr<Lex_t> func, std::shared_ptr<Scope_table> func_scope, std::vector<std::shared_ptr<Lex_t>> &vars) : 
-	Statement(Statements_t::FUNC), func_(func), func_scope_(func_scope), vars_(std::move(vars)) {};
+	Declaration(std::shared_ptr<Lex_t> func, std::vector<std::shared_ptr<Lex_t>> &vars) : 
+	Statement(Statements_t::FUNC), func_(func), vars_(std::move(vars)) {};
 
-	Declaration(std::shared_ptr<Lex_t> func, std::shared_ptr<Scope_table> func_scope, std::string gl_name, std::vector<std::shared_ptr<Lex_t>> &vars) : 
-	Statement(Statements_t::FUNC), func_(func), func_scope_(func_scope), global_name_(gl_name), vars_(std::move(vars)) {};
+	Declaration(std::shared_ptr<Lex_t> func, std::string gl_name, std::vector<std::shared_ptr<Lex_t>> &vars) : 
+	Statement(Statements_t::FUNC), func_(func), global_name_(gl_name), vars_(std::move(vars)) {};
 
 	virtual ~Declaration() = default;
 	
 	void                                       set_decl(std::weak_ptr<Statement> This) { this_ = This; };
 	virtual Lex_t                             &get_lhs() const override                { return *func_; };
 	std::shared_ptr<Lex_t>                     get_scope() const                       { return scope_; };
-	std::shared_ptr<Scope_table>			   get_scope_table() const                 { return func_scope_; };
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const                        { return vars_; };
 	void                                       add_scope(std::shared_ptr<Lex_t> scope) { scope_ = scope; };
 	virtual std::string                        name() const override;
 	std::string 							   get_func_name() const                   { return func_->short_name(); };
 
-	llvm::Value    *codegen() const override;
-	llvm::Function *codegen_func() const override;
-	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value    *codegen(AST_creator &creator) const override;
+	llvm::Function *codegen_func(AST_creator &creator) const override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -95,8 +91,8 @@ public:
   	Lex_t              &get_else() const         { if (!else_) throw_exception("This \"if\" has no \"else\"\n", lhs_->get_num() - 1); return *else_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen() const override;
-	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -117,8 +113,8 @@ public:
   	Lex_t              &get_rhs() const          { return *rhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen() const override;
-	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -138,8 +134,8 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen() const override;
-	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -159,8 +155,8 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen() const override;
-	virtual int  run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value *codegen(AST_creator &creator) const override;
+	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
@@ -180,9 +176,9 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value    *codegen() const override;
-	llvm::Function *codegen_func() const override;
-	virtual int     run_stmt(std::istream &istr, std::ostream &ostr) const override;
+	llvm::Value    *codegen(AST_creator &creator) const override;
+	llvm::Function *codegen_func(AST_creator &creator) const override;
+	virtual int     run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 

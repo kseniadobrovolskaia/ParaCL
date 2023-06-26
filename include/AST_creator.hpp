@@ -32,11 +32,14 @@ class Lex_array_t;
  */
 class AST_creator {
 
+	bool RETURN_COMMAND_;
+
 	std::shared_ptr<Lex_t>       AST_;
 	std::shared_ptr<Lex_array_t> Tokens_;
 
 	//Global function names that are visible in all scopes
 	std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS_;
+	std::shared_ptr<Scope_table>                                CURR_SCOPE_;
 
 
 public:
@@ -48,18 +51,21 @@ public:
 	void codegen(const std::string &file_name);
 	void run_program(std::istream & istr, std::ostream & ostr);
 
+	bool                         is_return()  const { return RETURN_COMMAND_; }
+	bool                        *set_return()       { return &RETURN_COMMAND_;}
 	std::shared_ptr<Lex_t>       get_AST()    const { return AST_; };
 	std::shared_ptr<Lex_array_t> get_Tokens() const { return Tokens_; };
+	std::shared_ptr<Scope_table> get_CURR_SCOPE()   { return CURR_SCOPE_; }
+	void                         set_CURR_SCOPE(std::shared_ptr<Scope_table> scope) { CURR_SCOPE_ = scope; }
+	int                         &get_var(const std::string &name, int num_lexem);
+	void                         init_var(const std::string &name);
+	llvm::AllocaInst            *alloca_var(const std::string &name, int num_lexem);
+	void                         add_func(const std::string &name, llvm::Function *func);
+	void                         init_func(const std::string &name, std::shared_ptr<Statement> body);
+
 	
-	void print_tokens();
-	void print_AST();
-
-	/// For class "Lex_t" in the methods "calculate" to know the current situation of the program
-	static bool RETURN_COMMAND;
-	static int  IN_FUNCTION;
-
-	static std::shared_ptr<Scope_table>                                CURR_SCOPE;
-	static std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
+	void print_tokens() const;
+	void print_AST() const;
 
 	/// To build LLVM IR
 	static std::shared_ptr<llvm::LLVMContext>       TheContext;

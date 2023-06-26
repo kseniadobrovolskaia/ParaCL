@@ -4,20 +4,20 @@
 //--------------------------------------------RUN_STATEMENTS------------------------------------------------
 
 
-int If::run_stmt(std::istream &istr, std::ostream &ostr) const
+int If::run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
 	int res;
-	int condition = lhs_->calculate(istr, ostr);
+	int condition = lhs_->calculate(istr, ostr, creator);
 
 	if (condition)
 	{
-		res = rhs_->calculate(istr, ostr);
+		res = rhs_->calculate(istr, ostr, creator);
 	}
 	else
 	{
 		if (else_)
 		{
-			res = else_->calculate(istr, ostr);
+			res = else_->calculate(istr, ostr, creator);
 		}
 	}
 
@@ -25,27 +25,27 @@ int If::run_stmt(std::istream &istr, std::ostream &ostr) const
 }
 
 
-int While::run_stmt(std::istream &istr, std::ostream &ostr) const
+int While::run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	int condition = lhs_->calculate(istr, ostr);
+	int condition = lhs_->calculate(istr, ostr, creator);
 
 	while (condition)
 	{
-		rhs_->calculate(istr, ostr);
+		rhs_->calculate(istr, ostr, creator);
 
-		if (AST_creator::RETURN_COMMAND)
+		if (creator.is_return())
 			break;
 
-		condition = lhs_->calculate(istr, ostr);
+		condition = lhs_->calculate(istr, ostr, creator);
 	}
 
 	return 0;
 }
 
 
-int Print::run_stmt(std::istream &istr, std::ostream &ostr) const
+int Print::run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	int val = lhs_->calculate(istr, ostr);
+	int val = lhs_->calculate(istr, ostr, creator);
 
 	ostr << val << std::endl;
 
@@ -53,27 +53,28 @@ int Print::run_stmt(std::istream &istr, std::ostream &ostr) const
 }
 
 
-int Return::run_stmt(std::istream &istr, std::ostream &ostr) const
+int Return::run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	AST_creator::RETURN_COMMAND = 1;
+	*(creator.set_return()) = 1;
 
-	int val = lhs_->calculate(istr, ostr);
+	int val = lhs_->calculate(istr, ostr, creator);
 
 	return val;
 }
 
 
-int Arithmetic::run_stmt(std::istream &istr, std::ostream &ostr) const
+int Arithmetic::run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	int res = lhs_->calculate(istr, ostr);
+	int res = lhs_->calculate(istr, ostr, creator);
 
 	return res;
 }
 
 
-int Declaration::run_stmt(std::istream &istr, std::ostream &ostr) const
+int Declaration::run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const
 {
-	AST_creator::CURR_SCOPE->init_func(func_->short_name(), this_.lock());
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	creator.init_func(func_->short_name(), this_.lock());
 
 	return 0;
 }
@@ -82,14 +83,14 @@ int Declaration::run_stmt(std::istream &istr, std::ostream &ostr) const
 //-----------------------------------------------CODEGEN------------------------------------------------
 
 
-llvm::Value *Declaration::codegen() const
+llvm::Value *Declaration::codegen(AST_creator &creator) const
 {
 	const llvm::APInt zero(32, 0, true);
 	return llvm::ConstantInt::get(*AST_creator::TheContext, zero);
 }
 
 
-llvm::Function *Declaration::codegen_func() const
+llvm::Function *Declaration::codegen_func(AST_creator &creator) const
 {
 	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
 
@@ -111,19 +112,20 @@ llvm::Function *Declaration::codegen_func() const
   	llvm::BasicBlock *Block = llvm::BasicBlock::Create(*AST_creator::TheContext, "entry", Func);
   	AST_creator::Builder->SetInsertPoint(Block);
   	
-  	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
-	AST_creator::CURR_SCOPE = func_scope_;
+  	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>();
+  	std::shared_ptr<Scope_table> old_curr_scope = creator.get_CURR_SCOPE();
+	creator.set_CURR_SCOPE(func_scope);
 
   	unsigned Idx = 0;
   	for (auto &Arg : Func->args())
   	{
   		std::string name = vars_[Idx++]->short_name();
-
-  		llvm::AllocaInst *Alloca = AST_creator::CURR_SCOPE->alloca_var(name, func_->get_num() + 3);
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  		llvm::AllocaInst *Alloca = creator.alloca_var(name, func_->get_num() + 3);
   		AST_creator::Builder->CreateStore(&Arg, Alloca);
   	} 
 
-  	llvm::Value *RetVal = scope_->codegen();
+  	llvm::Value *RetVal = scope_->codegen(creator);
 
   	if (!RetVal)
   	{
@@ -133,9 +135,9 @@ llvm::Function *Declaration::codegen_func() const
   	AST_creator::Builder->CreateRet(RetVal);
 	verifyFunction(*Func);
 
-  	AST_creator::CURR_SCOPE = old_curr_scope;
-
-  	AST_creator::CURR_SCOPE->add_func(func_->short_name(), Func);
+  	creator.set_CURR_SCOPE(old_curr_scope);
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  	creator.add_func(func_->short_name(), Func);
 
   	AST_creator::Builder->SetInsertPoint(InsertBB);
 
@@ -143,9 +145,9 @@ llvm::Function *Declaration::codegen_func() const
 }
 
 
-llvm::Value *If::codegen() const
+llvm::Value *If::codegen(AST_creator &creator) const
 {
-	llvm::Value *Cond = lhs_->codegen();
+	llvm::Value *Cond = lhs_->codegen(creator);
 
  	if (!Cond)
   	{
@@ -176,7 +178,7 @@ llvm::Value *If::codegen() const
 
 	AST_creator::Builder->SetInsertPoint(ThenBB);
 
-	llvm::Value *Then = rhs_->codegen();
+	llvm::Value *Then = rhs_->codegen(creator);
 
  	if (!Then)
   	{
@@ -193,7 +195,7 @@ llvm::Value *If::codegen() const
 		Func->getBasicBlockList().push_back(ElseBB);
 		AST_creator::Builder->SetInsertPoint(ElseBB);
 
-		Else = else_->codegen();
+		Else = else_->codegen(creator);
 		
 		if (!Else)
 	  	{
@@ -222,7 +224,7 @@ llvm::Value *If::codegen() const
 }
 
 
-llvm::Value *While::codegen() const
+llvm::Value *While::codegen(AST_creator &creator) const
 {
   	const llvm::APInt zero(32, 0, true);
 	llvm::Value *Zero = llvm::ConstantInt::get(*AST_creator::TheContext, zero);
@@ -234,7 +236,7 @@ llvm::Value *While::codegen() const
 	AST_creator::Builder->CreateBr(CondBB);
 	AST_creator::Builder->SetInsertPoint(CondBB);
 
-	llvm::Value *Cond = lhs_->codegen();
+	llvm::Value *Cond = lhs_->codegen(creator);
 	Cond = AST_creator::Builder->CreateICmpNE(Cond, Zero, "whilecond");
 
  	if (!Cond)
@@ -251,7 +253,7 @@ llvm::Value *While::codegen() const
 
 	AST_creator::Builder->SetInsertPoint(LoopBB);
 
-	rhs_->codegen();
+	rhs_->codegen(creator);
 
 	AST_creator::Builder->CreateBr(CondBB);
 	LoopBB = AST_creator::Builder->GetInsertBlock();
@@ -263,9 +265,9 @@ llvm::Value *While::codegen() const
 }
 
 
-llvm::Value *Print::codegen() const
+llvm::Value *Print::codegen(AST_creator &creator) const
 {
-	llvm::Value *Val = lhs_->codegen();
+	llvm::Value *Val = lhs_->codegen(creator);
 
 	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
 
@@ -296,9 +298,9 @@ llvm::Value *Print::codegen() const
 }
 
 
-llvm::Value *Return::codegen() const
+llvm::Value *Return::codegen(AST_creator &creator) const
 {
-	llvm::Value *RetVal = lhs_->codegen();
+	llvm::Value *RetVal = lhs_->codegen(creator);
 
   	if (!RetVal)
   	{
@@ -311,13 +313,13 @@ llvm::Value *Return::codegen() const
 }
 
 
-llvm::Value *Arithmetic::codegen() const
+llvm::Value *Arithmetic::codegen(AST_creator &creator) const
 {
-	return lhs_->codegen();
+	return lhs_->codegen(creator);
 }
 
 
-llvm::Function *Arithmetic::codegen_func() const
+llvm::Function *Arithmetic::codegen_func(AST_creator &creator) const
 {
 	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
 
@@ -334,11 +336,11 @@ llvm::Function *Arithmetic::codegen_func() const
 	llvm::BasicBlock *Block = llvm::BasicBlock::Create(*AST_creator::TheContext, "entry", Func);
   	AST_creator::Builder->SetInsertPoint(Block);
 
-  	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>(AST_creator::CURR_SCOPE);
-  	std::shared_ptr<Scope_table> old_curr_scope = AST_creator::CURR_SCOPE;
-	AST_creator::CURR_SCOPE = func_scope;
+  	std::shared_ptr<Scope_table> func_scope = std::make_shared<Scope_table>(creator.get_CURR_SCOPE());
+  	std::shared_ptr<Scope_table> old_curr_scope = creator.get_CURR_SCOPE();
+	creator.set_CURR_SCOPE(func_scope);
 
-	llvm::Value *RetVal = lhs_->codegen();
+	llvm::Value *RetVal = lhs_->codegen(creator);
 
   	if (!RetVal)
   	{
@@ -348,7 +350,7 @@ llvm::Function *Arithmetic::codegen_func() const
   	AST_creator::Builder->CreateRet(RetVal);
 	verifyFunction(*Func);
 
-  	AST_creator::CURR_SCOPE = old_curr_scope;
+  	creator.set_CURR_SCOPE(old_curr_scope);
 
   	AST_creator::Builder->SetInsertPoint(InsertBB);
 
