@@ -1,14 +1,5 @@
-#include <vector>
-#include <string>
-#include <memory>
-#include <unordered_map>
 #include "Lex_array.hpp"
 
 
 
 bool Lex_array_t::EoF_;
-
-
-std::shared_ptr<llvm::LLVMContext> AST_creator::TheContext = std::make_shared<llvm::LLVMContext>();
-std::shared_ptr<llvm::Module>      AST_creator::TheModule  = std::make_shared<llvm::Module>("ParaCL", *TheContext);
-std::shared_ptr<llvm::IRBuilder<>> AST_creator::Builder    = std::make_shared<llvm::IRBuilder<>>(*TheContext);

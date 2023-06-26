@@ -2,6 +2,9 @@
 
 
 
+//----------------------------------------------------SCOPE_TABLE----------------------------------------------------------------------------------------------------------
+
+
 void Scope_table::print_scope() const
 {
 	std::cout << "Variables: \n";
@@ -23,22 +26,22 @@ void Scope_table::init_var(const std::string &name)
 }
 
 
-static llvm::AllocaInst *CreateAlloca(const std::string &VarName)
+static llvm::AllocaInst *CreateAlloca(const std::string &VarName, std::shared_ptr<llvm::LLVMContext> TheContext, std::shared_ptr<llvm::IRBuilder<>> Builder)
 {
-	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
+	llvm::BasicBlock *InsertBB = Builder->GetInsertBlock();
 	llvm::Function *Func = InsertBB->getParent();
 	
 	llvm::IRBuilder<> TmpB(&Func->getEntryBlock(), Func->getEntryBlock().begin());
 
-	return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*AST_creator::TheContext), 0, VarName.c_str());
+	return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*TheContext), 0, VarName.c_str());
 }
 
 
-llvm::AllocaInst *Scope_table::alloca_var(const std::string &name, int num_lexem)
+llvm::AllocaInst *Scope_table::alloca_var(const std::string &name, int num_lexem, std::shared_ptr<llvm::LLVMContext> TheContext, std::shared_ptr<llvm::IRBuilder<>> Builder)
 {
   	if (!is_var_alloca(name))
 	{
-		VarNames[name] = CreateAlloca(name);
+		VarNames[name] = CreateAlloca(name, TheContext, Builder);
 		return VarNames[name];
 	}
 
@@ -200,7 +203,7 @@ void Scope_table::clean() noexcept
 }
 
 
-//------------------------------------------------MAIN_SCOPE_TABLE-----------------------------------------
+//------------------------------------------------MAIN_SCOPE_TABLE---------------------------------------------------------------------------------------------------------
 
 
 int Main_Scope_table::is_func_exist(const std::string &name) const

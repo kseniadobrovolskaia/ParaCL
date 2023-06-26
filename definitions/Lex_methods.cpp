@@ -59,7 +59,6 @@ int Assign_node::calculate(std::istream &istr, std::ostream &ostr, AST_creator &
 
 	lhs_->calculate(istr, ostr, creator);
 
-//!!!!!!!!!!!!!!!!!!!!!!!
 	creator.get_var(var_name, var->get_num()) = right_part;
 
 	return creator.get_var(var_name, var->get_num());
@@ -222,270 +221,57 @@ int Function::calculate(std::istream &istr, std::ostream &ostr, AST_creator &cre
 //----------------------------------------------CODEGEN--------------------------------------------------
 
 
-llvm::Value *Value::codegen(AST_creator &creator)
+llvm::Value *Value::codegen(Codegen_creator &creator)
 {
-	if (type_ != Value_type::INPUT)
-	{	
-		const llvm::APInt value(32, this->get_data(), true);
-
-		return llvm::ConstantInt::get(*AST_creator::TheContext, value);
-	}
-
-	llvm::BasicBlock *InsertBB = AST_creator::Builder->GetInsertBlock();
- 	llvm::Function *func_scanf = AST_creator::TheModule->getFunction("scanf");
-
-    if (!func_scanf)
-    {
-    	std::vector<llvm::Type *> Ints(0, llvm::Type::getInt32Ty(*AST_creator::TheContext));
-	  	
-	  	llvm::FunctionType *FuncType =
-	    llvm::FunctionType::get(llvm::Type::getInt32Ty(*AST_creator::TheContext), Ints, false);
-
-	  	func_scanf = 
-	  	llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "scanf", AST_creator::TheModule.get());
-
-        func_scanf->setCallingConv(llvm::CallingConv::C);
-    }
-
-    llvm::Value *str = AST_creator::Builder->CreateGlobalStringPtr("%d");
-    std::vector <llvm::Value*> call_params;
-    call_params.push_back(str);
- 
-    llvm::CallInst *call = llvm::CallInst::Create(func_scanf, call_params, "calltmp", InsertBB);
-    
-   	return call;
+	return creator.codegen_value(*this);
 }
 
 
-llvm::Value *Variable::codegen(AST_creator &creator)
+llvm::Value *Variable::codegen(Codegen_creator &creator)
 {
-	std::string var_name = this->short_name();
-
-	llvm::AllocaInst *Var = creator.get_CURR_SCOPE()->get_var_addr(var_name, this->get_num());
-
-  	if (!Var)
-  	{
-  		throw_exception("Unknown variable name\n", this->get_num());
-  	}
-
-  	return AST_creator::Builder->CreateLoad(Var->getAllocatedType(), Var, var_name.c_str());
+	return creator.codegen_variable(*this);
 }
 
 
-llvm::Value *Negation::codegen(AST_creator &creator)
+llvm::Value *Negation::codegen(Codegen_creator &creator)
 {
-	llvm::Value *right = rhs_->codegen(creator);
-	const llvm::APInt zero(32, 0, true);
-  	
-  	right = AST_creator::Builder->CreateICmpEQ(right, 
-    llvm::ConstantInt::get(*AST_creator::TheContext, zero), "neg");
-
-    right = AST_creator::Builder->CreateUIToFP(right, llvm::Type::getDoubleTy(*AST_creator::TheContext), "doubletmp");
-	return AST_creator::Builder->CreateFPToSI(right, llvm::Type::getInt32Ty(*AST_creator::TheContext), "inttmp");
+	return creator.codegen_negation(*this);
 }
 
 
-llvm::Value *Assign_node::codegen(AST_creator &creator)
+llvm::Value *Assign_node::codegen(Codegen_creator &creator)
 {
-	llvm::Value *Val = rhs_->codegen(creator);
-
-  	if (!Val)
-  	{
-  		throw_exception("Non-existing operand\n", rhs_->get_num());
-  	}
-	
-	std::shared_ptr<Lex_t> var = lhs_;
-	std::string var_name;
-
-	if (std::dynamic_pointer_cast<Variable>(var))
-	{
-		var_name = var->short_name();
-	}
-	else
-	{
-		var = get_variable();
-		var_name = var->short_name();
-	}
-
-	llvm::AllocaInst *Var = creator.get_CURR_SCOPE()->alloca_var(var_name, this->get_num());
-
-  	if (!Var)
-  	{
-  		throw_exception("Unknown variable name\n", this->get_num());
-  	}
-
-  	AST_creator::Builder->CreateStore(Val, Var);
-
-  	return Val;
+	return creator.codegen_assign(*this);
 }
 
 
-llvm::Value *Scope::codegen(AST_creator &creator)
+llvm::Value *Scope::codegen(Codegen_creator &creator)
 {
-	std::shared_ptr<Scope_table> curr_scope = std::make_shared<Scope_table>(creator.get_CURR_SCOPE());
-	std::shared_ptr<Scope_table> old_curr_scope = creator.get_CURR_SCOPE();
-	
-	creator.set_CURR_SCOPE(curr_scope);
-
-  	
-	const llvm::APInt zero(32, 0, true);
-		
-	if (!stmts_.size())
-	{
-		return llvm::ConstantInt::get(*AST_creator::TheContext, zero);
-	}
-	
-	llvm::Value *last_expr = llvm::ConstantInt::get(*AST_creator::TheContext, zero);
-
-	for (auto &elem : stmts_)
-	{
-		if (std::dynamic_pointer_cast<Declaration>(elem))
-		{
-			elem->codegen_func(creator);
-		}
-		else
-		{
-			last_expr = elem->codegen(creator);
-		}
-	}
-
-	creator.set_CURR_SCOPE(old_curr_scope);
-
-	return last_expr;
+	return creator.codegen_scope(*this);
 }
 
 
-llvm::Value *Function::codegen(AST_creator &creator)
+llvm::Value *Function::codegen(Codegen_creator &creator)
 {
-	std::string func_name = this->short_name();
-	llvm::Function *Call = AST_creator::TheModule->getFunction(func_name);
-
-	if (!Call)
-	{
-		Call = creator.get_CURR_SCOPE()->get_func_addr(func_name, this->get_num());
-  	}
-
-  	int args_size = args_.size();
-
-	if (static_cast<int>(Call->arg_size()) != args_size)
-	{
-		throw_exception("Incorrect count arguments\n", this->get_num());
-	}
-   
-	std::vector<llvm::Value*> ArgsV;
-
-  	for (auto &&arg : args_)
-  	{
-  		ArgsV.push_back(arg->codegen(creator));
-    }
-    
-  	return AST_creator::Builder->CreateCall(Call, ArgsV, "calltmp");
+	return creator.codegen_call(*this);
 }
 
 
-llvm::Value *UnOp::codegen(AST_creator &creator)
+llvm::Value *UnOp::codegen(Codegen_creator &creator)
 {
-	const llvm::APInt one(32, 1, true);	
-	llvm::Value *One = llvm::ConstantInt::get(*AST_creator::TheContext, one);
-	
-	std::shared_ptr<Lex_t> var = get_variable();
-	std::string var_name;
-
-	llvm::Value *Var = var->codegen(creator);
-
-  	if (!Var)
-  	{
-  		throw_exception("Unknown variable name\n", this->get_num());
-  	}
-
-  	llvm::Value *Val;
-
-	switch (this->get_data())
-	{
-		case Statements_t::INC:
-			Val = AST_creator::Builder->CreateAdd(Var, One, "Inctmp");
-			break;
-		case Statements_t::DEC:
-			Val = AST_creator::Builder->CreateSub(Var, One, "Dectmp");
-			break;
-	}
-
-  	if (!Val)
-  	{
-  		throw_exception("Non-existing operand\n", lhs_->get_num());
-  	}
-
-  	AST_creator::Builder->CreateStore(Val, Var);
-
-  	return Val;
+	return creator.codegen_unop(*this);
 }
 
 
-llvm::Value *BinOp::codegen(AST_creator &creator)
+llvm::Value *BinOp::codegen(Codegen_creator &creator)
 {
-	llvm::Value *left = lhs_->codegen(creator);
-  	llvm::Value *right = rhs_->codegen(creator);
-
-  	if (!left || !right) 
-  	{
-  		throw_exception("Non-existing operand\n", this->get_num());
-  	};
-
-	switch (this->get_data())
-	{
-		case BinOp_t::ADD:
-			return AST_creator::Builder->CreateAdd(left, right, "addtmp");
-		case BinOp_t::SUB:
-			return AST_creator::Builder->CreateSub(left, right, "subtmp");
-		case BinOp_t::MULT:
-			return AST_creator::Builder->CreateMul(left, right, "multtmp");
-		case BinOp_t::DIV:
-			if (right == 0)
-			{
-				throw_exception("Division by zero\n", this->get_num());
-			}
-			return AST_creator::Builder->CreateSDiv(left, right, "divtmp");
-	}
-
-	throw_exception("Error: it is not clear what is in function \"BinOp::Codegen\"\n", this->get_num());
-	return nullptr;
+	return creator.codegen_binop(*this);
 }
 
 
-llvm::Value *CompOp::codegen(AST_creator &creator)
+llvm::Value *CompOp::codegen(Codegen_creator &creator)
 {
-	llvm::Value *left = lhs_->codegen(creator);
-  	llvm::Value *right = rhs_->codegen(creator);
-
-  	if (!left || !right) 
-  	{
-  		throw_exception("Non-existing operand\n", this->get_num());
-  	};
-  
-	switch (this->get_data())
-	{
-		case CompOp_t::LESS:
-			left = AST_creator::Builder->CreateICmpSLT(left, right, "lesstmp");
-			break;
-		case CompOp_t::GREATER:
-			left = AST_creator::Builder->CreateICmpSGT(left, right, "greatertmp");
-			break;
-		case CompOp_t::LESorEQ:
-			left = AST_creator::Builder->CreateICmpSLE(left, right, "LESorEQtmp");
-			break;
-		case CompOp_t::GRorEQ:
-			left = AST_creator::Builder->CreateICmpSGE(left, right, "GRorEQtmp");
-			break;
-		case CompOp_t::EQUAL:
-			left = AST_creator::Builder->CreateICmpEQ(left, right, "EQtmp");
-			break;
-		case CompOp_t::NOT_EQUAL:
-			left = AST_creator::Builder->CreateICmpNE(left, right, "NEtmp");
-			break;
-	}
-	
-	left = AST_creator::Builder->CreateUIToFP(left, llvm::Type::getDoubleTy(*AST_creator::TheContext), "doubletmp");
-	return AST_creator::Builder->CreateFPToSI(left, llvm::Type::getInt32Ty(*AST_creator::TheContext), "inttmp");
+	return creator.codegen_compop(*this);
 }
 
 

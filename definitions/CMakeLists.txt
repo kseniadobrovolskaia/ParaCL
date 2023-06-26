@@ -16,6 +16,7 @@ add_compile_options(-Wall -std=c++2a -fexceptions)
 include_directories(.././include)			
 
 set(SOURCE_LIB  AST_creator.cpp
+				Codegen_creator.cpp
 				Lex_array_t.cpp
 				Lex_methods.cpp
 				Parser_arith.cpp

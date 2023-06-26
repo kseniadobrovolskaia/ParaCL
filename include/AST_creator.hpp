@@ -22,15 +22,32 @@
 
 
 class Lex_t;
+class Value;
+class Variable;
+class Negation;
+class Assign_node;
+class Scope;
+class Function;
+class UnOp;
+class CompOp;
+class BinOp;
+class Declaration;
+class If;
+class While;
+class Print;
+class Return;
+class Arithmetic;
 class Statement;
 class Scope_table;
 class Lex_array_t;
 
 
 /**
- * @brief class AST_creator - class for lexical analysis, parsing and program execution
+ * @brief class AST_creator - class for lexical analysis, parsing, program execution and codegeneration.
  */
 class AST_creator {
+
+protected:
 
 	bool RETURN_COMMAND_;
 
@@ -55,22 +72,16 @@ public:
 	bool                        *set_return()       { return &RETURN_COMMAND_;}
 	std::shared_ptr<Lex_t>       get_AST()    const { return AST_; };
 	std::shared_ptr<Lex_array_t> get_Tokens() const { return Tokens_; };
-	std::shared_ptr<Scope_table> get_CURR_SCOPE()   { return CURR_SCOPE_; }
+	std::shared_ptr<Scope_table> get_CURR_SCOPE() const { return CURR_SCOPE_; }
 	void                         set_CURR_SCOPE(std::shared_ptr<Scope_table> scope) { CURR_SCOPE_ = scope; }
 	int                         &get_var(const std::string &name, int num_lexem);
 	void                         init_var(const std::string &name);
-	llvm::AllocaInst            *alloca_var(const std::string &name, int num_lexem);
 	void                         add_func(const std::string &name, llvm::Function *func);
 	void                         init_func(const std::string &name, std::shared_ptr<Statement> body);
 
 	
 	void print_tokens() const;
 	void print_AST() const;
-
-	/// To build LLVM IR
-	static std::shared_ptr<llvm::LLVMContext>       TheContext;
-	static std::shared_ptr<llvm::Module>            TheModule;
-	static std::shared_ptr<llvm::IRBuilder<>>       Builder;
 };
 
 

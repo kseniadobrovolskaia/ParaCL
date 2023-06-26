@@ -4,13 +4,18 @@
 #include "Stmt_methods.hpp"
 
 
-
+/**
+ * @brief class Parser - parses an array of tokens and returns the AST root, start parsing with the method "parse_scope".
+ */
 class Parser {
 
+    ///Nesting level
     int IN_FUNCTION = 0;
 
-    const std::shared_ptr<Lex_array_t> &lex_array_;
+    ///Tokens arrat for parsing
+    std::shared_ptr<Lex_array_t> lex_array_;
  
+    ///Global functions
     std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
 
 public:
@@ -28,6 +33,14 @@ public:
     std::shared_ptr<Lex_t> parse_negation();
     std::shared_ptr<Lex_t> parse_negative();
     std::shared_ptr<Lex_t> parse_unary();
+
+    /**
+     * @brief parse_scope - function to parse scopes
+     * 
+     * @param reset       - the function contains a static variable MAIN 
+     *                      which says that we are parsing the main.
+     *                      When this parameter is set to 1, the MAIN is again set to 1
+     */
     std::shared_ptr<Lex_t> parse_scope(bool reset = 0);
     std::shared_ptr<Lex_t> parse_asgn();
     std::shared_ptr<Lex_t> parse_bool();

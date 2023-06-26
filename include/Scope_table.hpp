@@ -19,13 +19,13 @@ protected:
 	///Scope which contains this scope
 	std::shared_ptr<Scope_table> higher_scope_;
 
-	///Variables declared in this scope with they indexes in Lex_t::vars_table()
+	///Variables declared in this scope with they values
 	std::unordered_map<std::string, int> vars_;
 
 	///Functions declared in this scope
 	std::unordered_map<std::string, std::shared_ptr<Statement>> funcs_;
 
-	///all variables/functions declared in this scope
+	///Variables/functions declared in this scope
 	std::map<std::string, llvm::AllocaInst*> VarNames;
 	std::map<std::string, llvm::Function*>   FuncNames;
 
@@ -34,7 +34,7 @@ public:
 	Scope_table(std::shared_ptr<Scope_table> higher_scope) : higher_scope_(higher_scope) {};
 	Scope_table() : higher_scope_(nullptr) {};
 
-	llvm::AllocaInst *alloca_var(const std::string &name, int num_lexem);
+	llvm::AllocaInst *alloca_var(const std::string &name, int num_lexem, std::shared_ptr<llvm::LLVMContext> TheContext, std::shared_ptr<llvm::IRBuilder<>> Builder);
 	void add_func(const std::string &name, llvm::Function *func);
 	void init_var(const std::string &name);
 	void init_func(const std::string &name, std::shared_ptr<Statement> body);
@@ -65,13 +65,18 @@ public:
 
 
 
+/**
+ * @brief class Main_Scope_table - also contains a table of global functions that can be seen from any scope.
+ * 
+ */
 class Main_Scope_table : public Scope_table {
 
+	///Global functions
 	std::unordered_map<std::string, std::shared_ptr<Statement>> FUNCTIONS;
 
 public:
 
-	Main_Scope_table(std::unordered_map<std::string, std::shared_ptr<Statement>> Funcs) : Scope_table(), FUNCTIONS(Funcs) {};
+	Main_Scope_table(const std::unordered_map<std::string, std::shared_ptr<Statement>> &Funcs) : Scope_table(), FUNCTIONS(Funcs) {};
 
 	virtual int                                                         is_func_exist(const std::string &name) const;
 	virtual std::shared_ptr<Statement>                                  get_func_decl(const std::string &name, int num_lexem);

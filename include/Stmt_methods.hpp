@@ -24,13 +24,13 @@ public:
 	virtual Lex_t      &get_lhs()  const = 0;
 	virtual std::string name()     const = 0;
 
-	virtual llvm::Function *codegen_func(AST_creator &creator) const { return nullptr; };
-	virtual llvm::Value    *codegen(AST_creator &creator)      const = 0;
+	virtual llvm::Function *codegen_func(Codegen_creator &creator) { return nullptr; };
+	virtual llvm::Value    *codegen(Codegen_creator &creator) = 0;
 	virtual int             run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const = 0;
 };
 
 
-//-----------------------------------------STATEMENT_CLASSES-----------------------------------------------------
+//-----------------------------------------STATEMENT_CLASSES---------------------------------------------------------------------------------------------
 
 
 class Declaration final : public Statement {
@@ -66,14 +66,15 @@ public:
 	void                                       add_scope(std::shared_ptr<Lex_t> scope) { scope_ = scope; };
 	virtual std::string                        name() const override;
 	std::string 							   get_func_name() const                   { return func_->short_name(); };
+	std::string                                get_global_name() const                 { return global_name_; };
 
-	llvm::Value    *codegen(AST_creator &creator) const override;
-	llvm::Function *codegen_func(AST_creator &creator) const override;
+	llvm::Value    *codegen(Codegen_creator &creator) override;
+	llvm::Function *codegen_func(Codegen_creator &creator) override;
 	virtual int     run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//---------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class If final : public Statement {
@@ -86,17 +87,18 @@ public:
 
 	virtual ~If() = default;
 
-	virtual Lex_t      &get_lhs() const override { return *lhs_; };
-  	Lex_t              &get_rhs() const          { return *rhs_; };
-  	Lex_t              &get_else() const         { if (!else_) throw_exception("This \"if\" has no \"else\"\n", lhs_->get_num() - 1); return *else_; };
-	virtual std::string name() const override;
+	virtual Lex_t          &get_lhs() const override { return *lhs_; };
+  	Lex_t                  &get_rhs() const          { return *rhs_; };
+  	Lex_t                  &get_else() const         { if (!else_) throw_exception("This \"if\" has no \"else\"\n", lhs_->get_num() - 1); return *else_; };
+  	std::shared_ptr<Lex_t> get_Else() const      { return else_; };
+	virtual std::string    name() const override;
 
-	llvm::Value *codegen(AST_creator &creator) const override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//---------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class While final : public Statement {
@@ -113,12 +115,12 @@ public:
   	Lex_t              &get_rhs() const          { return *rhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen(AST_creator &creator) const override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//---------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Print final : public Statement {
@@ -134,12 +136,12 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen(AST_creator &creator) const override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//---------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Return final : public Statement {
@@ -155,12 +157,12 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value *codegen(AST_creator &creator) const override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//---------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Arithmetic final : public Statement {
@@ -176,8 +178,8 @@ public:
 	virtual Lex_t      &get_lhs() const override { return *lhs_; };
 	virtual std::string name() const override;
 
-	llvm::Value    *codegen(AST_creator &creator) const override;
-	llvm::Function *codegen_func(AST_creator &creator) const override;
+	llvm::Value    *codegen(Codegen_creator &creator) override;
+	llvm::Function *codegen_func(Codegen_creator &creator) override;
 	virtual int     run_stmt(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 

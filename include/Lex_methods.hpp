@@ -5,7 +5,7 @@
 #include "Scope_table.hpp"
 
 
-//--------------------------------------------LEXEME_CLASSES------------------------------------------------
+//--------------------------------------------LEXEME_CLASSES--------------------------------------------------------------------------------------------------------------------
 
 
 enum Value_type { INPUT, NUMBER };
@@ -20,14 +20,15 @@ public:
 
 	virtual ~Value() = default;
 
-	Value_type get_type() const { return type_; }
+	Value_type get_type() const { return type_; };
+	int        get_value() const{ return get_data(); };
 
-	llvm::Value *codegen(AST_creator &creator) override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Scope : public Lex_t {
@@ -42,12 +43,12 @@ public:
 
 	const std::vector<std::shared_ptr<Statement>> &get_lhs() const { return stmts_; };
 
-	llvm::Value *codegen(AST_creator &creator) override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Function : public Lex_t {
@@ -64,12 +65,12 @@ public:
 	const std::vector<std::shared_ptr<Lex_t>> &get_args() const   { return args_; };
 	void                                       print_args() const { std::for_each(args_.begin(), args_.end(), [](std::shared_ptr<Lex_t> arg){ std::cout << arg->name() << " ";});};
 
-	llvm::Value *codegen(AST_creator &creator) override;
+	llvm::Value *codegen(Codegen_creator &creator) override;
 	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class BinOp : public Lex_t {
@@ -85,12 +86,12 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	llvm::Value *codegen(AST_creator &creator) override;
+  	llvm::Value *codegen(Codegen_creator &creator) override;
   	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class CompOp : public Lex_t {
@@ -106,12 +107,12 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	llvm::Value *codegen(AST_creator &creator) override;
+  	llvm::Value *codegen(Codegen_creator &creator) override;
   	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Negation : public Lex_t {
@@ -126,12 +127,12 @@ public:
 
  	Lex_t &get_rhs() const { return *rhs_; };
 
- 	llvm::Value *codegen(AST_creator &creator) override;
+ 	llvm::Value *codegen(Codegen_creator &creator) override;
  	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------REF_TYPE----------------------------------------------------
+//----------------------------------------------REF_TYPE------------------------------------------------------------------------------------------------------------------------------
 
 
 /**
@@ -151,7 +152,7 @@ public:
 };
 
 
-//----------------------------------CLASSES_THAT_RETURN_A_VARIABLE-----------------------------------------
+//----------------------------------CLASSES_THAT_RETURN_A_VARIABLE---------------------------------------------------------------------------------------------------------------------
 
 
 class Variable : public Lex_t {
@@ -161,12 +162,12 @@ public:
 
  	virtual ~Variable() = default;
 
- 	llvm::Value *codegen(AST_creator &creator) override;
+ 	llvm::Value *codegen(Codegen_creator &creator) override;
  	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Assign_node : public Lex_t, public Ref_t {
@@ -182,12 +183,12 @@ public:
   	Lex_t &get_lhs() const { return *lhs_; };
   	Lex_t &get_rhs() const { return *rhs_; };
 
-  	llvm::Value *codegen(AST_creator &creator) override;
+  	llvm::Value *codegen(Codegen_creator &creator) override;
   	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 
 
-//----------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class UnOp : public Lex_t, public Ref_t {
@@ -200,7 +201,7 @@ public:
 
   	virtual ~UnOp() = default;
   	
-  	llvm::Value *codegen(AST_creator &creator) override;
+  	llvm::Value *codegen(Codegen_creator &creator) override;
   	virtual int  calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const override;
 };
 

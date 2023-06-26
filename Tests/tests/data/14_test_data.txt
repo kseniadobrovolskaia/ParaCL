@@ -3,7 +3,7 @@
 
 x = ?;
 
-foo = func(x, y, z) : function
+fo = func(x, y, z) : function
 {
 	if (x > y)
 	{
@@ -21,7 +21,7 @@ foo = func(x, y, z) : function
 
 y = ?;
 
-if (foo(x, 3, 7) != { print function(x + 0, 10 - y, y); })
+if (fo(x, 3, 7) != { print function(x + 0, 10 - y, y); })
 {
 	while(1)
 	;

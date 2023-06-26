@@ -11,7 +11,7 @@
 #include <vector>
 #include <signal.h>
 
-#include "AST_creator.hpp"
+#include "Codegen_creator.hpp"
 
 
 /**
@@ -24,7 +24,7 @@
 void throw_exception(std::string mess, int error_elem, std::vector<std::shared_ptr<Lex_t>> lex_array_ = std::vector<std::shared_ptr<Lex_t>>());
 
 
-//--------------------------------------------LEX_KIND--------------------------------------------------------
+//--------------------------------------------LEX_KIND----------------------------------------------------------------------------------------
 
 
 enum Lex_kind_t {
@@ -42,7 +42,7 @@ enum Lex_kind_t {
 };
 
 
-//--------------------------------------------LEX_DATA--------------------------------------------------------
+//--------------------------------------------LEX_DATA-------------------------------------------------------------------------------------
 
 
 enum BinOp_t { ADD, SUB, MULT, DIV };
@@ -58,7 +58,7 @@ enum Statements_t { ASSIGN, IF, WHILE, PRINT, INC, DEC, ARITHMETIC, FUNC, RETURN
 enum Symbols_t { SEMICOL, SCAN, ELSE, NEGATION, COLON, COMMA };
 
 
-//--------------------------------------------LEX_CLASS-------------------------------------------------------
+//--------------------------------------------LEX_CLASS------------------------------------------------------------------------------------
 
 
 /**
@@ -90,7 +90,7 @@ public:
 	int         get_data()   const { return data_; };
 	int         get_num()    const { return num_; };
 
-	virtual llvm::Value *codegen(AST_creator &creator)                                                 { return nullptr; }
+	virtual llvm::Value *codegen(Codegen_creator &creator)                                             { return nullptr; }
 	virtual int          calculate(std::istream &istr, std::ostream &ostr, AST_creator &creator) const { return data_; };
 };
 
